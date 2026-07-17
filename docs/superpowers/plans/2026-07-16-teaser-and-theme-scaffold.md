@@ -393,9 +393,12 @@ git commit -m "Add neon teaser section with masked wordmark, signup form, and fl
 
 ### Task 6: Password layout + template
 
+> **Amendment (added during execution, after Task 2's code-quality review):** the Shopify Skeleton starter cloned in Task 2 already ships `theme/layout/password.liquid`, `theme/sections/password.liquid`, and `theme/templates/password.json`. Steps 1–2 below are therefore **overwrites** of existing files, not new-file creation. Additionally, once `templates/password.json` is rewired to render `lf-teaser` instead of Skeleton's stock `password` section, `theme/sections/password.liquid` becomes dead code — **Step 2.5 (added)** deletes it in the same commit, after confirming nothing else references it.
+
 **Files:**
-- Create: `theme/layout/password.liquid`
-- Create: `theme/templates/password.json`
+- Modify (overwrite): `theme/layout/password.liquid`
+- Modify (overwrite): `theme/templates/password.json`
+- Delete: `theme/sections/password.liquid`
 
 - [ ] **Step 1: Write `theme/layout/password.liquid` (complete file)**
 
@@ -432,10 +435,18 @@ git commit -m "Add neon teaser section with masked wordmark, signup form, and fl
 }
 ```
 
+- [ ] **Step 2.5 (added): Delete the now-orphaned stock section**
+
+First confirm nothing else references it: `grep -r "sections/password\|'password'" theme/`. Expect only unrelated hits (Shopify's built-in `request.page_type == 'password'` check, and locale strings for the password *field* label) — if you find a real reference to the section file itself, stop and investigate before deleting.
+
+```bash
+git rm theme/sections/password.liquid
+```
+
 - [ ] **Step 3: Theme check**
 
 Run: `shopify theme check --path theme`
-Expected: no new offenses.
+Expected: no new offenses; the `OrphanedSnippet` warning on `lf-fonts.liquid` (present since Task 4) should disappear now that `password.liquid` renders it via `{% render 'lf-fonts' %}`.
 
 - [ ] **Step 4: Commit**
 
@@ -443,6 +454,8 @@ Expected: no new offenses.
 git add theme/layout/password.liquid theme/templates/password.json
 git commit -m "Wire teaser section onto themed password page"
 ```
+
+(Include the Step 2.5 deletion in this same commit.)
 
 ### Task 7: Local verification against dev store
 
