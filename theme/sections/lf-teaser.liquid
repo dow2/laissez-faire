@@ -1,0 +1,158 @@
+<div class="lf-teaser">
+  <div
+    class="lf-teaser__sign"
+    role="img"
+    aria-label="Laissez-Faire"
+    style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"
+  ></div>
+
+  <p class="lf-teaser__manifesto lf-script">{{ section.settings.manifesto_line }}</p>
+
+  <div class="lf-teaser__fleur" aria-hidden="true">
+    <img src="{{ 'lf-fleur.png' | asset_url }}" width="44" height="26" loading="lazy" alt="">
+  </div>
+
+  {% if section.settings.show_signup %}
+    <div class="lf-teaser__signup">
+      {% form 'customer', class: 'lf-teaser__form' %}
+        <input type="hidden" name="contact[tags]" value="teaser-list">
+        {% if form.posted_successfully? %}
+          <p class="lf-teaser__success lf-glow-text">You're on the list. Lights on soon.</p>
+        {% else %}
+          <label for="lf-email" class="lf-teaser__label">{{ section.settings.signup_prompt }}</label>
+          <div class="lf-teaser__row">
+            <input
+              id="lf-email"
+              type="email"
+              name="contact[email]"
+              required
+              autocomplete="email"
+              placeholder="you@example.com"
+            >
+            <button type="submit" class="lf-display">Notify&nbsp;Me</button>
+          </div>
+          {% if form.errors %}
+            <p class="lf-teaser__error" role="alert">{{ form.errors | default_errors }}</p>
+          {% endif %}
+        {% endif %}
+      {% endform %}
+    </div>
+  {% endif %}
+
+  {% if section.settings.instagram_url != blank %}
+    <a class="lf-teaser__ig" href="{{ section.settings.instagram_url }}" rel="me noopener" target="_blank">Instagram</a>
+  {% endif %}
+</div>
+
+{% stylesheet %}
+.lf-teaser {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+.lf-teaser__sign {
+  width: min(82vw, 620px);
+  aspect-ratio: 3000 / 1800;
+  background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-wordmark) center / contain no-repeat;
+  mask: var(--lf-wordmark) center / contain no-repeat;
+  filter: drop-shadow(0 0 6px var(--lf-neon-halo)) drop-shadow(0 0 26px var(--lf-neon-halo));
+}
+.lf-teaser__manifesto {
+  font-size: clamp(1.05rem, 2.6vw, 1.4rem);
+  color: var(--lf-body-text);
+  max-width: 34ch;
+  margin: 0;
+}
+.lf-teaser__fleur img { opacity: .55; }
+.lf-teaser__label {
+  display: block;
+  font-size: .72rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--lf-muted);
+  margin-bottom: .7rem;
+}
+.lf-teaser__row { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+.lf-teaser__row input {
+  background: var(--lf-panel);
+  border: 1px solid #26262e;
+  color: var(--lf-body-text);
+  padding: .8rem 1rem;
+  min-width: min(60vw, 280px);
+  font-family: var(--lf-font-body);
+}
+.lf-teaser__row input:focus-visible {
+  outline: 2px solid var(--lf-neon-halo);
+  outline-offset: 2px;
+}
+.lf-teaser__row button {
+  background: transparent;
+  border: 1px solid var(--lf-neon-halo);
+  color: var(--lf-neon-core);
+  text-shadow: 0 0 10px var(--lf-neon-halo);
+  padding: .8rem 1.4rem;
+  font-size: .8rem;
+  cursor: pointer;
+  transition: box-shadow .3s var(--lf-ease);
+}
+.lf-teaser__row button:hover { box-shadow: 0 0 18px var(--lf-neon-halo); }
+.lf-teaser__error { color: #ff8896; font-size: .85rem; }
+.lf-teaser__ig {
+  color: var(--lf-muted);
+  font-size: .72rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 1px solid #26262e;
+  padding-bottom: 2px;
+}
+.lf-teaser__ig:hover { color: var(--lf-neon-core); border-color: var(--lf-neon-halo); }
+{% endstylesheet %}
+
+{% javascript %}
+  // Flicker the sign on once per browser session; respect reduced motion.
+  var sign = document.querySelector('.lf-teaser__sign');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (sign && !reduced && !sessionStorage.getItem('lfFlickered')) {
+    sign.classList.add('lf-flicker-on');
+    sessionStorage.setItem('lfFlickered', '1');
+  }
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "LF Teaser",
+  "settings": [
+    {
+      "type": "text",
+      "id": "manifesto_line",
+      "label": "Manifesto line",
+      "default": "Effortless excellence through uncompromising craftsmanship."
+    },
+    {
+      "type": "text",
+      "id": "signup_prompt",
+      "label": "Signup prompt",
+      "default": "Be there when the lights come on"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_signup",
+      "label": "Show email signup",
+      "default": true
+    },
+    {
+      "type": "url",
+      "id": "instagram_url",
+      "label": "Instagram URL"
+    }
+  ],
+  "presets": [{ "name": "LF Teaser" }]
+}
+{% endschema %}
