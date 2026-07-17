@@ -1,0 +1,65 @@
+/* Laissez-Faire design tokens — spec §2. Glow is display-only; body text never glows. */
+:root {
+  --lf-ground: #0d0d11;
+  --lf-panel: #14141a;
+  --lf-body-text: #c9c9d4;
+  --lf-muted: #7a7a85;
+
+  --lf-neon-core: #9fd8ff;   /* house neon: ice blue */
+  --lf-neon-halo: #4aa8ff;
+
+  /* per-drop accents (Phase B swaps these via metafield) */
+  --lf-accent-red-core: #fff3dd;
+  --lf-accent-red-halo: #c8102e;
+  --lf-accent-green-core: #f5f0a0;
+  --lf-accent-green-halo: #2fbf71;
+  --lf-accent-purple-core: #9fd8ff;
+  --lf-accent-purple-halo: #8b3df0;
+
+  --lf-font-display: 'Graduate', 'Arial Black', sans-serif;
+  --lf-font-script: 'Kaushan Script', cursive;
+  --lf-font-body: 'Archivo', Arial, sans-serif;
+
+  --lf-ease: cubic-bezier(0.32, 0.72, 0, 1); /* single site-wide easing family */
+}
+
+body {
+  background: var(--lf-ground);
+  color: var(--lf-body-text);
+  font-family: var(--lf-font-body);
+  font-weight: 300;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.lf-glow-text {
+  color: var(--lf-neon-core);
+  text-shadow: 0 0 8px var(--lf-neon-halo), 0 0 28px var(--lf-neon-halo);
+}
+
+.lf-script { font-family: var(--lf-font-script); }
+.lf-display {
+  font-family: var(--lf-font-display);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* Neon sign flicker — applied once per session by lf-teaser.liquid JS */
+@keyframes lf-flicker {
+  0%, 100% { opacity: 1; }
+  8%  { opacity: .15; }
+  12% { opacity: 1; }
+  16% { opacity: .3; }
+  22% { opacity: 1; }
+  38% { opacity: .2; }
+  44% { opacity: 1; }
+  58% { opacity: .85; }
+  63% { opacity: 1; }
+}
+.lf-flicker-on { animation: lf-flicker 2.2s var(--lf-ease) 1; }
+
+/* Accessibility hard requirement (spec §4): static glow, no flicker */
+@media (prefers-reduced-motion: reduce) {
+  .lf-flicker-on { animation: none; }
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
