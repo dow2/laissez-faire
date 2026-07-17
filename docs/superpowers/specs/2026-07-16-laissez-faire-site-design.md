@@ -32,7 +32,7 @@ Rules: glow effects are reserved for display type and iconography. Body/UI text 
 ### Typography ("Varsity & Script")
 
 - **Display / product names:** collegiate varsity block (launch: Graduate via Google Fonts; swappable for a licensed premium block later — typography loads through one token layer so the swap is config-level).
-- **Culture lines / flourishes:** sign-painter script (launch candidate: Kaushan Script-class; the actual brand wordmark is always the supplied asset, never re-typeset).
+- **Culture lines / flourishes:** sign-painter script (launch: Kaushan Script via Google Fonts; the actual brand wordmark is always the supplied asset, never re-typeset).
 - **Body / specs / UI:** clean grotesque (Archivo), weights 300–600.
 
 ### Iconography
@@ -55,7 +55,7 @@ Shopify password page, fully custom-themed:
 
 - **Home:** sign hero → current-drop story → featured pieces → shrine/manifesto section → culture strip (second-line imagery) → email block → oversized footer wordmark.
 - **Shop:** single collection grid at launch (`/collections/all`), drop-tagged.
-- **Product page:** varsity-block title, price, story paragraph (metafield), details/materials accordion, edition count, size selector, add-to-cart (or "Notify me" while gated).
+- **Product page:** varsity-block title, price, story paragraph (metafield), details/materials accordion, edition count, size selector, add-to-cart; sold-out variants show "Notify me" (Klaviyo back-in-stock).
 - **Story/manifesto page:** the refined manifesto, pillars, imagery.
 - **Cart:** drawer, not a page.
 - **Nav:** Shop, Story, cart. Deliberately minimal.
