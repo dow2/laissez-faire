@@ -11,9 +11,11 @@
 
   <p class="lf-teaser__manifesto lf-script">{{ section.settings.manifesto_line }}</p>
 
-  <div class="lf-teaser__fleur" aria-hidden="true">
-    <img src="{{ 'lf-fleur.png' | asset_url }}" width="44" height="26" loading="lazy" alt="">
-  </div>
+  <div
+    class="lf-teaser__crest"
+    aria-hidden="true"
+    style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"
+  ></div>
 
   {% if section.settings.show_signup %}
     <div class="lf-teaser__signup">
@@ -84,7 +86,15 @@
   max-width: 34ch;
   margin: 0;
 }
-.lf-teaser__fleur img { opacity: .55; }
+.lf-teaser__crest {
+  width: 46px;
+  aspect-ratio: 300 / 320;
+  margin-top: .2rem;
+  background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-crest) center / contain no-repeat;
+  mask: var(--lf-crest) center / contain no-repeat;
+  filter: drop-shadow(0 0 5px var(--lf-neon-halo)) drop-shadow(0 0 18px var(--lf-neon-halo));
+}
 .lf-teaser__label {
   display: block;
   font-size: .72rem;
