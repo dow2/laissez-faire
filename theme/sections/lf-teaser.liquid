@@ -1,10 +1,13 @@
 <div class="lf-teaser">
-  <div
-    class="lf-teaser__sign"
-    role="img"
-    aria-label="Laissez-Faire"
-    style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"
-  ></div>
+  <div class="lf-teaser__wordmark">
+    <div
+      class="lf-teaser__sign"
+      role="img"
+      aria-label="Laissez-Faire Leisure Club"
+      style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"
+    ></div>
+    <p class="lf-teaser__subtitle lf-display lf-glow-text" aria-hidden="true">Leisure Club</p>
+  </div>
 
   <p class="lf-teaser__manifesto lf-script">{{ section.settings.manifesto_line }}</p>
 
@@ -56,6 +59,12 @@
   padding: 2rem 1.25rem;
   text-align: center;
 }
+.lf-teaser__wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+}
 .lf-teaser__sign {
   width: min(82vw, 620px);
   aspect-ratio: 3000 / 1800;
@@ -63,6 +72,11 @@
   -webkit-mask: var(--lf-wordmark) center / contain no-repeat;
   mask: var(--lf-wordmark) center / contain no-repeat;
   filter: drop-shadow(0 0 6px var(--lf-neon-halo)) drop-shadow(0 0 26px var(--lf-neon-halo));
+}
+.lf-teaser__subtitle {
+  font-size: clamp(.65rem, 1.8vw, .95rem);
+  letter-spacing: .4em;
+  margin: 0;
 }
 .lf-teaser__manifesto {
   font-size: clamp(1.05rem, 2.6vw, 1.4rem);
@@ -117,8 +131,8 @@
 {% endstylesheet %}
 
 {% javascript %}
-  // Flicker the sign on once per browser session; respect reduced motion.
-  var sign = document.querySelector('.lf-teaser__sign');
+  // Flicker the whole wordmark lockup (sign + subtitle) on as one fixture, once per browser session; respect reduced motion.
+  var sign = document.querySelector('.lf-teaser__wordmark');
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (sign && !reduced && !sessionStorage.getItem('lfFlickered')) {
     sign.classList.add('lf-flicker-on');
