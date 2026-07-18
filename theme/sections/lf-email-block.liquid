@@ -1,0 +1,42 @@
+<section class="lf-email" data-lf-reveal>
+  <div class="lf-email__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
+  <p class="lf-email__prompt lf-script">{{ section.settings.prompt }}</p>
+  {% form 'customer', class: 'lf-email__form' %}
+    {%- comment -%} Note: contact[tags] only applies to NEW customer records; Shopify does not merge/apply this tag if the submitting email already exists as a customer. {%- endcomment -%}
+    <input type="hidden" name="contact[tags]" value="teaser-list">
+    {% if form.posted_successfully? %}
+      <p class="lf-email__success">You're on the list.</p>
+    {% else %}
+      <div class="lf-email__row">
+        <label class="visually-hidden" for="lf-email-home">Email</label>
+        <input id="lf-email-home" type="email" name="contact[email]" required autocomplete="email" placeholder="you@example.com">
+        <button type="submit" class="lf-display">Notify&nbsp;Me</button>
+      </div>
+      {% if form.errors %}<p class="lf-email__error" role="alert">{{ form.errors | default_errors }}</p>{% endif %}
+    {% endif %}
+  {% endform %}
+</section>
+
+{% stylesheet %}
+.lf-email { padding: 4.5rem 1.25rem; text-align: center; }
+.lf-email__crest { width: 54px; aspect-ratio: 300/320; margin: 0 auto 1rem; background-color: var(--lf-neon-core); -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat; filter: drop-shadow(0 0 5px var(--lf-neon-halo)) drop-shadow(0 0 16px var(--lf-neon-halo)); }
+.lf-email__prompt { font-size: 1.1rem; margin: 0 0 1.1rem; }
+.lf-email__row { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+.lf-email__row input { background: var(--lf-panel); border: 1px solid #26262e; color: var(--lf-body-text); padding: .8rem 1rem; min-width: min(60vw, 280px); font-family: var(--lf-font-body); }
+.lf-email__row input:focus-visible { outline: 2px solid var(--lf-neon-halo); outline-offset: 2px; }
+.lf-email__row button { background: transparent; border: 1px solid var(--lf-neon-halo); color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); padding: .8rem 1.4rem; font-size: .8rem; cursor: pointer; }
+.lf-email__row button:hover { box-shadow: 0 0 18px var(--lf-neon-halo); }
+.lf-email__success { color: var(--lf-body-text); }
+.lf-email__error { color: #ff8896; font-size: .85rem; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Email Block",
+  "settings": [
+    { "type": "text", "id": "prompt", "label": "Prompt", "default": "Be there when the lights come on." }
+  ],
+  "presets": [{ "name": "LF Email Block" }]
+}
+{% endschema %}
