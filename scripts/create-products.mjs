@@ -82,7 +82,7 @@ async function createProduct(p) {
   const media = [];
   for (const g of GARMENTS) {
     const url = await stagedUpload(g.file(p.slug));
-    media.push({ originalSource: url, alt: `${g.value} — ${p.title}`, mediaContentType: 'IMAGE' });
+    media.push({ originalSource: url, alt: `${g.value} — ${p.title}`, contentType: 'IMAGE' });
   }
 
   const variants = [];
@@ -110,9 +110,9 @@ async function createProduct(p) {
       variants,
       files: media,
       metafields: [
-        { namespace: 'lf', key: 'story', type: 'multi_line_text_field', value: p.story },
-        { namespace: 'lf', key: 'edition_size', type: 'number_integer', value: '150' },
-        { namespace: 'lf', key: 'drop_accent', type: 'color', value: '#9fd8ff' },
+        { namespace: 'lfc', key: 'story', type: 'multi_line_text_field', value: p.story },
+        { namespace: 'lfc', key: 'edition_size', type: 'number_integer', value: '150' },
+        { namespace: 'lfc', key: 'drop_accent', type: 'color', value: '#9fd8ff' },
       ],
     },
   });

@@ -18,9 +18,9 @@
   <div class="lf-pdp__buy">
     <h1 class="lf-display lf-glow-text">{{ product.title }}</h1>
     <p class="lf-pdp__price" data-lf-price>{{ product.selected_or_first_available_variant.price | money }}</p>
-    {% assign edition = product.metafields.lf.edition_size %}
+    {% assign edition = product.metafields.lfc.edition_size %}
     {% if edition != blank %}<p class="lf-pdp__edition">Edition of {{ edition }}</p>{% endif %}
-    {% assign story = product.metafields.lf.story %}
+    {% assign story = product.metafields.lfc.story %}
     {% if story != blank %}<p class="lf-script lf-pdp__story">{{ story }}</p>{% endif %}
     {% if product.description != blank %}<div class="lf-pdp__desc">{{ product.description }}</div>{% endif %}
 
