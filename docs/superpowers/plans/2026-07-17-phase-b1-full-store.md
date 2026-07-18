@@ -1072,9 +1072,9 @@ is WRONG (different context object). Instead: leave `list-collections.json` poin
   <div class="lf-pdp__buy">
     <h1 class="lf-display lf-glow-text">{{ product.title }}</h1>
     <p class="lf-pdp__price" data-lf-price>{{ product.selected_or_first_available_variant.price | money }}</p>
-    {% assign edition = product.metafields.lf.edition_size %}
+    {% assign edition = product.metafields.lfc.edition_size %}
     {% if edition != blank %}<p class="lf-pdp__edition">Edition of {{ edition }}</p>{% endif %}
-    {% assign story = product.metafields.lf.story %}
+    {% assign story = product.metafields.lfc.story %}
     {% if story != blank %}<p class="lf-script lf-pdp__story">{{ story }}</p>{% endif %}
     {% if product.description != blank %}<div class="lf-pdp__desc">{{ product.description }}</div>{% endif %}
 
@@ -1490,7 +1490,7 @@ async function createProduct(p) {
   const media = [];
   for (const g of GARMENTS) {
     const url = await stagedUpload(g.file(p.slug));
-    media.push({ originalSource: url, alt: `${g.value} — ${p.title}`, mediaContentType: 'IMAGE' });
+    media.push({ originalSource: url, alt: `${g.value} — ${p.title}`, contentType: 'IMAGE' });
   }
 
   const variants = [];
@@ -1518,9 +1518,9 @@ async function createProduct(p) {
       variants,
       files: media,
       metafields: [
-        { namespace: 'lf', key: 'story', type: 'multi_line_text_field', value: p.story },
-        { namespace: 'lf', key: 'edition_size', type: 'number_integer', value: '150' },
-        { namespace: 'lf', key: 'drop_accent', type: 'color', value: '#9fd8ff' },
+        { namespace: 'lfc', key: 'story', type: 'multi_line_text_field', value: p.story },
+        { namespace: 'lfc', key: 'edition_size', type: 'number_integer', value: '150' },
+        { namespace: 'lfc', key: 'drop_accent', type: 'color', value: '#9fd8ff' },
       ],
     },
   });
@@ -1618,4 +1618,4 @@ Barba lights-out page transitions, split-text staggers, scroll-linked glow ramps
 
 - **Spec coverage:** shell/header/footer/drawer ✓ (T2-4), hero slider ✓ (T5), featured stories ✓ (T6), drop grid ✓ (T7), culture+email ✓ (T8), home wiring ✓ (T9), shop ✓ (T10), split PDP + related + variant-synced gallery + accordion + edition/story metafields ✓ (T11), story page ✓ (T12), 6 products × 15 variants × $75/$150 × metafields × alt-mapped images ✓ (T13), reduced-motion narrowing ✓ (T1), vendored libs ✓ (T1), quality gates + teaser-regression check ✓ (T14), orphan deletions with grep guards ✓ (T2,3,9,10,11).
 - **Placeholders:** none — every file complete; culture-image choice and hero/featured content assignment are explicitly delegated content decisions with named owners (implementer pick + user checkpoint / theme editor with user), not code gaps.
-- **Consistency:** `data-lf-cart-open`/`lf:cart:added` contract between header (T2), PDP (T11), and drawer (T4) matches; alt convention `"<Garment value> — <Title>"` produced by T13 matches T11's `indexOf(garment) === 0` check; metafields `lf.story`/`lf.edition_size`/`lf.drop_accent` written by T13, read by T11 (accent reserved for B2 use); `--lf-crest`/`--lf-wordmark` CSS custom-property pattern consistent with Phase A sections; money format in drawer JS uses `$` directly (store currency USD, confirmed live).
+- **Consistency:** `data-lf-cart-open`/`lf:cart:added` contract between header (T2), PDP (T11), and drawer (T4) matches; alt convention `"<Garment value> — <Title>"` produced by T13 matches T11's `indexOf(garment) === 0` check; metafields `lfc.story`/`lfc.edition_size`/`lfc.drop_accent` written by T13, read by T11 (accent reserved for B2 use); `--lf-crest`/`--lf-wordmark` CSS custom-property pattern consistent with Phase A sections; money format in drawer JS uses `$` directly (store currency USD, confirmed live).
