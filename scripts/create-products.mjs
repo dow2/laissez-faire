@@ -1,14 +1,30 @@
 #!/usr/bin/env node
 /* Creates the six Drop 001 products on 1xiwxi-yy.myshopify.com via Admin GraphQL.
    Idempotent-ish: skips any product whose handle already exists.
-   Token: macOS Keychain item `lf-shopify-admin-token` (never hardcoded). */
+   Auth: OAuth client credentials grant (Dev Dashboard app `lf-catalog-loader`,
+   installed on the store, same org). Client ID is public; the Secret lives in
+   macOS Keychain item `lf-shopify-client-secret` (never hardcoded). The grant
+   returns a ~24h access token at startup. */
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const SHOP = '1xiwxi-yy.myshopify.com';
 const API = `https://${SHOP}/admin/api/2025-10/graphql.json`;
-const TOKEN = execSync('security find-generic-password -a lf -s lf-shopify-admin-token -w', { encoding: 'utf8' }).trim();
+const CLIENT_ID = '1c05c65814060a190372cffaa20ba146';
+const CLIENT_SECRET = execSync('security find-generic-password -a lf -s lf-shopify-client-secret -w', { encoding: 'utf8' }).trim();
+
+async function getAccessToken() {
+  const res = await fetch(`https://${SHOP}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grant_type: 'client_credentials', client_id: CLIENT_ID, client_secret: CLIENT_SECRET }),
+  });
+  if (!res.ok) throw new Error(`client credentials grant failed: ${res.status} ${await res.text()}`);
+  const json = await res.json();
+  return json.access_token;
+}
+const TOKEN = await getAccessToken();
 const IMG_DIR = path.join(import.meta.dirname, 'product-images');
 
 const GARMENTS = [
