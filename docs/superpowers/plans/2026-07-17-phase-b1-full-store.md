@@ -795,6 +795,8 @@ Expected: three JPGs, each ≤ 450KB (drop `-Z` to 1100 for any that exceed it).
 
 - [ ] **Step 2: Write `theme/sections/lf-culture-strip.liquid` (complete file)**
 
+> **Amendment (Task 8 execution):** `width="1000" height="1250"` was added to the fallback `<img>` below during implementation — `shopify theme check` raises an `ImgWidthAndHeight` error without them. The code block reflects the as-shipped file.
+
 ```liquid
 <section class="lf-culture" data-lf-reveal>
   <p class="lf-culture__kicker">{{ section.settings.kicker }}</p>
@@ -806,7 +808,6 @@ Expected: three JPGs, each ≤ 450KB (drop `-Z` to 1100 for any that exceed it).
         {% if section.settings[key] != blank %}
           {{ section.settings[key] | image_url: width: 1000 | image_tag: loading: 'lazy', alt: section.settings[cap] }}
         {% else %}
-          {%- comment -%} Amendment (Task 8 execution): width/height added — theme-check ImgWidthAndHeight errors without them. {%- endcomment -%}
           <img src="{{ 'lf-culture-' | append: i | append: '.jpg' | asset_url }}" width="1000" height="1250" loading="lazy" alt="{{ section.settings[cap] }}">
         {% endif %}
         {% if section.settings[cap] != blank %}<figcaption class="lf-script">{{ section.settings[cap] }}</figcaption>{% endif %}
