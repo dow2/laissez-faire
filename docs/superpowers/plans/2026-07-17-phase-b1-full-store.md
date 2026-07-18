@@ -302,6 +302,8 @@ git add -A && git commit -m "LF theme shell and header; rewire header group; dro
 
 Expected: `OK-TO-DELETE` prints (only then delete).
 
+> **Execution note (what actually happened):** the guard self-matched `header-group.json`'s mandatory top-level `"type": "header"` declaration — a plan-authoring artifact, not a real reference. The implementer verified no template/section references `sections/header.liquid` (nested `sections` entries reference only `lf-header`; no `{% section 'header' %}` anywhere) and deleted it. Deviation reviewed and accepted; Task 3's guard was rewritten to check nested references only.
+
 ### Task 3: Footer
 
 **Files:**
@@ -374,14 +376,17 @@ Expected: `OK-TO-DELETE` prints (only then delete).
 
 - [ ] **Step 3: Check + delete orphaned stock footer + commit**
 
+> **Amendment (from Task 2 execution):** the original guard `grep -rn '"type": "footer"' ...` always self-matches the group JSON's own mandatory top-level `"type": "footer"` declaration, so it can never print `OK-TO-DELETE`. Use the nested-reference check below instead (it inspects only the group's `sections` entries, which is what actually determines whether `sections/footer.liquid` is still consumed).
+
 ```bash
 shopify theme check --path theme
-grep -rn '"type": "footer"' theme/sections theme/templates || echo OK-TO-DELETE
+python3 -c "import json; d=json.load(open('theme/sections/footer-group.json')); print('OK-TO-DELETE' if all(s['type'] != 'footer' for s in d['sections'].values()) else 'STILL-REFERENCED')"
+grep -rn "section 'footer'" theme/ || true
 git rm theme/sections/footer.liquid
 git add -A && git commit -m "LF footer with oversized wordmark; rewire footer group; drop stock footer"
 ```
 
-Expected: 3 known warnings; `OK-TO-DELETE` prints before deletion.
+Expected: 3 known warnings (+ the temporary `MissingTemplate` for `lf-cart-drawer` until Task 4); `OK-TO-DELETE` prints and the grep finds nothing before deletion.
 
 ### Task 4: Cart drawer
 
@@ -521,7 +526,8 @@ git add theme/sections/lf-cart-drawer.liquid && git commit -m "AJAX cart drawer 
   {% for block in section.blocks %}
     <div class="lf-hero__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }} data-lf-slide>
       {% if block.settings.image != blank %}
-        {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-hero__img', loading: forloop.first | default: false, alt: block.settings.heading }}
+        {% if forloop.first %}{% assign img_loading = 'eager' %}{% else %}{% assign img_loading = 'lazy' %}{% endif %}
+        {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-hero__img', loading: img_loading, alt: block.settings.heading }}
       {% endif %}
       <div class="lf-hero__shade"></div>
       <div class="lf-hero__copy">
@@ -789,6 +795,8 @@ Expected: three JPGs, each ≤ 450KB (drop `-Z` to 1100 for any that exceed it).
 
 - [ ] **Step 2: Write `theme/sections/lf-culture-strip.liquid` (complete file)**
 
+> **Amendment (Task 8 execution):** `width="1000" height="1250"` was added to the fallback `<img>` below during implementation — `shopify theme check` raises an `ImgWidthAndHeight` error without them. The code block reflects the as-shipped file.
+
 ```liquid
 <section class="lf-culture" data-lf-reveal>
   <p class="lf-culture__kicker">{{ section.settings.kicker }}</p>
@@ -800,7 +808,7 @@ Expected: three JPGs, each ≤ 450KB (drop `-Z` to 1100 for any that exceed it).
         {% if section.settings[key] != blank %}
           {{ section.settings[key] | image_url: width: 1000 | image_tag: loading: 'lazy', alt: section.settings[cap] }}
         {% else %}
-          <img src="{{ 'lf-culture-' | append: i | append: '.jpg' | asset_url }}" loading="lazy" alt="{{ section.settings[cap] }}">
+          <img src="{{ 'lf-culture-' | append: i | append: '.jpg' | asset_url }}" width="1000" height="1250" loading="lazy" alt="{{ section.settings[cap] }}">
         {% endif %}
         {% if section.settings[cap] != blank %}<figcaption class="lf-script">{{ section.settings[cap] }}</figcaption>{% endif %}
       </figure>
@@ -1048,7 +1056,8 @@ is WRONG (different context object). Instead: leave `list-collections.json` poin
   <div class="lf-pdp__gallery" data-lf-gallery>
     {% for media in product.media %}
       <div class="lf-pdp__slide {% if forloop.first %}is-active{% endif %}" data-lf-gslide data-alt="{{ media.alt | escape }}">
-        {{ media | image_url: width: 1400 | image_tag: loading: forloop.first | default: false, alt: media.alt | default: product.title }}
+        {% if forloop.first %}{% assign img_loading = 'eager' %}{% else %}{% assign img_loading = 'lazy' %}{% endif %}
+        {{ media | image_url: width: 1400 | image_tag: loading: img_loading, alt: media.alt | default: product.title }}
       </div>
     {% endfor %}
     {% if product.media.size > 1 %}
@@ -1063,9 +1072,9 @@ is WRONG (different context object). Instead: leave `list-collections.json` poin
   <div class="lf-pdp__buy">
     <h1 class="lf-display lf-glow-text">{{ product.title }}</h1>
     <p class="lf-pdp__price" data-lf-price>{{ product.selected_or_first_available_variant.price | money }}</p>
-    {% assign edition = product.metafields.lf.edition_size %}
+    {% assign edition = product.metafields.lfc.edition_size %}
     {% if edition != blank %}<p class="lf-pdp__edition">Edition of {{ edition }}</p>{% endif %}
-    {% assign story = product.metafields.lf.story %}
+    {% assign story = product.metafields.lfc.story %}
     {% if story != blank %}<p class="lf-script lf-pdp__story">{{ story }}</p>{% endif %}
     {% if product.description != blank %}<div class="lf-pdp__desc">{{ product.description }}</div>{% endif %}
 
@@ -1385,11 +1394,15 @@ git add theme/sections/lf-story.liquid theme/templates/page.story.json && git co
 - Create: `scripts/create-products.mjs` (repo root — NOT inside `theme/`)
 - Create: `scripts/product-images/` (18 prepped JPGs)
 
-- [ ] **Step 1 (OPERATOR ACTION — required before Step 4):** Create an Admin API token: Admin → Settings → Apps and sales channels → Develop apps → Create app `lf-catalog-loader` → Configure Admin API scopes: `write_products`, `read_products` → Install app → Reveal Admin API access token **once**. Store it in Keychain from your own terminal (silent input — never paste into chat or plain shell history):
+- [ ] **Step 1 (OPERATOR ACTION — required before Step 4):**
+
+> **Amendment (Task 13 execution):** Shopify's 2026 custom-app overhaul removed the legacy "Develop apps" store-admin flow and its static Admin API tokens. The actual mechanism: create the app in the **Dev Dashboard** (dev.shopify.com), add Admin API scopes `write_products` + `read_products` to a version, **Release** it, then from the app's Home page **Install app** on the store. There is no revealable admin token — the script exchanges the app's **Client ID + Secret** for a ~24h access token via the OAuth **client credentials grant** (`POST /admin/oauth/access_token`), which works because the app and store share an organization. Store the Secret (Settings → Credentials → Secret, eye icon) in Keychain from your own terminal (silent input — never paste into chat or plain shell history):
 
 ```bash
-read -s LF_TOKEN && security add-generic-password -a lf -s lf-shopify-admin-token -w "$LF_TOKEN" && unset LF_TOKEN
+read -s LF_SECRET && security add-generic-password -a lf -s lf-shopify-client-secret -w "$LF_SECRET" && unset LF_SECRET
 ```
+
+(The Client ID is not secret and is hardcoded in the script. The original plan's `lf-shopify-admin-token` Keychain item is obsolete.)
 
 - [ ] **Step 2: Prep the 18 product images with the alt-mapping filename convention**
 
@@ -1477,7 +1490,7 @@ async function createProduct(p) {
   const media = [];
   for (const g of GARMENTS) {
     const url = await stagedUpload(g.file(p.slug));
-    media.push({ originalSource: url, alt: `${g.value} — ${p.title}`, mediaContentType: 'IMAGE' });
+    media.push({ originalSource: url, alt: `${g.value} — ${p.title}`, contentType: 'IMAGE' });
   }
 
   const variants = [];
@@ -1505,9 +1518,9 @@ async function createProduct(p) {
       variants,
       files: media,
       metafields: [
-        { namespace: 'lf', key: 'story', type: 'multi_line_text_field', value: p.story },
-        { namespace: 'lf', key: 'edition_size', type: 'number_integer', value: '150' },
-        { namespace: 'lf', key: 'drop_accent', type: 'color', value: '#9fd8ff' },
+        { namespace: 'lfc', key: 'story', type: 'multi_line_text_field', value: p.story },
+        { namespace: 'lfc', key: 'edition_size', type: 'number_integer', value: '150' },
+        { namespace: 'lfc', key: 'drop_accent', type: 'color', value: '#9fd8ff' },
       ],
     },
   });
@@ -1605,4 +1618,4 @@ Barba lights-out page transitions, split-text staggers, scroll-linked glow ramps
 
 - **Spec coverage:** shell/header/footer/drawer ✓ (T2-4), hero slider ✓ (T5), featured stories ✓ (T6), drop grid ✓ (T7), culture+email ✓ (T8), home wiring ✓ (T9), shop ✓ (T10), split PDP + related + variant-synced gallery + accordion + edition/story metafields ✓ (T11), story page ✓ (T12), 6 products × 15 variants × $75/$150 × metafields × alt-mapped images ✓ (T13), reduced-motion narrowing ✓ (T1), vendored libs ✓ (T1), quality gates + teaser-regression check ✓ (T14), orphan deletions with grep guards ✓ (T2,3,9,10,11).
 - **Placeholders:** none — every file complete; culture-image choice and hero/featured content assignment are explicitly delegated content decisions with named owners (implementer pick + user checkpoint / theme editor with user), not code gaps.
-- **Consistency:** `data-lf-cart-open`/`lf:cart:added` contract between header (T2), PDP (T11), and drawer (T4) matches; alt convention `"<Garment value> — <Title>"` produced by T13 matches T11's `indexOf(garment) === 0` check; metafields `lf.story`/`lf.edition_size`/`lf.drop_accent` written by T13, read by T11 (accent reserved for B2 use); `--lf-crest`/`--lf-wordmark` CSS custom-property pattern consistent with Phase A sections; money format in drawer JS uses `$` directly (store currency USD, confirmed live).
+- **Consistency:** `data-lf-cart-open`/`lf:cart:added` contract between header (T2), PDP (T11), and drawer (T4) matches; alt convention `"<Garment value> — <Title>"` produced by T13 matches T11's `indexOf(garment) === 0` check; metafields `lfc.story`/`lfc.edition_size`/`lfc.drop_accent` written by T13, read by T11 (accent reserved for B2 use); `--lf-crest`/`--lf-wordmark` CSS custom-property pattern consistent with Phase A sections; money format in drawer JS uses `$` directly (store currency USD, confirmed live).

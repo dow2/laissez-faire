@@ -1,0 +1,108 @@
+<div class="lf-drawer" data-lf-drawer hidden>
+  <div class="lf-drawer__scrim" data-lf-cart-close></div>
+  <aside class="lf-drawer__panel" role="dialog" aria-modal="true" aria-label="Cart">
+    <div class="lf-drawer__head">
+      <h2 class="lf-display">Cart</h2>
+      <button type="button" class="lf-drawer__close" data-lf-cart-close aria-label="Close cart">&times;</button>
+    </div>
+    <div class="lf-drawer__items" data-lf-cart-items>
+      {%- comment -%} Rendered/re-rendered by JS from /cart.js; server-rendered fallback below. {%- endcomment -%}
+      {% for item in cart.items %}
+        <div class="lf-drawer__item">
+          <img src="{{ item.image | image_url: width: 120 }}" width="60" height="60" alt="">
+          <div><p>{{ item.product_title }}</p><p class="muted">{{ item.variant_title }} × {{ item.quantity }}</p></div>
+          <p>{{ item.final_line_price | money }}</p>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="lf-drawer__foot">
+      <div class="lf-drawer__subtotal"><span>Subtotal</span><span data-lf-cart-subtotal>{{ cart.total_price | money }}</span></div>
+      <a href="{{ routes.cart_url }}/checkout" class="lf-drawer__checkout lf-display" data-lf-checkout>Checkout</a>
+      <a href="{{ routes.cart_url }}" class="lf-drawer__cartlink">View cart page</a>
+    </div>
+  </aside>
+</div>
+
+{% stylesheet %}
+.lf-drawer { position: fixed; inset: 0; z-index: 60; }
+.lf-drawer__scrim { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+.lf-drawer__panel {
+  position: absolute; top: 0; right: 0; height: 100%; width: min(92vw, 400px);
+  background: var(--lf-panel); border-left: 1px solid #22222a;
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform .45s var(--lf-ease);
+}
+.lf-drawer.is-open .lf-drawer__panel { transform: none; }
+@media (prefers-reduced-motion: reduce) { .lf-drawer__panel { transition: none; } }
+.lf-drawer__head { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid #22222a; }
+.lf-drawer__head h2 { font-size: .9rem; letter-spacing: .3em; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); margin: 0; }
+.lf-drawer__close { background: none; border: 0; color: var(--lf-body-text); font-size: 1.4rem; cursor: pointer; }
+.lf-drawer__items { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; }
+.lf-drawer__item { display: grid; grid-template-columns: 60px 1fr auto; gap: .8rem; align-items: center; margin-bottom: 1rem; font-size: .8rem; }
+.lf-drawer__item img { border: 1px solid #22222a; }
+.lf-drawer__item p { margin: 0; }
+.lf-drawer__item .muted, .lf-drawer__qty span { color: var(--lf-muted); font-size: .7rem; }
+.lf-drawer__qty { display: inline-flex; gap: .6rem; align-items: center; margin-top: .3rem; }
+.lf-drawer__qty button { background: none; border: 1px solid #2a2a33; color: var(--lf-body-text); width: 22px; height: 22px; cursor: pointer; }
+.lf-drawer__foot { border-top: 1px solid #22222a; padding: 1rem 1.2rem; }
+.lf-drawer__subtotal { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: .8rem; }
+.lf-drawer__checkout {
+  display: block; text-align: center; padding: .85rem; border: 1px solid var(--lf-neon-halo);
+  color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); text-decoration: none; letter-spacing: .2em; font-size: .8rem;
+}
+.lf-drawer__checkout:hover { box-shadow: 0 0 18px var(--lf-neon-halo); }
+.lf-drawer__cartlink { display: block; text-align: center; margin-top: .6rem; color: var(--lf-muted); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; }
+.lf-drawer__empty { color: var(--lf-muted); text-align: center; margin-top: 2rem; font-size: .8rem; }
+{% endstylesheet %}
+
+{% javascript %}
+  var drawer = document.querySelector('[data-lf-drawer]');
+  if (drawer) {
+    var itemsEl = drawer.querySelector('[data-lf-cart-items]');
+    var subEl = drawer.querySelector('[data-lf-cart-subtotal]');
+    var money = function (cents) { return '$' + (cents / 100).toFixed(2); };
+
+    function render(cart) {
+      document.querySelectorAll('[data-lf-cart-count]').forEach(function (el) { el.textContent = cart.item_count; });
+      subEl.textContent = money(cart.total_price);
+      if (!cart.items.length) { itemsEl.innerHTML = '<p class="lf-drawer__empty">The rack is empty.</p>'; return; }
+      itemsEl.innerHTML = cart.items.map(function (it) {
+        return '<div class="lf-drawer__item">' +
+          '<img src="' + (it.image ? it.image.replace(/(\.[a-z]+)(\?|$)/, '_120x$1$2') : '') + '" width="60" height="60" alt="">' +
+          '<div><p>' + it.product_title + '</p><p class="muted">' + (it.variant_title || '') + '</p>' +
+          '<span class="lf-drawer__qty">' +
+          '<button type="button" data-lf-qty="' + it.key + ':' + (it.quantity - 1) + '">−</button>' +
+          '<span>' + it.quantity + '</span>' +
+          '<button type="button" data-lf-qty="' + it.key + ':' + (it.quantity + 1) + '">+</button>' +
+          '</span></div>' +
+          '<p>' + money(it.final_line_price) + '</p></div>';
+      }).join('');
+    }
+
+    function refresh() { return fetch('/cart.js').then(function (r) { return r.json(); }).then(render); }
+
+    function open() { drawer.removeAttribute('hidden'); requestAnimationFrame(function () { drawer.classList.add('is-open'); }); refresh(); }
+    function close() { drawer.classList.remove('is-open'); setTimeout(function () { drawer.setAttribute('hidden', ''); }, 460); }
+
+    document.addEventListener('click', function (e) {
+      var openBtn = e.target.closest('[data-lf-cart-open]');
+      var closeBtn = e.target.closest('[data-lf-cart-close]');
+      var qtyBtn = e.target.closest('[data-lf-qty]');
+      if (openBtn) { e.preventDefault(); open(); }
+      if (closeBtn) { close(); }
+      if (qtyBtn) {
+        var parts = qtyBtn.getAttribute('data-lf-qty').split(':');
+        fetch('/cart/change.js', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: parts[0], quantity: Math.max(0, parseInt(parts[1], 10)) })
+        }).then(function (r) { return r.json(); }).then(render);
+      }
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !drawer.hasAttribute('hidden')) close(); });
+    document.addEventListener('lf:cart:added', open);
+  }
+{% endjavascript %}
+
+{% schema %}
+{ "name": "LF Cart Drawer", "settings": [] }
+{% endschema %}

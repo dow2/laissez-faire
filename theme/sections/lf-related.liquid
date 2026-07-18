@@ -1,0 +1,38 @@
+<section class="lf-related" data-lf-reveal>
+  <p class="lf-related__kicker">More from the Drop</p>
+  <div class="lf-related__grid">
+    {% assign shown = 0 %}
+    {% for p in collections.all.products %}
+      {% if p.id != product.id and shown < 3 %}
+        {% assign shown = shown | plus: 1 %}
+        <a class="lf-related__card" href="{{ p.url }}">
+          <div class="lf-related__imgwrap">
+            {{ p.featured_image | image_url: width: 700 | image_tag: loading: 'lazy', alt: p.title, class: 'lf-related__img is-primary' }}
+            {% if p.images[1] %}{{ p.images[1] | image_url: width: 700 | image_tag: loading: 'lazy', alt: '', class: 'lf-related__img is-alt' }}{% endif %}
+          </div>
+          <p class="lf-related__name lf-display">{{ p.title }}</p>
+          <p class="lf-related__price">{{ p.price_min | money }}{% if p.price_varies %} — {{ p.price_max | money }}{% endif %}</p>
+        </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-related { padding: 0 1.25rem 5rem; max-width: 1180px; margin: 0 auto; text-align: center; }
+.lf-related__kicker { font-size: .66rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-muted); margin: 0 0 1.4rem; }
+.lf-related__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.lf-related__card { text-decoration: none; background: var(--lf-panel); border: 1px solid #1e1e26; padding-bottom: .8rem; }
+.lf-related__imgwrap { position: relative; }
+.lf-related__img { width: 100%; height: auto; display: block; }
+.lf-related__img.is-alt { position: absolute; inset: 0; opacity: 0; transition: opacity .35s var(--lf-ease); }
+.lf-related__card:hover .lf-related__img.is-alt { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .lf-related__img.is-alt { transition: none; } }
+.lf-related__name { color: var(--lf-body-text); font-size: .72rem; letter-spacing: .16em; margin: .7rem 0 .15rem; }
+.lf-related__price { color: var(--lf-muted); font-size: .72rem; margin: 0; }
+@media (max-width: 749px) { .lf-related__grid { grid-template-columns: 1fr 1fr; gap: 8px; } }
+{% endstylesheet %}
+
+{% schema %}
+{ "name": "LF Related", "settings": [] }
+{% endschema %}
