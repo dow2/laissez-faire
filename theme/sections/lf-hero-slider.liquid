@@ -2,8 +2,11 @@
   {% for block in section.blocks %}
     <div class="lf-hero__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }} data-lf-slide>
       {% if block.settings.image != blank %}
-        {% if forloop.first %}{% assign img_loading = 'eager' %}{% else %}{% assign img_loading = 'lazy' %}{% endif %}
-        {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-hero__img', loading: img_loading, alt: block.settings.heading }}
+        {% if forloop.first %}
+          {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-hero__img', loading: 'eager', fetchpriority: 'high', preload: true, alt: block.settings.heading }}
+        {% else %}
+          {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-hero__img', loading: 'lazy', alt: block.settings.heading }}
+        {% endif %}
       {% endif %}
       <div class="lf-hero__shade"></div>
       <div class="lf-hero__copy">
