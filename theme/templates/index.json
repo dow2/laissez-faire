@@ -9,7 +9,8 @@
             "kicker": "Drop 001",
             "heading": "Won't Bow Down",
             "cta_label": "Shop the Drop",
-            "link": "shopify://collections/all"
+            "link": "shopify://collections/all",
+            "image": "shopify://shop_images/lf-hero-chief.jpg"
           }
         },
         "slide2": {
@@ -18,7 +19,8 @@
             "kicker": "Nouvelle-Orl\u00e9ans",
             "heading": "Kill 'Em Dead, Needle & Thread",
             "cta_label": "Our Story",
-            "link": "shopify://pages/story"
+            "link": "shopify://pages/story",
+            "image": "shopify://shop_images/lf-hero-secondline.jpg"
           }
         }
       },
