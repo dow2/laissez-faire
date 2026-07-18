@@ -48,6 +48,18 @@
   {% if section.settings.instagram_url != blank %}
     <a class="lf-teaser__ig" href="{{ section.settings.instagram_url }}" rel="me noopener" target="_blank">Instagram</a>
   {% endif %}
+
+  <details class="lf-teaser__enter">
+    <summary>Members</summary>
+    {% form 'storefront_password' %}
+      <div class="lf-teaser__enter-row">
+        <label class="lf-teaser__sr" for="lf-pass">Password</label>
+        <input id="lf-pass" type="password" name="password" placeholder="password" autocomplete="current-password">
+        <button type="submit" class="lf-display">Enter</button>
+      </div>
+      {% if form.errors %}<p class="lf-teaser__error" role="alert">That's not it.</p>{% endif %}
+    {% endform %}
+  </details>
 </div>
 
 {% stylesheet %}
@@ -138,6 +150,24 @@
   padding-bottom: 2px;
 }
 .lf-teaser__ig:hover { color: var(--lf-neon-core); border-color: var(--lf-neon-halo); }
+.lf-teaser__enter { margin-top: .5rem; }
+.lf-teaser__enter summary {
+  cursor: pointer; list-style: none; color: var(--lf-muted); opacity: .7;
+  font-size: .62rem; letter-spacing: .3em; text-transform: uppercase;
+}
+.lf-teaser__enter summary::-webkit-details-marker { display: none; }
+.lf-teaser__enter summary:hover { color: var(--lf-neon-core); opacity: 1; }
+.lf-teaser__enter-row { display: flex; gap: .5rem; justify-content: center; margin-top: .7rem; }
+.lf-teaser__enter-row input {
+  background: var(--lf-panel); border: 1px solid #26262e; color: var(--lf-body-text);
+  padding: .55rem .8rem; width: min(50vw, 180px); font-family: var(--lf-font-body);
+}
+.lf-teaser__enter-row input:focus-visible { outline: 2px solid var(--lf-neon-halo); outline-offset: 2px; }
+.lf-teaser__enter-row button {
+  background: transparent; border: 1px solid var(--lf-neon-halo); color: var(--lf-neon-core);
+  text-shadow: 0 0 8px var(--lf-neon-halo); padding: .55rem 1rem; font-size: .68rem; cursor: pointer;
+}
+.lf-teaser__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 {% endstylesheet %}
 
 {% javascript %}
