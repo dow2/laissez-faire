@@ -3,23 +3,80 @@
     "hero": {
       "type": "lf-hero-slider",
       "blocks": {
-        "slide1": { "type": "slide", "settings": { "kicker": "Drop 001", "heading": "Won't Bow Down", "cta_label": "Shop the Drop", "link": "shopify://collections/all" } },
-        "slide2": { "type": "slide", "settings": { "kicker": "Nouvelle-Orléans", "heading": "Kill 'Em Dead, Needle & Thread", "cta_label": "Our Story", "link": "shopify://pages/story" } }
+        "slide1": {
+          "type": "slide",
+          "settings": {
+            "kicker": "Drop 001",
+            "heading": "Won't Bow Down",
+            "cta_label": "Shop the Drop",
+            "link": "shopify://collections/all"
+          }
+        },
+        "slide2": {
+          "type": "slide",
+          "settings": {
+            "kicker": "Nouvelle-Orl\u00e9ans",
+            "heading": "Kill 'Em Dead, Needle & Thread",
+            "cta_label": "Our Story",
+            "link": "shopify://pages/story"
+          }
+        }
       },
-      "block_order": ["slide1", "slide2"],
-      "settings": { "autoplay_seconds": 6 }
+      "block_order": [
+        "slide1",
+        "slide2"
+      ],
+      "settings": {
+        "autoplay_seconds": 6
+      }
     },
     "featured": {
       "type": "lf-featured-story",
       "blocks": {
-        "f1": { "type": "feature", "settings": { "kicker": "Drop 001 — Featured", "story": "Our Lady in blue neon — protection for the ones who move at night." } },
-        "f2": { "type": "feature", "settings": { "kicker": "Drop 001 — Featured", "story": "The city's oldest mark, drawn in tube light." } }
+        "f1": {
+          "type": "feature",
+          "settings": {
+            "kicker": "Drop 001 \u2014 Featured",
+            "story": "Our Lady in blue neon \u2014 protection for the ones who move at night.",
+            "product": "maria"
+          }
+        },
+        "f2": {
+          "type": "feature",
+          "settings": {
+            "kicker": "Drop 001 \u2014 Featured",
+            "story": "The city's oldest mark, drawn in tube light.",
+            "product": "fluerdelis"
+          }
+        }
       },
-      "block_order": ["f1", "f2"]
+      "block_order": [
+        "f1",
+        "f2"
+      ]
     },
-    "grid": { "type": "lf-drop-grid", "settings": { "kicker": "The Rest of the Drop", "limit": 6, "show_cta": true } },
-    "culture": { "type": "lf-culture-strip", "settings": {} },
-    "email": { "type": "lf-email-block", "settings": {} }
+    "grid": {
+      "type": "lf-drop-grid",
+      "settings": {
+        "kicker": "The Rest of the Drop",
+        "limit": 6,
+        "show_cta": true
+      }
+    },
+    "culture": {
+      "type": "lf-culture-strip",
+      "settings": {}
+    },
+    "email": {
+      "type": "lf-email-block",
+      "settings": {}
+    }
   },
-  "order": ["hero", "featured", "grid", "culture", "email"]
+  "order": [
+    "hero",
+    "featured",
+    "grid",
+    "culture",
+    "email"
+  ]
 }
