@@ -16,8 +16,9 @@
     <main id="lf-main">{{ content_for_layout }}</main>
     {% sections 'footer-group' %}
     {% section 'lf-cart-drawer' %}
-    <script src="{{ 'gsap.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'ScrollTrigger.min.js' | asset_url }}" defer></script>
+    {% comment %} GSAP + ScrollTrigger are vendored in assets but not loaded in B1 —
+       nothing uses them until the B2 motion layer, and parsing them cost ~1s of
+       mobile blocking time in Lighthouse. B2 re-adds the script tags. {% endcomment %}
     <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
     <script src="{{ 'lf-motion.js' | asset_url }}" defer></script>
   </body>
