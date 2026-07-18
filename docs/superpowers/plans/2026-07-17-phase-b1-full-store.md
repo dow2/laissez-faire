@@ -806,7 +806,8 @@ Expected: three JPGs, each ≤ 450KB (drop `-Z` to 1100 for any that exceed it).
         {% if section.settings[key] != blank %}
           {{ section.settings[key] | image_url: width: 1000 | image_tag: loading: 'lazy', alt: section.settings[cap] }}
         {% else %}
-          <img src="{{ 'lf-culture-' | append: i | append: '.jpg' | asset_url }}" loading="lazy" alt="{{ section.settings[cap] }}">
+          {%- comment -%} Amendment (Task 8 execution): width/height added — theme-check ImgWidthAndHeight errors without them. {%- endcomment -%}
+          <img src="{{ 'lf-culture-' | append: i | append: '.jpg' | asset_url }}" width="1000" height="1250" loading="lazy" alt="{{ section.settings[cap] }}">
         {% endif %}
         {% if section.settings[cap] != blank %}<figcaption class="lf-script">{{ section.settings[cap] }}</figcaption>{% endif %}
       </figure>
