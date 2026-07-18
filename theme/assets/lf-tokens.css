@@ -58,8 +58,15 @@ body {
 }
 .lf-flicker-on { animation: lf-flicker 2.2s var(--lf-ease) 1; }
 
-/* Accessibility hard requirement (spec §4): static glow, no flicker */
+/* Accessibility hard requirement (spec §4): static glow, no flicker.
+   Scoped on purpose — JS-driven motion guards itself via matchMedia. */
 @media (prefers-reduced-motion: reduce) {
   .lf-flicker-on { animation: none; }
-  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+/* Scroll reveal (driven by lf-motion.js) */
+[data-lf-reveal] { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--lf-ease), transform .7s var(--lf-ease); }
+[data-lf-reveal].lf-revealed { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  [data-lf-reveal] { opacity: 1; transform: none; transition: none; }
 }
