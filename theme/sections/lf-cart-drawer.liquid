@@ -68,12 +68,12 @@
       if (!cart.items.length) { itemsEl.innerHTML = '<p class="lf-drawer__empty">The rack is empty.</p>'; return; }
       itemsEl.innerHTML = cart.items.map(function (it) {
         return '<div class="lf-drawer__item">' +
-          '<img src="' + (it.image ? it.image.replace(/(\.[a-z]+)(\?|$)/, '_120x$1$2') : '') + '" width="60" height="60" alt="">' +
+          '<img src="' + (it.image ? it.image + (it.image.indexOf('?') > -1 ? '&' : '?') + 'width=120' : '') + '" width="60" height="60" alt="">' +
           '<div><p>' + it.product_title + '</p><p class="muted">' + (it.variant_title || '') + '</p>' +
           '<span class="lf-drawer__qty">' +
-          '<button type="button" data-lf-qty="' + it.key + ':' + (it.quantity - 1) + '">−</button>' +
+          '<button type="button" data-lf-line="' + it.key + '" data-lf-set="' + (it.quantity - 1) + '">−</button>' +
           '<span>' + it.quantity + '</span>' +
-          '<button type="button" data-lf-qty="' + it.key + ':' + (it.quantity + 1) + '">+</button>' +
+          '<button type="button" data-lf-line="' + it.key + '" data-lf-set="' + (it.quantity + 1) + '">+</button>' +
           '</span></div>' +
           '<p>' + money(it.final_line_price) + '</p></div>';
       }).join('');
@@ -87,14 +87,14 @@
     document.addEventListener('click', function (e) {
       var openBtn = e.target.closest('[data-lf-cart-open]');
       var closeBtn = e.target.closest('[data-lf-cart-close]');
-      var qtyBtn = e.target.closest('[data-lf-qty]');
+      var qtyBtn = e.target.closest('[data-lf-line]');
       if (openBtn) { e.preventDefault(); open(); }
       if (closeBtn) { close(); }
       if (qtyBtn) {
-        var parts = qtyBtn.getAttribute('data-lf-qty').split(':');
+        // Line-item keys contain colons ("<variantId>:<hash>") — pass whole, never split.
         fetch('/cart/change.js', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: parts[0], quantity: Math.max(0, parseInt(parts[1], 10)) })
+          body: JSON.stringify({ id: qtyBtn.getAttribute('data-lf-line'), quantity: Math.max(0, parseInt(qtyBtn.getAttribute('data-lf-set'), 10)) })
         }).then(function (r) { return r.json(); }).then(render);
       }
     });
