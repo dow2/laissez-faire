@@ -1394,11 +1394,15 @@ git add theme/sections/lf-story.liquid theme/templates/page.story.json && git co
 - Create: `scripts/create-products.mjs` (repo root — NOT inside `theme/`)
 - Create: `scripts/product-images/` (18 prepped JPGs)
 
-- [ ] **Step 1 (OPERATOR ACTION — required before Step 4):** Create an Admin API token: Admin → Settings → Apps and sales channels → Develop apps → Create app `lf-catalog-loader` → Configure Admin API scopes: `write_products`, `read_products` → Install app → Reveal Admin API access token **once**. Store it in Keychain from your own terminal (silent input — never paste into chat or plain shell history):
+- [ ] **Step 1 (OPERATOR ACTION — required before Step 4):**
+
+> **Amendment (Task 13 execution):** Shopify's 2026 custom-app overhaul removed the legacy "Develop apps" store-admin flow and its static Admin API tokens. The actual mechanism: create the app in the **Dev Dashboard** (dev.shopify.com), add Admin API scopes `write_products` + `read_products` to a version, **Release** it, then from the app's Home page **Install app** on the store. There is no revealable admin token — the script exchanges the app's **Client ID + Secret** for a ~24h access token via the OAuth **client credentials grant** (`POST /admin/oauth/access_token`), which works because the app and store share an organization. Store the Secret (Settings → Credentials → Secret, eye icon) in Keychain from your own terminal (silent input — never paste into chat or plain shell history):
 
 ```bash
-read -s LF_TOKEN && security add-generic-password -a lf -s lf-shopify-admin-token -w "$LF_TOKEN" && unset LF_TOKEN
+read -s LF_SECRET && security add-generic-password -a lf -s lf-shopify-client-secret -w "$LF_SECRET" && unset LF_SECRET
 ```
+
+(The Client ID is not secret and is hardcoded in the script. The original plan's `lf-shopify-admin-token` Keychain item is obsolete.)
 
 - [ ] **Step 2: Prep the 18 product images with the alt-mapping filename convention**
 
