@@ -526,7 +526,8 @@ git add theme/sections/lf-cart-drawer.liquid && git commit -m "AJAX cart drawer 
   {% for block in section.blocks %}
     <div class="lf-hero__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }} data-lf-slide>
       {% if block.settings.image != blank %}
-        {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-hero__img', loading: forloop.first | default: false, alt: block.settings.heading }}
+        {% if forloop.first %}{% assign img_loading = 'eager' %}{% else %}{% assign img_loading = 'lazy' %}{% endif %}
+        {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-hero__img', loading: img_loading, alt: block.settings.heading }}
       {% endif %}
       <div class="lf-hero__shade"></div>
       <div class="lf-hero__copy">
@@ -1053,7 +1054,8 @@ is WRONG (different context object). Instead: leave `list-collections.json` poin
   <div class="lf-pdp__gallery" data-lf-gallery>
     {% for media in product.media %}
       <div class="lf-pdp__slide {% if forloop.first %}is-active{% endif %}" data-lf-gslide data-alt="{{ media.alt | escape }}">
-        {{ media | image_url: width: 1400 | image_tag: loading: forloop.first | default: false, alt: media.alt | default: product.title }}
+        {% if forloop.first %}{% assign img_loading = 'eager' %}{% else %}{% assign img_loading = 'lazy' %}{% endif %}
+        {{ media | image_url: width: 1400 | image_tag: loading: img_loading, alt: media.alt | default: product.title }}
       </div>
     {% endfor %}
     {% if product.media.size > 1 %}
