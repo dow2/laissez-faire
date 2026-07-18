@@ -302,6 +302,8 @@ git add -A && git commit -m "LF theme shell and header; rewire header group; dro
 
 Expected: `OK-TO-DELETE` prints (only then delete).
 
+> **Execution note (what actually happened):** the guard self-matched `header-group.json`'s mandatory top-level `"type": "header"` declaration — a plan-authoring artifact, not a real reference. The implementer verified no template/section references `sections/header.liquid` (nested `sections` entries reference only `lf-header`; no `{% section 'header' %}` anywhere) and deleted it. Deviation reviewed and accepted; Task 3's guard was rewritten to check nested references only.
+
 ### Task 3: Footer
 
 **Files:**
@@ -374,14 +376,17 @@ Expected: `OK-TO-DELETE` prints (only then delete).
 
 - [ ] **Step 3: Check + delete orphaned stock footer + commit**
 
+> **Amendment (from Task 2 execution):** the original guard `grep -rn '"type": "footer"' ...` always self-matches the group JSON's own mandatory top-level `"type": "footer"` declaration, so it can never print `OK-TO-DELETE`. Use the nested-reference check below instead (it inspects only the group's `sections` entries, which is what actually determines whether `sections/footer.liquid` is still consumed).
+
 ```bash
 shopify theme check --path theme
-grep -rn '"type": "footer"' theme/sections theme/templates || echo OK-TO-DELETE
+python3 -c "import json; d=json.load(open('theme/sections/footer-group.json')); print('OK-TO-DELETE' if all(s['type'] != 'footer' for s in d['sections'].values()) else 'STILL-REFERENCED')"
+grep -rn "section 'footer'" theme/ || true
 git rm theme/sections/footer.liquid
 git add -A && git commit -m "LF footer with oversized wordmark; rewire footer group; drop stock footer"
 ```
 
-Expected: 3 known warnings; `OK-TO-DELETE` prints before deletion.
+Expected: 3 known warnings (+ the temporary `MissingTemplate` for `lf-cart-drawer` until Task 4); `OK-TO-DELETE` prints and the grep finds nothing before deletion.
 
 ### Task 4: Cart drawer
 
