@@ -1,0 +1,188 @@
+<section class="lf-pdp" data-lf-pdp>
+  <div class="lf-pdp__gallery" data-lf-gallery>
+    {% for media in product.media %}
+      <div class="lf-pdp__slide {% if forloop.first %}is-active{% endif %}" data-lf-gslide data-alt="{{ media.alt | escape }}">
+        {% if forloop.first %}{% assign img_loading = 'eager' %}{% else %}{% assign img_loading = 'lazy' %}{% endif %}
+        {{ media | image_url: width: 1400 | image_tag: loading: img_loading, alt: media.alt | default: product.title }}
+      </div>
+    {% endfor %}
+    {% if product.media.size > 1 %}
+      <div class="lf-pdp__gnav">
+        <button type="button" data-lf-gprev aria-label="Previous image">&larr;</button>
+        <span data-lf-gnum>1 / {{ product.media.size }}</span>
+        <button type="button" data-lf-gnext aria-label="Next image">&rarr;</button>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="lf-pdp__buy">
+    <h1 class="lf-display lf-glow-text">{{ product.title }}</h1>
+    <p class="lf-pdp__price" data-lf-price>{{ product.selected_or_first_available_variant.price | money }}</p>
+    {% assign edition = product.metafields.lf.edition_size %}
+    {% if edition != blank %}<p class="lf-pdp__edition">Edition of {{ edition }}</p>{% endif %}
+    {% assign story = product.metafields.lf.story %}
+    {% if story != blank %}<p class="lf-script lf-pdp__story">{{ story }}</p>{% endif %}
+    {% if product.description != blank %}<div class="lf-pdp__desc">{{ product.description }}</div>{% endif %}
+
+    {% form 'product', product, data-lf-form: '' %}
+      {% assign current = product.selected_or_first_available_variant %}
+      <input type="hidden" name="id" value="{{ current.id }}" data-lf-variant-id>
+      {% for option in product.options_with_values %}
+        <fieldset class="lf-pdp__opt">
+          <legend>{{ option.name }}</legend>
+          {% for value in option.values %}
+            <label>
+              <input type="radio" name="lf-opt-{{ forloop.parentloop.index0 }}" value="{{ value | escape }}"
+                     {% if option.selected_value == value %}checked{% endif %}>
+              <span>{{ value }}</span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endfor %}
+      <button type="submit" class="lf-pdp__add lf-display" data-lf-add>
+        Add to Cart — <span data-lf-add-price>{{ current.price | money }}</span>
+      </button>
+      <p class="lf-pdp__soldout" data-lf-soldout hidden>Sold out — this one's gone.</p>
+    {% endform %}
+
+    <div class="lf-pdp__accordion">
+      {% for i in (1..3) %}
+        {% assign t = 'acc_title_' | append: i %}
+        {% assign b = 'acc_body_' | append: i %}
+        {% if section.settings[t] != blank %}
+          <details>
+            <summary>{{ section.settings[t] }}</summary>
+            <div>{{ section.settings[b] }}</div>
+          </details>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <script type="application/json" data-lf-variants>
+    [{% for v in product.variants %}{"id":{{ v.id }},"available":{{ v.available }},"price":"{{ v.price | money }}","options":{{ v.options | json }}}{% unless forloop.last %},{% endunless %}{% endfor %}]
+  </script>
+</section>
+
+{% stylesheet %}
+.lf-pdp { display: grid; grid-template-columns: 1.15fr 1fr; gap: 2.5rem; max-width: 1180px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; align-items: start; }
+.lf-pdp__gallery { position: relative; }
+.lf-pdp__slide { display: none; }
+.lf-pdp__slide.is-active { display: block; }
+.lf-pdp__slide img { width: 100%; height: auto; display: block; border: 1px solid #1e1e26; }
+.lf-pdp__gnav { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: .8rem; }
+.lf-pdp__gnav button { background: none; border: 1px solid #2a2a33; color: var(--lf-body-text); width: 34px; height: 34px; cursor: pointer; }
+.lf-pdp__gnav button:hover { border-color: var(--lf-neon-halo); color: var(--lf-neon-core); }
+.lf-pdp__gnav span { color: var(--lf-muted); font-size: .72rem; letter-spacing: .2em; }
+.lf-pdp__buy { position: sticky; top: 5rem; }
+.lf-pdp__buy h1 { font-size: clamp(1.4rem, 3.6vw, 2.1rem); margin: 0 0 .4rem; }
+.lf-pdp__price { font-size: 1rem; color: var(--lf-body-text); margin: 0 0 .2rem; }
+.lf-pdp__edition { color: var(--lf-muted); font-size: .7rem; letter-spacing: .25em; text-transform: uppercase; margin: 0 0 1rem; }
+.lf-pdp__story { font-size: 1.05rem; margin: 0 0 .8rem; }
+.lf-pdp__desc { color: var(--lf-body-text); font-size: .84rem; line-height: 1.65; margin-bottom: 1.4rem; }
+.lf-pdp__opt { border: 0; padding: 0; margin: 0 0 1.1rem; }
+.lf-pdp__opt legend { font-size: .66rem; letter-spacing: .28em; text-transform: uppercase; color: var(--lf-muted); margin-bottom: .5rem; }
+.lf-pdp__opt label { display: inline-block; margin: 0 .4rem .4rem 0; cursor: pointer; }
+.lf-pdp__opt input { position: absolute; opacity: 0; pointer-events: none; }
+.lf-pdp__opt span { display: inline-block; border: 1px solid #2a2a33; color: var(--lf-body-text); font-size: .74rem; padding: .45rem .8rem; }
+.lf-pdp__opt input:checked + span { border-color: var(--lf-neon-halo); color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); }
+.lf-pdp__opt input:focus-visible + span { outline: 2px solid var(--lf-neon-halo); outline-offset: 2px; }
+.lf-pdp__add { width: 100%; background: transparent; border: 1px solid var(--lf-neon-halo); color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); padding: .95rem; font-size: .82rem; letter-spacing: .2em; cursor: pointer; margin-top: .4rem; }
+.lf-pdp__add:hover { box-shadow: 0 0 20px var(--lf-neon-halo); }
+.lf-pdp__add[disabled] { opacity: .35; cursor: not-allowed; box-shadow: none; }
+.lf-pdp__soldout { color: #ff8896; font-size: .8rem; }
+.lf-pdp__accordion { margin-top: 1.6rem; }
+.lf-pdp__accordion details { border-top: 1px solid #22222a; padding: .7rem 0; }
+.lf-pdp__accordion summary { cursor: pointer; color: var(--lf-body-text); font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; }
+.lf-pdp__accordion div { color: var(--lf-muted); font-size: .8rem; line-height: 1.6; padding-top: .5rem; }
+@media (max-width: 849px) { .lf-pdp { display: block; } .lf-pdp__buy { position: static; margin-top: 1.4rem; } }
+{% endstylesheet %}
+
+{% javascript %}
+  var pdp = document.querySelector('[data-lf-pdp]');
+  if (pdp) {
+    var variants = JSON.parse(pdp.querySelector('[data-lf-variants]').textContent);
+    var form = pdp.querySelector('form');
+    var idInput = pdp.querySelector('[data-lf-variant-id]');
+    var priceEl = pdp.querySelector('[data-lf-price]');
+    var addBtn = pdp.querySelector('[data-lf-add]');
+    var addPrice = pdp.querySelector('[data-lf-add-price]');
+    var soldEl = pdp.querySelector('[data-lf-soldout]');
+    var slides = Array.prototype.slice.call(pdp.querySelectorAll('[data-lf-gslide]'));
+    var gnum = pdp.querySelector('[data-lf-gnum]');
+    var gi = 0;
+
+    function selectedOptions() {
+      var opts = [];
+      pdp.querySelectorAll('.lf-pdp__opt').forEach(function (fs, idx) {
+        var checked = fs.querySelector('input:checked');
+        opts[idx] = checked ? checked.value : null;
+      });
+      return opts;
+    }
+    function findVariant(opts) {
+      return variants.find(function (v) { return v.options.every(function (o, idx) { return o === opts[idx]; }); });
+    }
+    function showSlide(n) {
+      if (!slides.length) return;
+      slides[gi].classList.remove('is-active');
+      gi = (n + slides.length) % slides.length;
+      slides[gi].classList.add('is-active');
+      if (gnum) gnum.textContent = (gi + 1) + ' / ' + slides.length;
+    }
+    function syncGalleryTo(garment) {
+      // Image alt convention: alt starts with the garment option value (e.g. "Tee — Black").
+      var target = slides.findIndex(function (s) { return (s.getAttribute('data-alt') || '').indexOf(garment) === 0; });
+      if (target >= 0) showSlide(target);
+    }
+    function update() {
+      var opts = selectedOptions();
+      var v = findVariant(opts);
+      if (v) {
+        idInput.value = v.id;
+        priceEl.textContent = v.price;
+        addPrice.textContent = v.price;
+        addBtn.disabled = !v.available;
+        soldEl.hidden = v.available;
+      }
+      if (opts[0]) syncGalleryTo(opts[0]);
+    }
+    pdp.querySelectorAll('.lf-pdp__opt input').forEach(function (r) { r.addEventListener('change', update); });
+    var prev = pdp.querySelector('[data-lf-gprev]'); var next = pdp.querySelector('[data-lf-gnext]');
+    if (prev) prev.addEventListener('click', function () { showSlide(gi - 1); });
+    if (next) next.addEventListener('click', function () { showSlide(gi + 1); });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      addBtn.disabled = true;
+      fetch('/cart/add.js', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: parseInt(idInput.value, 10), quantity: 1 })
+      }).then(function (r) {
+        if (!r.ok) throw new Error('add-to-cart failed');
+        return r.json();
+      }).then(function () {
+        addBtn.disabled = false;
+        document.dispatchEvent(new CustomEvent('lf:cart:added'));
+      }).catch(function () {
+        addBtn.disabled = false;
+        window.location.href = '/cart';
+      });
+    });
+    update();
+  }
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "LF Product",
+  "settings": [
+    { "type": "text", "id": "acc_title_1", "label": "Accordion 1 title", "default": "Materials & Care" },
+    { "type": "textarea", "id": "acc_body_1", "label": "Accordion 1 body", "default": "Heavyweight cotton. Wash cold, inside out, hang dry. Built to break in, not break down." },
+    { "type": "text", "id": "acc_title_2", "label": "Accordion 2 title", "default": "Sizing" },
+    { "type": "textarea", "id": "acc_body_2", "label": "Accordion 2 body", "default": "Cut roomy through the chest — New Orleans proportions. Between sizes, size down." },
+    { "type": "text", "id": "acc_title_3", "label": "Accordion 3 title", "default": "Shipping" },
+    { "type": "textarea", "id": "acc_body_3", "label": "Accordion 3 body", "default": "Ships from New Orleans within 3–5 business days." }
+  ]
+}
+{% endschema %}
