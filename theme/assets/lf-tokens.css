@@ -70,3 +70,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   [data-lf-reveal] { opacity: 1; transform: none; transition: none; }
 }
+
+/* Skeleton's critical.css makes every .shopify-section a page grid sized by
+   --page-width/--page-margin from its css-variables snippet, which this layout
+   does not render — leaving the grid in a broken collapsed state. LF sections
+   own their layout (full-bleed or internal max-widths), so restore block flow. */
+.shopify-section { display: block; }
