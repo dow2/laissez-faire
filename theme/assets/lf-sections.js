@@ -252,4 +252,14 @@
     arm();
     LF.teardown.push(function () { clearInterval(timer); });
   };
+
+  // ——— CTA row: cursor-following label pill per card (desktop only) ———
+  LF.init.ctaFollow = function (root, ctx) {
+    var row = (root || document).querySelector('.lf-ctarow');
+    if (!row || row.hasAttribute('data-lf-bound')) return;
+    row.setAttribute('data-lf-bound', '1');
+    // Cursor labels themselves are handled globally by LF.init.cursor (lf-chrome.js)
+    // via [data-cursor] — nothing further needed here beyond marking bound so
+    // this init is idempotent; kept as its own function for clarity/future growth.
+  };
 })();

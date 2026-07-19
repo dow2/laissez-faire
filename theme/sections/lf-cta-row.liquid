@@ -1,0 +1,53 @@
+<section class="lf-ctarow" data-lf-overlap style="--lf-ctarow-cols: {{ section.blocks.size | at_least: 1 }};">
+  {% for block in section.blocks %}
+    <a class="lf-ctarow__card" href="{{ block.settings.link }}" {{ block.shopify_attributes }} data-cursor="{{ block.settings.cta_label | default: 'View' | escape }}">
+      {% if block.settings.image != blank %}
+        {{ block.settings.image | image_url: width: 900 | image_tag: loading: 'lazy', class: 'lf-ctarow__img', alt: '' }}
+      {% endif %}
+      <div class="lf-ctarow__overlay"></div>
+      <div class="lf-ctarow__copy">
+        <p class="lf-ctarow__eyebrow">{% render 'lf-eyebrow', text: block.settings.eyebrow %}</p>
+        <h3 class="lf-ctarow__title lf-display">{{ block.settings.title }}</h3>
+      </div>
+    </a>
+  {% endfor %}
+</section>
+
+{% stylesheet %}
+.lf-ctarow { display: grid; grid-template-columns: repeat(var(--lf-ctarow-cols, 3), 1fr); }
+.lf-ctarow__card { position: relative; display: block; aspect-ratio: 3/4; text-decoration: none; overflow: hidden; }
+.lf-ctarow__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--lf-ease); }
+.lf-ctarow__card:hover .lf-ctarow__img { transform: scale(1.04); }
+.lf-ctarow__overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,13,17,.1) 0%, rgba(13,13,17,.75) 100%); }
+.lf-ctarow__copy { position: absolute; left: 1.4rem; bottom: 1.6rem; right: 1.4rem; }
+.lf-ctarow__eyebrow { margin: 0 0 .4rem; }
+.lf-ctarow__title { color: var(--lf-body-text); font-size: 1.1rem; margin: 0; }
+@media (max-width: 749px) { .lf-ctarow { grid-template-columns: 1fr; } }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF CTA Row",
+  "blocks": [
+    {
+      "type": "card",
+      "name": "Card",
+      "settings": [
+        { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "our products" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Shop now" },
+        { "type": "text", "id": "cta_label", "label": "Cursor label", "default": "View" },
+        { "type": "url", "id": "link", "label": "Link" },
+        { "type": "image_picker", "id": "image", "label": "Image" }
+      ]
+    }
+  ],
+  "max_blocks": 3,
+  "default": {
+    "blocks": [
+      { "type": "card", "settings": { "eyebrow": "our products", "title": "Shop now" } },
+      { "type": "card", "settings": { "eyebrow": "our story", "title": "Read more" } },
+      { "type": "card", "settings": { "eyebrow": "our community", "title": "Community" } }
+    ]
+  }
+}
+{% endschema %}
