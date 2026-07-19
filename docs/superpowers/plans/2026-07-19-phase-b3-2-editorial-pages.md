@@ -792,7 +792,15 @@ git status --short
     "statement": { "type": "lf-statement", "settings": {} },
     "ctarow": { "type": "lf-cta-row", "settings": {} },
     "marquee": { "type": "lf-marquee", "settings": {} },
-    "lookbook": { "type": "lf-lookbook", "settings": {} },
+    "lookbook": {
+      "type": "lf-lookbook",
+      "blocks": {
+        "slide1": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-hero-chief.jpg", "caption": "Won't Bow Down" } },
+        "slide2": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-hero-secondline.jpg", "caption": "Kill 'Em Dead, Needle & Thread" } }
+      },
+      "block_order": ["slide1", "slide2"],
+      "settings": {}
+    },
     "community": { "type": "lf-community", "settings": {} },
     "email": { "type": "lf-email-block", "settings": {} }
   },
@@ -841,6 +849,9 @@ git add theme/templates/index.json theme/assets/lf-sections.js theme/assets/lf-t
 git commit -m "feat(b3.2): wire home page to new sections, add overlap-scroll stitching"
 git status --short
 ```
+
+> **As-run (found in Task 12 verification, fixed in `de44c28`):** the original Step 1 code block wired `"lookbook": { "type": "lf-lookbook", "settings": {} }` with no `blocks`/`block_order`. `LF.init.lookbook` (Task 5) only binds its prev/next click handlers `if (n >= 2)` slides exist, so this rendered 0 slides and left the arrows silently dead — no console error, easy to miss in a quick visual check. The code block above is corrected to seed 2 `slide` blocks reusing the hero's already-uploaded shop images (`lf-hero-chief.jpg`/`lf-hero-secondline.jpg`), matching the field names in `lf-lookbook.liquid`'s schema (`image`, `caption`).
+> **Process lesson:** any section that loops `{% for block in section.blocks %}` (block-driven — lookbook, hero, cta-row) needs sample content seeded in the *same* task that wires it into a template, and verification needs to check actual block/slide count, not just section presence. Sections driven by top-level `settings.*` id fields instead of blocks (story-sticky, contact-split, community) render their real structure even with blank settings, so they don't have this failure mode — the distinction matters when writing or reviewing future wiring tasks (e.g. B3.3).
 
 ---
 
@@ -1440,6 +1451,8 @@ const BASE = 'http://127.0.0.1:9292';
 ```
 
 Expected: every line `true` / overflow `0`. Fix findings, re-run until clean; commit fixes as `fix(b3.2): <finding>` and amend the relevant plan code blocks.
+
+> **As-run:** theme check held at 3 warnings (all pre-existing `RemoteAsset` in `lf-fonts.liquid`) — the B3.1-baseline `OrphanedSnippet` warning for `lf-eyebrow` cleared as predicted, since Contact/Story now render it. First script run found `lookbook advanced: false` — root-caused to Task 7's `index.json` wiring the lookbook section with zero blocks (see Task 7's As-run note above), fixed in `de44c28`, re-verified clean. All other checks passed on the first run.
 
 - [ ] **Step 4: User visual pass** on the dev preview (hero feel, marquee drag feel, sticky stack pacing, contact layout, story reading-hover on a real desktop browser). Fix + re-verify anything raised.
 
