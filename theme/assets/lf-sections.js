@@ -346,8 +346,13 @@
   };
 
   // ——— Overlap-scroll stitching: pinned section slides under the next as you scroll past ———
+  // Desktop-only (LF.FINE, same gate as flickthrough): the yPercent:50 slide is
+  // calibrated for desktop section geometry. On portrait mobile the CTA row
+  // collapses to a single ~880px column, so half its height (~440px) permanently
+  // buried the entire marquee beneath it — z-index:1 put the slid section on top.
   LF.init.scrollOverlap = function (root, ctx) {
     if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    if (!(LF.FINE && LF.FINE.matches)) return;
     (root || document).querySelectorAll('[data-lf-overlap]:not([data-lf-overlap-bound])').forEach(function (el) {
       el.setAttribute('data-lf-overlap-bound', '1');
       gsap.timeline({
