@@ -62,22 +62,6 @@
 }
 {% endstylesheet %}
 
-{% javascript %}
-  var burger = document.querySelector('[data-lf-menu-toggle]');
-  var overlay = document.querySelector('[data-lf-menu]');
-  if (burger && overlay) {
-    burger.addEventListener('click', function () {
-      var open = overlay.hasAttribute('hidden');
-      if (open) { overlay.removeAttribute('hidden'); } else { overlay.setAttribute('hidden', ''); }
-      burger.setAttribute('aria-expanded', String(open));
-      document.documentElement.style.overflow = open ? 'hidden' : '';
-    });
-    overlay.querySelectorAll('a').forEach(function (a) {
-      a.addEventListener('click', function () { overlay.setAttribute('hidden', ''); document.documentElement.style.overflow = ''; });
-    });
-  }
-{% endjavascript %}
-
 {% schema %}
 { "name": "LF Header", "settings": [] }
 {% endschema %}
