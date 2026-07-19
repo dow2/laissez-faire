@@ -6,7 +6,10 @@
 2. Verify products/prices/inventory in admin (edition sizes: metafield `lfc.edition_size`).
 3. Online Store → Preferences → Password protection → OFF.
 4. Klaviyo → send the "lights on" campaign to the `teaser-list` segment.
-5. Smoke test on laissezfaireleisureclub.com: browse → PDP → cart → real checkout.
+5. Run `node scripts/test-purchase-path.mjs` (browse → PDP → add-to-cart → cart
+   verification, automated) against the live domain: `STORE_URL=https://laissezfaireleisureclub.com
+   STOREFRONT_PASSWORD=<pw> node scripts/test-purchase-path.mjs` — then finish with a
+   manual real checkout (test card) since the script can't exercise payment.
 6. **Fast-follow, not a blocker:** re-run Lighthouse mobile perf against the now-public
    home + PDP once traffic is real. As of Phase B2 ship (`v0.3.0-motion`), live-CDN
    samples (via password-bypass cookie) came in below the ≥85 gate — home 53,
