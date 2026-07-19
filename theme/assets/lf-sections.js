@@ -422,4 +422,30 @@
     }
     LF.teardown.push(function () { clearInterval(interval); });
   };
+
+  // ——— Sticky story stack: pure CSS position:sticky, JS only for reduced-motion no-op guard ———
+  LF.init.stickyStack = function (root, ctx) {
+    var stack = (root || document).querySelector('.lf-storysticky__stack');
+    if (!stack || stack.hasAttribute('data-lf-bound')) return;
+    stack.setAttribute('data-lf-bound', '1');
+  };
+
+  // ——— Floating crests: cycle visibility scrubbed to scroll position ———
+  LF.init.floatingCrests = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-floating-crests]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    var crests = Array.prototype.slice.call(wrap.querySelectorAll('.lf-storysticky__crest'));
+    if (crests.length < 2) return;
+    var tl = gsap.timeline({
+      scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true }
+    });
+    crests.forEach(function (c, idx) {
+      tl.set(crests, {
+        autoAlpha: function (i) { return i === idx ? 1 : 0; },
+        overwrite: 'auto'
+      }, idx / (crests.length - 1));
+    });
+  };
 })();

@@ -22,7 +22,15 @@
     <main id="lf-main" data-barba="wrapper">
       <div data-barba="container" data-barba-namespace="{{ template.name }}">{{ content_for_layout }}</div>
     </main>
-    {% sections 'footer-group' %}
+    {%- comment -%} Story renders its own full-height footer as a template section (above);
+       Contact's split layout has an inline mini-footer and no standard footer at all.
+       Scoped to template.name == 'page' too — template.suffix alone is resource-type-
+       agnostic in Shopify, so an unrelated future alternate template (e.g.
+       product.story.json) named "story"/"contact" for a different purpose would
+       otherwise silently lose its footer sitewide. {%- endcomment -%}
+    {% unless template.name == 'page' and template.suffix == 'story' or template.name == 'page' and template.suffix == 'contact' %}
+      {% sections 'footer-group' %}
+    {% endunless %}
     {% section 'lf-cart-drawer' %}
     {% section 'lf-easter-egg' %}
     {% section 'lf-signup-popup' %}

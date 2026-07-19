@@ -1,4 +1,9 @@
 {
-  "sections": { "main": { "type": "lf-story", "settings": {} } },
-  "order": ["main"]
+  "sections": {
+    "hero": { "type": "lf-story-hero", "settings": {} },
+    "editorial": { "type": "lf-story-editorial", "settings": {} },
+    "sticky": { "type": "lf-story-sticky", "settings": {} },
+    "footer": { "type": "lf-footer", "settings": { "full_height": true } }
+  },
+  "order": ["hero", "editorial", "sticky", "footer"]
 }
