@@ -1,0 +1,27 @@
+<div class="lf-preloader" data-lf-preloader aria-hidden="true">
+  <div class="lf-preloader__inner">
+    <div class="lf-preloader__crest" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
+    <div class="lf-preloader__img" style="background-image: url('{{ 'lf-culture-2.jpg' | asset_url }}');"></div>
+  </div>
+</div>
+
+{% stylesheet %}
+.lf-preloader { position: fixed; inset: 0; z-index: 95; background: #000; display: none; }
+html.lf-first-visit .lf-preloader { display: block; }
+.lf-preloader__inner { position: absolute; inset: 0; display: grid; place-items: center; }
+.lf-preloader__crest {
+  width: 96px; aspect-ratio: 300/320; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat;
+  filter: drop-shadow(0 0 10px var(--lf-neon-halo)) drop-shadow(0 0 34px var(--lf-neon-halo));
+  opacity: 0; z-index: 1;
+}
+.lf-preloader__img {
+  position: absolute; inset: 30% 15%; background-size: cover; background-position: center;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%); opacity: .5;
+}
+@media (prefers-reduced-motion: reduce) { html.lf-first-visit .lf-preloader { display: none; } }
+{% endstylesheet %}
+
+{% schema %}
+{ "name": "LF Preloader", "settings": [] }
+{% endschema %}

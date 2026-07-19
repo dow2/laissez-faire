@@ -1,0 +1,6 @@
+{%- comment -%} Product code. Prefers metafield lfc.code; falls back to handle-derived. Usage: {% render 'lf-code', product: product %} {%- endcomment -%}
+{%- if product.metafields.lfc.code != blank -%}
+  <span class="lf-code">({{ product.metafields.lfc.code | escape }})</span>
+{%- else -%}
+  <span class="lf-code">(LF_{{ product.handle | replace: '-', '_' | upcase | truncate: 10, '' }})</span>
+{%- endif -%}

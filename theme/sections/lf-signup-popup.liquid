@@ -1,0 +1,51 @@
+<div class="lf-signup" data-lf-signup hidden>
+  <div class="lf-signup__scrim" data-lf-signup-close></div>
+  <div class="lf-signup__box" role="dialog" aria-modal="true" aria-label="Join the club">
+    <div class="lf-signup__img" style="background-image: url('{{ 'lf-culture-3.jpg' | asset_url }}');" aria-hidden="true"></div>
+    <div class="lf-signup__content">
+      <button type="button" class="lf-signup__close" data-lf-signup-close aria-label="Close">&times;</button>
+      <p class="lf-signup__head lf-display">Become part of the club.</p>
+      <p class="lf-signup__sub">First word on drops, parties, and the rack. {% render 'lf-stamp' %}</p>
+      {% form 'customer', class: 'lf-signup__form' %}
+        <input type="hidden" name="contact[tags]" value="newsletter,popup">
+        <div class="lf-signup__row">
+          <input type="email" name="contact[email]" placeholder="EMAIL" required aria-label="Email">
+          <button type="submit">Join</button>
+        </div>
+        {% if form.posted_successfully? %}<p class="lf-signup__ok" role="status">You're on the list.</p>{% endif %}
+        {% if form.errors %}<p class="lf-signup__err" role="alert">{{ form.errors.messages.email | default: 'Try again.' }}</p>{% endif %}
+      {% endform %}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+.lf-signup { position: fixed; inset: 0; z-index: 75; display: flex; align-items: center; justify-content: center; }
+.lf-signup[hidden] { display: none; }
+.lf-signup__scrim { position: absolute; inset: 0; background: rgba(0,0,0,.65); }
+.lf-signup__box {
+  position: relative; display: grid; grid-template-columns: 1fr 1.2fr; width: min(92vw, 640px);
+  background: var(--lf-panel); border: 1px solid var(--lf-neon-halo); box-shadow: 0 0 30px rgba(74,168,255,.25);
+}
+.lf-signup__img { background-size: cover; background-position: center; min-height: 260px; }
+.lf-signup__content { padding: 1.6rem; position: relative; }
+.lf-signup__close { position: absolute; top: .4rem; right: .7rem; background: none; border: 0; color: var(--lf-body-text); font-size: 1.4rem; cursor: pointer; }
+.lf-signup__head { color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); font-size: 1rem; letter-spacing: .12em; margin: 0 0 .6rem; }
+.lf-signup__sub { color: var(--lf-muted); font-size: .74rem; letter-spacing: .06em; margin: 0 0 1.2rem; }
+.lf-signup__row { display: flex; gap: .6rem; border-bottom: 1px solid #2a2a33; padding-bottom: .5rem; }
+.lf-signup__row input {
+  flex: 1; background: none; border: 0; outline: 0; color: var(--lf-body-text);
+  font-family: var(--lf-font-body); font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
+}
+.lf-signup__row button {
+  background: none; border: 0; cursor: pointer; color: var(--lf-neon-core);
+  text-shadow: 0 0 8px var(--lf-neon-halo); font-size: .8rem; letter-spacing: .2em; text-transform: uppercase;
+}
+.lf-signup__ok { color: var(--lf-neon-core); font-size: .74rem; margin-top: .8rem; }
+.lf-signup__err { color: #ff7a7a; font-size: .74rem; margin-top: .8rem; }
+@media (max-width: 649px) { .lf-signup__box { grid-template-columns: 1fr; } .lf-signup__img { min-height: 140px; } }
+{% endstylesheet %}
+
+{% schema %}
+{ "name": "LF Signup Popup", "settings": [] }
+{% endschema %}

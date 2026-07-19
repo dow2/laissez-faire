@@ -1,0 +1,67 @@
+<div class="lf-menu" id="lf-menu" data-lf-menu-root data-state="closed" aria-hidden="true">
+  <div class="lf-menu__veil" data-lf-menu-close></div>
+  <div class="lf-menu__imgpanel" style="background-image: url('{{ 'lf-culture-1.jpg' | asset_url }}');" aria-hidden="true"></div>
+  <div class="lf-menu__panel lf-menu__panel--1" aria-hidden="true"></div>
+  <div class="lf-menu__panel lf-menu__panel--2">
+    <nav class="lf-menu__list" aria-label="Menu">
+      <a class="lf-menu__link lf-display" href="{{ section.settings.link_1_url | default: routes.all_products_collection_url }}" data-lf-menu-close>{{ section.settings.link_1_label | default: 'Shop' }}</a>
+      <a class="lf-menu__link lf-display" href="{{ routes.root_url }}" data-lf-menu-close>Home</a>
+      <a class="lf-menu__link lf-display" href="{{ section.settings.link_2_url | default: '/pages/story' }}" data-lf-menu-close>{{ section.settings.link_2_label | default: 'Story' }}</a>
+      <a class="lf-menu__link lf-display" href="{{ section.settings.link_3_url | default: '/pages/contact' }}" data-lf-menu-close>{{ section.settings.link_3_label | default: 'Contact' }}</a>
+    </nav>
+    <button class="lf-menu__close" type="button" data-lf-menu-close>Close</button>
+    <div class="lf-menu__extras" data-lf-menu-fade>
+      <p>Laissez les bons temps rouler — {% render 'lf-stamp' %}</p>
+      <p>New Orleans, Louisiana</p>
+      <button type="button" class="lf-menu__cart" data-lf-cart-open>Cart <span data-lf-cart-count>{{ cart.item_count }}</span></button>
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+.lf-menu { position: fixed; inset: 0; z-index: 70; display: none; }
+.lf-menu[data-state="open"], .lf-menu[data-state="animating"] { display: block; }
+.lf-menu__veil { position: absolute; inset: 0; background: rgba(0,0,0,.6); opacity: 0; }
+.lf-menu__imgpanel {
+  position: absolute; inset: 0; background-size: cover; background-position: center;
+  opacity: .35; transform: translateY(-101%);
+}
+.lf-menu__panel { position: absolute; inset: 0; transform: translateY(-101%); }
+.lf-menu__panel--1 { background: #08080b; border-bottom: 1px solid var(--lf-neon-halo); }
+.lf-menu__panel--2 {
+  background: var(--lf-panel); border-bottom: 1px solid var(--lf-neon-halo);
+  display: flex; flex-direction: column; justify-content: space-between; padding: 6rem 2rem 2rem;
+}
+.lf-menu__list { display: flex; flex-direction: column; gap: 1.2rem; }
+.lf-menu__link {
+  font-size: clamp(2rem, 7vw, 4rem); color: var(--lf-neon-core);
+  text-shadow: 0 0 12px var(--lf-neon-halo); text-decoration: none;
+  overflow: hidden; transition: opacity .2s ease-out;
+}
+.lf-menu__list:hover .lf-menu__link:not(:hover) { opacity: .35; }
+.lf-menu__close {
+  position: absolute; top: 1.2rem; right: 1.4rem; background: none; border: 0; cursor: pointer;
+  color: var(--lf-body-text); font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
+}
+.lf-menu__extras { display: flex; gap: 2.5rem; flex-wrap: wrap; align-items: baseline; opacity: 0; }
+.lf-menu__extras p { color: var(--lf-muted); font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; margin: 0; }
+.lf-menu__cart { background: none; border: 0; cursor: pointer; color: var(--lf-neon-core); font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; }
+@media (prefers-reduced-motion: reduce) {
+  .lf-menu__imgpanel, .lf-menu__panel { transform: none; }
+  .lf-menu__veil, .lf-menu__extras { opacity: 1; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Menu",
+  "settings": [
+    { "type": "text", "id": "link_1_label", "label": "Link 1 label", "default": "Shop" },
+    { "type": "url", "id": "link_1_url", "label": "Link 1 URL" },
+    { "type": "text", "id": "link_2_label", "label": "Link 2 label", "default": "Story" },
+    { "type": "url", "id": "link_2_url", "label": "Link 2 URL" },
+    { "type": "text", "id": "link_3_label", "label": "Link 3 label", "default": "Contact" },
+    { "type": "url", "id": "link_3_url", "label": "Link 3 URL" }
+  ]
+}
+{% endschema %}

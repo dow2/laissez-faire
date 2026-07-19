@@ -424,6 +424,14 @@ git status --short
         return;
       }
       menu.setAttribute('data-state', 'animating');
+      // GSAP's first touch of an element with a CSS-declared percentage
+      // transform caches the browser's resolved pixel matrix as its `y`
+      // baseline, then ADDS a requested yPercent on top — doubling the
+      // offset instead of replacing it. Forcing y:0 first wipes that
+      // inherited baseline so the following yPercent set (and the tween
+      // below) resolve against a true zero, matching the CSS start state.
+      gsap.set([imgPanel, panels], { y: 0 });
+      gsap.set([imgPanel, panels], { yPercent: -101 });
       gsap.timeline({ onComplete: function () {
           menu.setAttribute('data-state', 'open');
           release = LF.trapFocus(menu);
@@ -481,6 +489,8 @@ git status --short
     });
   };
 ```
+
+> **As-run:** the first version of `open()` (without the two `gsap.set()` priming lines above) shipped a genuinely broken menu — `fromTo(panels/imgPanel, {yPercent:-101}, {yPercent:0})` silently no-op'd because GSAP's first touch of an element carrying a CSS-declared percentage transform caches the browser's resolved pixel matrix as its `y` baseline, then treats a subsequent `yPercent` as ADDITIVE rather than replacing it — doubling the offset instead of animating to zero. Confirmed via live Playwright verification (real, non-forced clicks on menu links timed out as "outside viewport") and an isolated minimal repro against the theme's own vendored `gsap.min.js`/`CustomEase.min.js`. Fixed by forcing `gsap.set([imgPanel, panels], { y: 0 })` before the percent-based set/tween, wiping the inherited CSS baseline so GSAP's cache starts from true zero. Verified across repeated open/close cycles with no state corruption.
 
 - [ ] **Step 3: Verify on dev server** — Menu opens with panel drop, links stagger in, sibling-dim hover works, Esc and Close and veil-click close it, Tab stays inside, body doesn't scroll behind, clicking a link navigates via surge with the menu gone. Reduced-motion (devtools emulation): instant open/close.
 
@@ -861,7 +871,7 @@ git status --short
             </li>
           {% endfor %}
         </ul>
-        <div class="lf-footer__follow" data-lf-follow aria-hidden="true"><img alt=""></div>
+        <div class="lf-footer__follow" data-lf-follow aria-hidden="true"><img alt="" width="480" height="600"></div>
       </div>
     </div>
   </div>
@@ -874,7 +884,7 @@ git status --short
 </footer>
 
 {% stylesheet %}
-.lf-footer { padding: 4rem 1.25rem 1.5rem; border-top: 1px solid #1a1a22; }
+.lf-footer { padding: 4rem 1.25rem 1.5rem; border-top: 1px solid #1a1a22; overflow-x: clip; }
 .lf-footer--full { min-height: 100dvh; display: flex; flex-direction: column; justify-content: space-between; }
 .lf-footer__wordmark {
   width: min(88vw, 900px); aspect-ratio: 2129/749; margin: 0 auto;
@@ -891,7 +901,7 @@ git status --short
   background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font-family: var(--lf-font-body);
 }
 .lf-footer__col a:hover, .lf-footer__joinbtn:hover { color: var(--lf-neon-core); }
-.lf-footer__findex { position: absolute; right: -20%; top: 0; width: 130px; aspect-ratio: 4/5; pointer-events: none; }
+.lf-footer__findex { position: absolute; right: -10%; top: 0; width: 130px; aspect-ratio: 4/5; pointer-events: none; }
 .lf-footer__findex div {
   position: absolute; inset: 0; background-size: cover; background-position: center;
   visibility: hidden; border: 1px solid var(--lf-neon-halo);
@@ -901,7 +911,7 @@ git status --short
 .lf-footer__plist a { display: flex; justify-content: space-between; gap: .8rem; padding: .32rem 0; border-bottom: 1px solid #191922; }
 .lf-footer__pcode { color: #55555f; }
 .lf-footer__follow {
-  position: absolute; right: -34%; top: 0; width: min(200px, 18vw); aspect-ratio: 4/5;
+  position: absolute; right: -10%; top: 0; width: min(200px, 18vw); aspect-ratio: 4/5;
   overflow: hidden; pointer-events: none; border: 1px solid var(--lf-neon-halo);
   box-shadow: 0 0 24px rgba(74,168,255,.25);
   clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%); will-change: transform;
@@ -964,6 +974,14 @@ git status --short
       var pre = new Image(); pre.src = a.getAttribute('data-lf-fimg');
     });
     var yTo = gsap.quickTo(panel, 'y', { duration: .35, ease: 'power3' });
+    // Footer persists entirely outside the Barba container, so this state
+    // survives every swap. A user hovering the list when they click a
+    // product link never fires mouseleave — without this, the panel stays
+    // stuck open showing the last-hovered image on the next page.
+    LF.teardown.push(function () {
+      gsap.set(panel, { clipPath: 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)', y: 0 });
+      currentSrc = null;
+    });
     list.addEventListener('mouseenter', function () {
       gsap.fromTo(panel,
         { clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)' },
@@ -977,7 +995,14 @@ git status --short
       var listRect = list.getBoundingClientRect();
       var h = panel.offsetHeight;
       var y = e.clientY - listRect.top - h / 2;
-      y = Math.max(0, Math.min(y, listRect.height - h));
+      // Clamp bounds must be computed with min/max, not assumed 0-first:
+      // when the follow panel is taller than the (short, 6-product) list,
+      // "listRect.height - h" is negative, inverting which bound is the
+      // true min — a naive Math.max(0, Math.min(y, listRect.height - h))
+      // then always resolves to 0 regardless of cursor position.
+      var lo = Math.min(0, listRect.height - h);
+      var hi = Math.max(0, listRect.height - h);
+      y = Math.max(lo, Math.min(y, hi));
       yTo(y);
       var row = e.target.closest('[data-lf-fimg]');
       if (row) {
@@ -987,6 +1012,10 @@ git status --short
     });
   };
 ```
+
+> **As-run:** the original clamp (`Math.max(0, Math.min(y, listRect.height - h))`) silently pinned the follow panel at `y:0` for every cursor position — this theme has only 6 real products (a ~139px list), while the follow panel is up to ~250px tall, so `listRect.height - h` is negative and the outer `Math.max(0, ...)` always won regardless of the inner result. Live-verified via three sampled mouse positions (panel frozen at one value before the fix). Fixed by computing the clamp's `lo`/`hi` bounds with `Math.min`/`Math.max` against 0 rather than assuming 0 is always the lower bound — this generalizes correctly whether the panel ends up taller or shorter than the list, without changing the panel's declared size (see the corrected code above).
+
+> **As-run (round 2):** code review found two more real issues after the clamp fix shipped. (1) Critical: `.lf-footer__findex`/`.lf-footer__follow`'s original `right: -20%`/`-34%` offsets spilled past the viewport's right edge at common laptop widths (~899–1335px) — `clip-path` clips paint, not layout, so the un-hovered box still occupied that horizontal space, risking a sitewide horizontal scrollbar on every page load regardless of hover state. Fixed by tightening both offsets to `right: -10%` and adding `overflow-x: clip` to `.lf-footer` as defense-in-depth; live-verified zero horizontal overflow at 1024/1280/1366px. (2) Important, same class of bug already fixed twice in this plan for `LF.init.cursor`/`LF.init.easter`: `footerFollow` had no `LF.teardown` entry, so hovering the product list right before clicking a product link (which never fires `mouseleave`) left the follow panel stuck open showing the stale image on the next page, since the footer persists outside the Barba container. Fixed with a teardown that force-closes the clip-path and resets `y`/`currentSrc`; live-verified via a simulated `LF.teardown` drain.
 
 - [ ] **Step 4: Verify** — footer shows wordmark, three columns, policies row; hovering Site Index links reveals the matching image; entering the product list wipes the follow panel in, it tracks the cursor vertically clamped to the list, image swaps per row; "Join the list" opens the popup; mobile (≤899px) hides both follow elements; reduced-motion leaves a plain static footer.
 
@@ -1056,6 +1085,8 @@ git status --short
 
 - [ ] **Step 1: theme check** — `shopify theme check --path theme` clean (no new offenses vs. master baseline).
 
+> **As-run:** the footer's JS-populated `<img>` (Task 8) had no static `width`/`height`, tripping theme-check's `ImgWidthAndHeight` error. The CSS already forces `width:100%; height:100%; object-fit:cover` inside a fixed-`aspect-ratio` container, so the actual attribute values are inert for layout — added `width="480" height="600"` (matching the 4:5 ratio used for the real product images elsewhere in the same file) purely to satisfy the linter. Back-ported into Task 8's markup above.
+
 - [ ] **Step 2: Push to dev theme** — `shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com` (dev server must be restarted if schema names changed).
 
 - [ ] **Step 3: Scripted behind-the-gate pass** (write to scratchpad, run with `NODE_PATH=/Users/dow/node_modules node <file>`; base `http://127.0.0.1:9292`):
@@ -1066,7 +1097,11 @@ const BASE = 'http://127.0.0.1:9292';
 (async () => {
   const browser = await chromium.launch();
 
-  // 1. Preloader: shows on first visit, absent on second (same context = same sessionStorage)
+  // 1. Preloader: shows on first visit, absent on second. Must RELOAD THE SAME
+  // TAB to test "repeat visit" — sessionStorage is scoped per top-level
+  // browsing context, so a fresh context.newPage() gets its own empty
+  // storage and is NOT a valid repeat-visit test (it looks like a second
+  // first-visit, which is exactly what its own preloader would then do).
   const ctx1 = await browser.newContext();
   const p1 = await ctx1.newPage();
   await p1.goto(BASE + '/', { waitUntil: 'load' });
@@ -1076,22 +1111,26 @@ const BASE = 'http://127.0.0.1:9292';
   await p1.waitForTimeout(3500);
   console.log('preloader finished (hidden):', await p1.evaluate(() =>
     getComputedStyle(document.querySelector('[data-lf-preloader]')).display === 'none'));
-  const p2 = await ctx1.newPage();
-  await p2.goto(BASE + '/', { waitUntil: 'load' });
-  console.log('preloader absent on repeat:', await p2.evaluate(() =>
+  await p1.reload({ waitUntil: 'load' });
+  console.log('preloader absent on repeat (same-tab reload):', await p1.evaluate(() =>
     !document.documentElement.classList.contains('lf-first-visit')));
+  const p2 = p1; // continue on the same, already-past-preloader tab
 
-  // 2. Menu: open, focus trapped, Esc closes, link nav closes + surges
+  // 2. Menu: open, focus trapped, Esc closes, link nav closes + surges.
+  // The open()/close() GSAP timelines measure ~1.0-1.3s to onComplete under
+  // typical local-machine load (several browser contexts + dev server +
+  // file watcher all competing for CPU) — a 900ms wait is too tight and
+  // reads the state mid-animation. 1700ms gives real margin.
   await p2.click('[data-lf-menu-open]');
-  await p2.waitForTimeout(900);
+  await p2.waitForTimeout(1700);
   console.log('menu open:', await p2.evaluate(() => document.querySelector('[data-lf-menu-root]').getAttribute('data-state') === 'open'));
   console.log('focus inside menu:', await p2.evaluate(() => !!document.activeElement.closest('[data-lf-menu-root]')));
   await p2.keyboard.press('Escape');
-  await p2.waitForTimeout(900);
+  await p2.waitForTimeout(1700);
   console.log('menu closed by Esc:', await p2.evaluate(() => document.querySelector('[data-lf-menu-root]').getAttribute('data-state') === 'closed'));
   console.log('scroll unlocked:', await p2.evaluate(() => document.documentElement.style.overflow === ''));
   await p2.click('[data-lf-menu-open]');
-  await p2.waitForTimeout(900);
+  await p2.waitForTimeout(1700);
   await p2.click('.lf-menu__link[href*="/collections/"]');
   await p2.waitForTimeout(2500);
   console.log('menu link navigated:', p2.url().indexOf('/collections/') > -1);
@@ -1144,6 +1183,8 @@ const BASE = 'http://127.0.0.1:9292';
 ```
 
 Expected: every line `true` / overflow `0`. Fix findings, re-run until clean; commit fixes as `fix(b3.1): <finding>` and amend the relevant plan code blocks.
+
+> **As-run:** the first two runs of this script (with its original `context.newPage()`-based repeat-visit check and 900ms animation waits) failed several lines — both were script bugs, not site defects, diagnosed and confirmed via targeted isolation before touching any source file. (1) `sessionStorage` is scoped per top-level browsing context; a fresh `context.newPage()` starts with empty storage, so it looks like a genuine first visit and its own preloader correctly plays and blocks the subsequent menu click — the fix (already applied above) is to `page.reload()` the SAME tab instead. (2) The menu's `open()`/`close()` GSAP timelines genuinely take ~1.0–1.3s to reach `onComplete` under this session's typical local load (confirmed via a 100ms-interval poll), well past the original 900ms wait — the fix (already applied above) widens those waits to 1700ms. With both corrected, all 19 checks passed cleanly on the next run.
 
 - [ ] **Step 4: User visual pass** on the dev preview (menu feel, preloader, footer follow, popup styling). Fix + re-verify anything raised.
 

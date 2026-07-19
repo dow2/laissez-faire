@@ -21,23 +21,6 @@
     });
   };
 
-  // ——— Header: mobile overlay menu (header persists outside Barba; bind once) ———
-  LF.init.header = function () {
-    var burger = document.querySelector('[data-lf-menu-toggle]');
-    var overlay = document.querySelector('[data-lf-menu]');
-    if (!burger || !overlay || burger.hasAttribute('data-lf-bound')) return;
-    burger.setAttribute('data-lf-bound', '1');
-    burger.addEventListener('click', function () {
-      var open = overlay.hasAttribute('hidden');
-      if (open) { overlay.removeAttribute('hidden'); } else { overlay.setAttribute('hidden', ''); }
-      burger.setAttribute('aria-expanded', String(open));
-      document.documentElement.style.overflow = open ? 'hidden' : '';
-    });
-    overlay.addEventListener('click', function (e) {
-      if (e.target.closest('a')) { overlay.setAttribute('hidden', ''); document.documentElement.style.overflow = ''; }
-    });
-  };
-
   // ——— Hero slider: buttons, autoplay, horizontal gestures ———
   LF.init.hero = function (root, ctx) {
     var hero = (root || document).querySelector('[data-lf-hero]');
@@ -183,23 +166,5 @@
         ScrollTrigger.create({ trigger: el, start: 'top 55%', once: true, onEnter: fire });
       }
     });
-  };
-
-  // ——— Footer crest cursor-follow (footer persists; bind once) ———
-  LF.init.footerFollow = function (root, ctx) {
-    if (ctx.reduced || !window.gsap) return;
-    if (!window.matchMedia('(pointer: fine)').matches) return;
-    var wm = document.querySelector('.lf-footer__wordmark');
-    var crest = document.querySelector('.lf-follow-crest');
-    if (!wm || !crest || crest.hasAttribute('data-lf-bound')) return;
-    crest.setAttribute('data-lf-bound', '1');
-    var qx = gsap.quickTo(crest, 'x', { duration: 0.4, ease: 'power3' });
-    var qy = gsap.quickTo(crest, 'y', { duration: 0.4, ease: 'power3' });
-    var zone = wm.closest('.lf-footer') || wm;
-    zone.addEventListener('mousemove', function (e) {
-      qx(e.clientX - 32); qy(e.clientY - 40);
-    });
-    zone.addEventListener('mouseenter', function () { gsap.to(crest, { opacity: .9, duration: .3 }); });
-    zone.addEventListener('mouseleave', function () { gsap.to(crest, { opacity: 0, duration: .3 }); });
   };
 })();

@@ -1,53 +1,106 @@
-<footer class="lf-footer">
-  <div class="lf-footer__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
-       style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');" data-lf-reveal></div>
-  <p class="lf-footer__club lf-display">Leisure Club</p>
-  <div class="lf-footer__cols">
-    <nav aria-label="Footer">
-      <a href="{{ section.settings.link_1_url | default: routes.all_products_collection_url }}">{{ section.settings.link_1_label | default: 'Shop' }}</a>
-      <a href="{{ section.settings.link_2_url | default: '/pages/story' }}">{{ section.settings.link_2_label | default: 'Story' }}</a>
-      {% if section.settings.instagram_url != blank %}<a href="{{ section.settings.instagram_url }}" rel="me noopener" target="_blank">Instagram</a>{% endif %}
-      {% if section.settings.contact_email != blank %}<a href="mailto:{{ section.settings.contact_email }}">{{ section.settings.contact_email }}</a>{% endif %}
-    </nav>
-    <nav aria-label="Policies">
-      {% for policy in shop.policies %}
-        {% if policy != blank %}<a href="{{ policy.url }}">{{ policy.title }}</a>{% endif %}
-      {% endfor %}
-    </nav>
+<footer class="lf-footer {% if section.settings.full_height %}lf-footer--full{% endif %}">
+  <div class="lf-footer__top">
+    <div class="lf-footer__brand">
+      <div class="lf-footer__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
+           style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');" data-lf-reveal></div>
+      <p class="lf-footer__club lf-script">a neon-lit expression of New Orleans</p>
+    </div>
+    <div class="lf-footer__grid">
+      <nav class="lf-footer__col" aria-label="Site index">
+        <p class="lf-footer__label">Site Index</p>
+        <a href="{{ routes.all_products_collection_url }}" data-lf-findex="0">Shop now</a>
+        <a href="{{ routes.root_url }}" data-lf-findex="1">Home</a>
+        <a href="/pages/story" data-lf-findex="2">Story</a>
+        <a href="{{ section.settings.contact_url | default: '/pages/contact' }}" data-lf-findex="3">Contact</a>
+        <div class="lf-footer__findex" aria-hidden="true">
+          <div style="background-image:url('{{ 'lf-culture-1.jpg' | asset_url }}')"></div>
+          <div style="background-image:url('{{ 'lf-culture-2.jpg' | asset_url }}')"></div>
+          <div style="background-image:url('{{ 'lf-culture-3.jpg' | asset_url }}')"></div>
+          <div style="background-image:url('{{ 'lf-culture-1.jpg' | asset_url }}')"></div>
+        </div>
+      </nav>
+      <nav class="lf-footer__col" aria-label="Social and contact">
+        <p class="lf-footer__label">The Club</p>
+        {% if section.settings.instagram_url != blank %}<a href="{{ section.settings.instagram_url }}" rel="me noopener" target="_blank">Instagram</a>{% endif %}
+        {% if section.settings.contact_email != blank %}<a href="mailto:{{ section.settings.contact_email }}">{{ section.settings.contact_email }}</a>{% endif %}
+        <button type="button" data-lf-signup-open class="lf-footer__joinbtn">Join the list</button>
+      </nav>
+      <div class="lf-footer__col lf-footer__followcol">
+        <p class="lf-footer__label">The Rack</p>
+        <ul class="lf-footer__plist" data-lf-flist>
+          {% for product in collections.all.products limit: 8 %}
+            <li>
+              <a href="{{ product.url }}" data-lf-fimg="{{ product.featured_image | image_url: width: 480 }}">
+                <span>{{ product.title }}</span>
+                <span class="lf-footer__pcode">{% render 'lf-code', product: product %}</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="lf-footer__follow" data-lf-follow aria-hidden="true"><img alt="" width="480" height="600"></div>
+      </div>
+    </div>
   </div>
-  <div class="lf-footer__seal" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
-  <p class="lf-footer__legal">&copy; {{ 'now' | date: '%Y' }} Laissez-Faire Leisure Club — New Orleans</p>
-  <div class="lf-follow-crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
+  <div class="lf-footer__bottom">
+    <nav class="lf-footer__legalnav" aria-label="Policies">
+      {% for policy in shop.policies %}{% if policy != blank %}<a href="{{ policy.url }}">{{ policy.title }}</a>{% endif %}{% endfor %}
+    </nav>
+    <p class="lf-footer__legal">All rights reserved _ {% render 'lf-stamp' %} — New Orleans, Louisiana</p>
+  </div>
 </footer>
 
 {% stylesheet %}
-.lf-footer { padding: 4rem 1.25rem 2rem; text-align: center; border-top: 1px solid #1a1a22; }
+.lf-footer { padding: 4rem 1.25rem 1.5rem; border-top: 1px solid #1a1a22; overflow-x: clip; }
+.lf-footer--full { min-height: 100dvh; display: flex; flex-direction: column; justify-content: space-between; }
 .lf-footer__wordmark {
   width: min(88vw, 900px); aspect-ratio: 2129/749; margin: 0 auto;
   background-color: var(--lf-neon-core);
-  -webkit-mask: var(--lf-wordmark) center/contain no-repeat;
-  mask: var(--lf-wordmark) center/contain no-repeat;
+  -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
   filter: drop-shadow(0 0 8px var(--lf-neon-halo)) drop-shadow(0 0 30px var(--lf-neon-halo));
 }
-.lf-footer__club { font-size: .8rem; letter-spacing: .45em; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); margin: .8rem 0 2.2rem; }
-.lf-footer__cols { display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; margin-bottom: 2rem; }
-.lf-footer__cols nav { display: flex; flex-direction: column; gap: .55rem; }
-.lf-footer__cols a { color: var(--lf-muted); font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; text-decoration: none; }
-.lf-footer__cols a:hover { color: var(--lf-neon-core); }
-.lf-footer__seal { width: 40px; aspect-ratio: 300/320; margin: 0 auto 1rem; background-color: var(--lf-muted); -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat; opacity: .6; }
-.lf-footer__legal { color: var(--lf-muted); font-size: .66rem; letter-spacing: .12em; }
+.lf-footer__club { text-align: center; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); font-size: 1.05rem; margin: .6rem 0 2.4rem; }
+.lf-footer__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 1100px; margin: 0 auto 2.5rem; }
+.lf-footer__col { display: flex; flex-direction: column; gap: .55rem; position: relative; }
+.lf-footer__label { color: var(--lf-neon-core); font-size: .66rem; letter-spacing: .3em; text-transform: uppercase; margin: 0 0 .4rem; }
+.lf-footer__col a, .lf-footer__joinbtn {
+  color: var(--lf-muted); font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; text-decoration: none;
+  background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font-family: var(--lf-font-body);
+}
+.lf-footer__col a:hover, .lf-footer__joinbtn:hover { color: var(--lf-neon-core); }
+.lf-footer__findex { position: absolute; right: -10%; top: 0; width: 130px; aspect-ratio: 4/5; pointer-events: none; }
+.lf-footer__findex div {
+  position: absolute; inset: 0; background-size: cover; background-position: center;
+  visibility: hidden; border: 1px solid var(--lf-neon-halo);
+}
+.lf-footer__findex div.show { visibility: visible; }
+.lf-footer__plist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lf-footer__plist a { display: flex; justify-content: space-between; gap: .8rem; padding: .32rem 0; border-bottom: 1px solid #191922; }
+.lf-footer__pcode { color: #55555f; }
+.lf-footer__follow {
+  position: absolute; right: -10%; top: 0; width: min(200px, 18vw); aspect-ratio: 4/5;
+  overflow: hidden; pointer-events: none; border: 1px solid var(--lf-neon-halo);
+  box-shadow: 0 0 24px rgba(74,168,255,.25);
+  clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%); will-change: transform;
+}
+.lf-footer__follow img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-footer__bottom { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; border-top: 1px solid #1a1a22; padding-top: 1rem; }
+.lf-footer__legalnav { display: flex; gap: 1.1rem; flex-wrap: wrap; }
+.lf-footer__legalnav a { color: var(--lf-muted); font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
+.lf-footer__legal { color: var(--lf-muted); font-size: .64rem; letter-spacing: .1em; margin: 0; }
+@media (max-width: 899px) {
+  .lf-footer__grid { grid-template-columns: 1fr; }
+  .lf-footer__findex, .lf-footer__follow { display: none; }
+}
 {% endstylesheet %}
 
 {% schema %}
 {
   "name": "LF Footer",
   "settings": [
-    { "type": "text", "id": "link_1_label", "label": "Link 1 label", "default": "Shop" },
-    { "type": "url", "id": "link_1_url", "label": "Link 1 URL" },
-    { "type": "text", "id": "link_2_label", "label": "Link 2 label", "default": "Story" },
-    { "type": "url", "id": "link_2_url", "label": "Link 2 URL" },
+    { "type": "checkbox", "id": "full_height", "label": "Full-height (100dvh) variant", "default": false },
     { "type": "url", "id": "instagram_url", "label": "Instagram URL" },
-    { "type": "text", "id": "contact_email", "label": "Contact email" }
+    { "type": "text", "id": "contact_email", "label": "Contact email" },
+    { "type": "url", "id": "contact_url", "label": "Contact page URL" }
   ]
 }
 {% endschema %}

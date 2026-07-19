@@ -92,29 +92,45 @@ body {
 .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover {
   animation: lf-buzz-once .45s steps(1, end) 1;
 }
-.lf-header__nav a:hover, .lf-footer__cols a:hover {
-  animation: lf-buzz-once .45s steps(1, end) 1;
-}
 
 /* Letter ignite: chars are pre-colored lit; dim = low opacity on the night ground. */
 [data-lf-ignite] { visibility: visible; }
 .lf-ignite-char { display: inline-block; white-space: pre; opacity: .12; }
 .lf-ignite-done .lf-ignite-char, .lf-lit .lf-ignite-char { opacity: 1; }
 
-/* Crest cursor-follow (footer, desktop only — element added in lf-footer.liquid) */
-.lf-follow-crest {
-  position: fixed; width: 64px; aspect-ratio: 300/320; pointer-events: none; z-index: 80;
-  background-color: var(--lf-neon-core);
-  -webkit-mask: var(--lf-crest) center/contain no-repeat;
-  mask: var(--lf-crest) center/contain no-repeat;
-  filter: drop-shadow(0 0 6px var(--lf-neon-halo)) drop-shadow(0 0 20px var(--lf-neon-halo));
-  opacity: 0; top: 0; left: 0; will-change: transform;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .lf-pdp__add:hover, .lf-teaser__row button:hover, .lf-email__row button:hover,
-  .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover,
-  .lf-header__nav a:hover, .lf-footer__cols a:hover { animation: none; }
+  .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover { animation: none; }
   .lf-ignite-char { opacity: 1 !important; }
-  .lf-follow-crest { display: none; }
 }
+
+/* Voice components */
+.lf-stamp { letter-spacing: .12em; }
+.lf-eyebrow { color: var(--lf-muted); font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; }
+.lf-code { color: #55555f; font-size: .9em; letter-spacing: .08em; }
+
+/* ——— B3.1 chrome ——— */
+/* z-scale: header 40 / drawer 60 / menu 70 / popup 75 / easter 78 / blackout 90 / preloader 95 / cursor 100 */
+
+/* Rolling text hover (OR h-flip): duplicate glyph via text-shadow, roll down on hover. */
+.lf-roll { overflow: hidden; display: inline-block; line-height: 1.1; }
+.lf-roll__inner {
+  display: inline-block; text-shadow: 0 -1.1em 0 currentColor;
+  transition: transform 0ms var(--lf-ease);
+}
+.lf-roll:hover .lf-roll__inner { transform: translateY(1.1em); transition-duration: 400ms; }
+@media (prefers-reduced-motion: reduce) { .lf-roll:hover .lf-roll__inner { transform: none; } }
+
+/* Labeled cursor pill (desktop, pointer:fine — element in theme.liquid) */
+.lf-cursor {
+  position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none; opacity: 0;
+  background: var(--lf-panel); border: 1px solid var(--lf-neon-halo);
+  padding: .3rem .7rem; will-change: transform;
+}
+.lf-cursor p {
+  margin: 0; color: var(--lf-neon-core); text-shadow: 0 0 6px var(--lf-neon-halo);
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; white-space: nowrap;
+}
+body.lf-cursor-on .lf-cursor { opacity: 1; }
+@media (max-width: 991px), (pointer: coarse) { .lf-cursor { display: none; } }
+@media (prefers-reduced-motion: reduce) { .lf-cursor { display: none; } }
