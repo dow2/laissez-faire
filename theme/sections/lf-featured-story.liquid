@@ -9,7 +9,7 @@
       </a>
       <div class="lf-fstory__copy">
         <p class="lf-fstory__kicker">{{ block.settings.kicker }}</p>
-        <h2 class="lf-display lf-glow-text">{{ product.title }}</h2>
+        <h2 class="lf-display lf-glow-text" data-lf-ignite>{{ product.title }}</h2>
         {% if block.settings.story != blank %}<p class="lf-script lf-fstory__script">{{ block.settings.story }}</p>{% endif %}
         <p class="lf-fstory__price">{{ product.price_min | money }}{% if product.price_varies %} — {{ product.price_max | money }}{% endif %}</p>
         <a class="lf-fstory__cta lf-display" href="{{ product.url }}">View</a>

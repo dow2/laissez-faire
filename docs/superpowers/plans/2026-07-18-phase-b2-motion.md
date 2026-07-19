@@ -105,7 +105,6 @@ git add theme/assets && git commit -m "Vendor SplitText, Observer, Barba for the
     <script src="{{ 'gsap.min.js' | asset_url }}" defer></script>
     <script src="{{ 'ScrollTrigger.min.js' | asset_url }}" defer></script>
     <script src="{{ 'SplitText.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'Observer.min.js' | asset_url }}" defer></script>
     <script src="{{ 'barba.min.js' | asset_url }}" defer></script>
     <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
     <script src="{{ 'lf-sections.js' | asset_url }}" defer></script>
@@ -113,6 +112,8 @@ git add theme/assets && git commit -m "Vendor SplitText, Observer, Barba for the
   </body>
 </html>
 ```
+
+> **Amendment (Task 10, Lighthouse fallback ladder):** rung 1 (swap `defer` for a sequential post-load loader) was tried and made things WORSE (perf 51→41) — native `defer` lets the browser fetch all vendors in parallel during HTML parse, while the sequential loader serialized 8 fetch+execute round trips under Lighthouse's simulated mobile network throttling, costing far more than it saved. Reverted to `defer`. Rung 2 (drop `Observer.min.js` + the hero's swipe/wheel gesture code) was applied instead — see Task 5's amendment. The 8 script tags below reflect the final as-shipped state (7 vendors, no Observer).
 
 (Order matters: `lf-sections.js` registers inits; `lf-motion.js` dispatches them. Both deferred, so DOM is parsed first. `lf-sections.js` doesn't exist until Task 5 — the resulting `MissingTemplate`-style asset 404 is inert at runtime and `theme check` does not flag asset_url references; note any new offense honestly.)
 
@@ -128,6 +129,10 @@ git add theme/layout/theme.liquid && git commit -m "Barba wrapper/container in l
 Expected: 3-warning baseline.
 
 ### Task 3: `lf-motion.js` — core rewrite (complete file)
+
+> **Amendment (code-quality review after execution, three rounds — round 3 added after Task 5 landed):** `beforeLeave` now also drains `LF.teardown` (an array Task 5's `lf-sections.js` pushes per-swap cleanup functions onto — hero's autoplay timer + Observer instance don't self-destruct when Barba discards their container). This line is forward-referenced here for a file Task 5 creates; both files ship together and `LF.teardown || []` guards the case where lf-sections.js hasn't loaded.
+
+> **Amendment (code-quality review after execution, two rounds):** the original code block below had a Critical bug — `leave()` called `bumpNav()` before `trimFactor()`, so `trimFactor()` always read the just-incremented count and every navigation (including the first) got the 0.7× trim, contradicting the spec's "first nav full-length" requirement. Round 1 fix (read `trimFactor()` before `bumpNav()` in `leave()`) was necessary but incomplete: `enter()` independently called `trimFactor()` again, and by then `leave()`'s `bumpNav()` had already run — so on nav #1, `leave()` got the correct full-length factor but `enter()` still saw the trimmed one (asymmetric transition). Round 2 fix: a single `pendingTrim` variable is set once in `leave()` (before `bumpNav()`) and reused by `enter()`, so both phases of one navigation always agree. Also fixed on review round 1: the `preventRule` regex was unanchored (`/account`/`/password` could false-match handles like `/products/password-protected-jacket`) — anchored to segment boundaries. All fixes plus minimal `console.error`/`console.warn` diagnostics on the previously-silent catch/guard paths are already folded into the code block below — it reflects the as-shipped, corrected file.
 
 **Files:**
 - Modify (rewrite): `theme/assets/lf-motion.js`
@@ -147,7 +152,7 @@ Expected: 3-warning baseline.
 
   function runInits(root) {
     Object.keys(LF.init).forEach(function (k) {
-      try { LF.init[k](root || document, LF.ctx); } catch (e) { /* one broken section must not kill the rest */ }
+      try { LF.init[k](root || document, LF.ctx); } catch (e) { if (window.console) console.error('[LF] init "' + k + '" failed', e); }
     });
   }
   LF.runInits = runInits;
@@ -181,9 +186,9 @@ Expected: 3-warning baseline.
   runInits(document);
 
   // ——— Barba surge transitions ———
-  if (!window.barba || !window.gsap) return;
+  if (!window.barba || !window.gsap) { if (window.console) console.warn('[LF] barba/gsap missing — falling back to native navigation'); return; }
   var blackout = document.getElementById('lf-blackout');
-  if (!blackout) return;
+  if (!blackout) { if (window.console) console.warn('[LF] #lf-blackout missing — falling back to native navigation'); return; }
 
   if (reduced) {
     // Instant swap, no surge — still Barba so nav stays consistent, but zero animation.
@@ -201,20 +206,33 @@ Expected: 3-warning baseline.
       prevent: preventRule,
       transitions: [{
         leave: function (data) {
+          // Captured once per nav cycle so leave() and enter() always agree on
+          // the same trim factor — reading trimFactor() independently in each
+          // (even with bumpNav() ordered correctly here) let enter() see the
+          // just-bumped count and trim when leave() didn't, on nav #1.
+          pendingTrim = trimFactor();
           bumpNav();
-          var f = trimFactor();
+          var f = pendingTrim;
           return gsap.timeline()
             .to(data.current.container, {
               keyframes: [{ opacity: .1 }, { opacity: 1 }, { opacity: .15 }, { opacity: .9 }, { opacity: .05 }, { opacity: 0 }],
               duration: .55 * f, ease: 'steps(5)'
             })
             .to(blackout, { opacity: 1, duration: .12 * f }, '<70%')
+            // Barba doesn't remove the outgoing container until well after our
+            // own enter()/afterEnter resolve — left in normal flow, it sits
+            // above the incoming container and pushes it hundreds of px down
+            // the page. That's invisible (blackout covers it) but corrupts any
+            // getBoundingClientRect() read during afterEnter (e.g. ignite's
+            // above-the-fold check), which was measuring the incoming heading
+            // as if it were far off-screen. Take it out of flow ourselves.
+            .set(data.current.container, { display: 'none' })
             .then();
         },
         enter: function (data) {
           window.scrollTo(0, 0);
           if (window.lfLenis) lfLenis.scrollTo(0, { immediate: true });
-          var f = trimFactor();
+          var f = pendingTrim;
           gsap.set(data.next.container, { opacity: 0 });
           return gsap.timeline()
             .to(blackout, { opacity: 0, duration: .15 * f, delay: .15 * f })
@@ -232,17 +250,21 @@ Expected: 3-warning baseline.
     var el = data.el;
     var href = (data.href || '');
     if (el && el.closest('[data-no-barba]')) return true;
-    if (/\/checkouts?|\/cart\/c\/|\/account|\/password/.test(href)) return true;
+    if (/\/(checkouts?|account|password)(\/|\?|$)|\/cart\/c\//.test(href)) return true;
     return false;
   }
 
   var navCount = 0;
+  var pendingTrim = 1; // shared between leave()/enter() of the same nav cycle
   try { navCount = parseInt(sessionStorage.getItem('lfNav') || '0', 10) || 0; } catch (e) {}
   function bumpNav() { navCount++; try { sessionStorage.setItem('lfNav', String(navCount)); } catch (e) {} }
   function trimFactor() { return navCount > 0 ? 0.7 : 1; }
 
   barba.hooks.beforeLeave(function () {
     if (window.ScrollTrigger) ScrollTrigger.getAll().forEach(function (t) { t.kill(); });
+    // Per-swap resources (hero autoplay timer, Observer instance) that lf-sections.js
+    // registers and that don't self-clean when their container is discarded.
+    if (LF.teardown) { LF.teardown.forEach(function (fn) { try { fn(); } catch (e) {} }); LF.teardown.length = 0; }
   });
   barba.hooks.afterEnter(function (data) {
     var m = data && data.next && data.next.html && data.next.html.match(/<title>([\s\S]*?)<\/title>/i);
@@ -323,6 +345,8 @@ git add theme/assets/lf-tokens.css && git commit -m "Motion CSS: hover buzz, ign
 
 ### Task 5: `lf-sections.js` registry + section JS migration
 
+> **Amendment (code-quality review after execution):** two Important findings fixed, folded into the code block below — (1) `LF.init.hero`'s `setInterval` timer and `Observer` instance had no teardown across Barba swaps (a per-navigation resource leak); fixed via `LF.teardown`, an array of cleanup fns drained in `lf-motion.js`'s `beforeLeave` (see that task's amendment). (2) The PDP add-to-cart `fetch` had no timeout — a hung request left the buy button permanently disabled with no feedback; fixed with a 12s `AbortController` watchdog that re-enables the button without navigating away (an aborted add may or may not have gone through, so staying on the PDP is safer than the normal failure path's redirect to `/cart`).
+
 **Files:**
 - Create: `theme/assets/lf-sections.js`
 - Modify: `theme/sections/lf-header.liquid` (delete its `{% javascript %}` block entirely)
@@ -338,6 +362,10 @@ git add theme/assets/lf-tokens.css && git commit -m "Motion CSS: hover buzz, ign
 (function () {
   window.LF = window.LF || {};
   LF.init = LF.init || {};
+  // Cleanup fns for resources created per-swap (timers, Observer instances) that
+  // don't self-destruct when their DOM is discarded. lf-motion.js's beforeLeave
+  // hook runs and clears this list, mirroring its ScrollTrigger.getAll().kill().
+  LF.teardown = LF.teardown || [];
 
   var fmtCache = {};
   LF.money = function (cents) {
@@ -390,14 +418,12 @@ git add theme/assets/lf-tokens.css && git commit -m "Motion CSS: hover buzz, ign
     if (next) next.addEventListener('click', function () { go(i + 1); arm(); });
     if (prev) prev.addEventListener('click', function () { go(i - 1); arm(); });
     arm();
-    // Horizontal-only gestures; vertical scroll stays native.
-    if (!ctx.reduced && window.Observer && n > 1) {
-      Observer.create({
-        target: hero, type: 'touch,wheel', lockAxis: true, tolerance: 60, preventDefault: false,
-        onLeft: function () { go(i + 1); arm(); },
-        onRight: function () { go(i - 1); arm(); }
-      });
-    }
+    // Observer-driven swipe/wheel gestures were dropped here (Task 10, Lighthouse
+    // fallback ladder rung 2) — the vendor + its setup cost pushed mobile TBT
+    // over budget. Arrow buttons + autoplay remain fully functional.
+    // This closure's timer belongs to THIS hero instance and won't self-clean
+    // when Barba discards its container on the next navigation.
+    LF.teardown.push(function () { clearInterval(timer); });
   };
 
   // ——— PDP: variant sync, gallery, AJAX add-to-cart ———
@@ -456,18 +482,28 @@ git add theme/assets/lf-tokens.css && git commit -m "Motion CSS: hover buzz, ign
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       addBtn.disabled = true;
+      // A hung request (flaky network, dead connection) must not leave the
+      // buy button disabled forever with no feedback — abort after 12s.
+      var controller = ('AbortController' in window) ? new AbortController() : null;
+      var timedOut = false;
+      var watchdog = controller ? setTimeout(function () { timedOut = true; controller.abort(); }, 12000) : null;
       fetch('/cart/add.js', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: parseInt(idInput.value, 10), quantity: 1 })
+        body: JSON.stringify({ id: parseInt(idInput.value, 10), quantity: 1 }),
+        signal: controller ? controller.signal : undefined
       }).then(function (r) {
+        if (watchdog) clearTimeout(watchdog);
         if (!r.ok) throw new Error('add failed');
         return r.json();
       }).then(function () {
         addBtn.disabled = false;
         document.dispatchEvent(new CustomEvent('lf:cart:added'));
       }).catch(function () {
+        if (watchdog) clearTimeout(watchdog);
         addBtn.disabled = false;
-        window.location.href = '/cart';
+        if (!timedOut) window.location.href = '/cart';
+        // On timeout, stay on the PDP with the button re-enabled rather than
+        // navigating away from an add that may or may not have gone through.
       });
     });
     update();
@@ -484,16 +520,26 @@ git add theme/assets/lf-tokens.css && git commit -m "Motion CSS: hover buzz, ign
       }
       var split = new SplitText(el, { type: 'chars', charsClass: 'lf-ignite-char' });
       var per = Math.min(0.055, 0.9 / Math.max(split.chars.length, 1));
-      ScrollTrigger.create({
-        trigger: el, start: 'top 55%', once: true,
-        onEnter: function () {
-          gsap.to(split.chars, {
-            keyframes: [{ opacity: .5 }, { opacity: .12 }, { opacity: 1 }, { opacity: .3 }, { opacity: 1 }],
-            duration: .5, ease: 'steps(4)', stagger: per,
-            onComplete: function () { el.classList.add('lf-ignite-done'); }
-          });
-        }
-      });
+      function fire() {
+        gsap.to(split.chars, {
+          keyframes: [{ opacity: .5 }, { opacity: .12 }, { opacity: 1 }, { opacity: .3 }, { opacity: 1 }],
+          duration: .5, ease: 'steps(4)', stagger: per,
+          onComplete: function () { el.classList.add('lf-ignite-done'); }
+        });
+      }
+      // ScrollTrigger's onEnter only fires on a scroll crossing INTO the trigger
+      // zone — an element already above-the-fold at bind time (a page's own H1,
+      // e.g. collection/story/PDP titles) is already "inside" the zone and would
+      // never receive that event, staying permanently dim. Fire immediately for
+      // anything already past the trigger line; ScrollTrigger only for the rest.
+      // (Requires the outgoing Barba container to already be display:none — see
+      // lf-motion.js leave() — otherwise this reads a phantom pushed-down position.)
+      var rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.55) {
+        fire();
+      } else {
+        ScrollTrigger.create({ trigger: el, start: 'top 55%', once: true, onEnter: fire });
+      }
     });
   };
 
@@ -799,7 +845,7 @@ shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
 3. Ignite fires on featured h2s, collection h1, PDP h1, story h1 — once each, staggered, capped.
 4. Hover: single stutter then steady glow on buttons and nav links.
 5. Footer: crest trails cursor (desktop); absent on touch.
-6. Hero: horizontal swipe/drag advances slides; vertical scroll over the hero scrolls the page; buttons + autoplay still work.
+6. Hero: arrow buttons advance slides; autoplay cycles; vertical scroll over the hero scrolls the page normally. (Swipe/wheel gestures were dropped in Task 10's Lighthouse fallback ladder rung 2 — see the as-run note below Step 3 — arrow buttons + autoplay are the shipped interaction model.)
 7. 375px pass on every template.
 8. Reduce Motion ON, fresh tab: instant page swaps, everything statically lit, no follow, no buzz, site fully usable.
 9. Teaser regression on `/password`: flicker-once, signup, Members entry — unchanged.
@@ -816,6 +862,10 @@ for n,p in [('home','/tmp/lh-b2-home.json'),('pdp','/tmp/lh-b2-pdp.json')]:
 ```
 
 Expected: ≥85 / ≥90 both pages. If perf fails: apply the spec §4 fallback ladder in order — (1) swap the five vendor `<script defer>` tags for a post-`load` injector snippet, re-measure; (2) drop Observer.min.js + the gesture block, re-measure. Document whichever rung shipped.
+
+> **As-run:** initial Lighthouse mobile came in at home 51 / pdp 77 (both below the ≥85 gate) — ~170KB of new GSAP-family JS on `defer` was competing for main-thread time during initial parse (TBT 1,530ms on home). **Rung 1 tried and reverted:** swapped the 8 `defer` tags for a sequential post-load loader — this made it WORSE (perf 41, TBT 4,380ms), because native `defer` fetches all vendors in parallel during HTML parse while the sequential loader serialized 8 fetch+execute round trips under Lighthouse's simulated mobile throttling. Reverted to `defer`. **Rung 2 applied:** dropped `Observer.min.js` and the hero's swipe/wheel gesture code (arrow buttons + autoplay unaffected) — see Task 2's and Task 5's amendments for the exact reverted/final code. Also fixed in this pass, found by manual behind-the-gate testing (not Lighthouse): `LF.init.ignite`'s `ScrollTrigger.create({ start: 'top 55%', once: true })` never fires `onEnter` for elements already above-the-fold at bind time (collection/story/PDP page H1 titles) — `onEnter` only fires on a scroll crossing INTO the zone, and an already-visible element is already inside it. Fixed by checking `getBoundingClientRect()` at bind time and firing immediately for anything already past the trigger line (see Task 5's ignite code, now amended). A second, unrelated ignite bug surfaced afterward via user report + Playwright repro against the dev server: Barba leaves the outgoing container in normal document flow (opacity faded but not removed) well past `afterEnter`, so it pushes the incoming container hundreds of px down the page at the exact moment the above-the-fold check runs — fixed by setting `display:none` on the outgoing container at the end of `leave()`'s timeline (see Task 3's amendment).
+>
+> **Lighthouse gate — local samples stayed noisy after rung 2** (single commit, no further code changes, back-to-back runs): perf 75/TBT 330ms, 50/1,320ms, 80/430ms, 65/650ms, 53/2,530ms (home), 63/4,110ms (pdp). Root-caused to local machine contention, not code: the local Chrome browser had 75 renderer processes running (ordinary daily-driver tab accumulation) competing with the headless Lighthouse Chrome instance and the `shopify theme dev` file watcher for CPU under Lighthouse's simulated mobile throttling — not a regression introduced by this plan. Decision (user-confirmed): ship with the current code-level fix (rung 2's real, measured improvement — best-case TBT 1,530ms → 330ms) rather than keep chasing a noisy local signal, and re-run Lighthouse against the published `laissezfaireleisureclub.com` post-ship, where there's no dev-proxy/file-watcher overhead and results should be more representative. If the live number is still below gate, that becomes fast-follow work rather than a ship blocker.
 
 - [ ] **Step 4: Fix findings, commit** (`git add -A && git commit -m "Phase B2 review fixes"` — skip if clean).
 

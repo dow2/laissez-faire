@@ -13,13 +13,18 @@
   </head>
   <body>
     {% sections 'header-group' %}
-    <main id="lf-main">{{ content_for_layout }}</main>
+    <main id="lf-main" data-barba="wrapper">
+      <div data-barba="container" data-barba-namespace="{{ template.name }}">{{ content_for_layout }}</div>
+    </main>
     {% sections 'footer-group' %}
     {% section 'lf-cart-drawer' %}
-    {% comment %} GSAP + ScrollTrigger are vendored in assets but not loaded in B1 —
-       nothing uses them until the B2 motion layer, and parsing them cost ~1s of
-       mobile blocking time in Lighthouse. B2 re-adds the script tags. {% endcomment %}
+    <div id="lf-blackout" aria-hidden="true"></div>
+    <script src="{{ 'gsap.min.js' | asset_url }}" defer></script>
+    <script src="{{ 'ScrollTrigger.min.js' | asset_url }}" defer></script>
+    <script src="{{ 'SplitText.min.js' | asset_url }}" defer></script>
+    <script src="{{ 'barba.min.js' | asset_url }}" defer></script>
     <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
+    <script src="{{ 'lf-sections.js' | asset_url }}" defer></script>
     <script src="{{ 'lf-motion.js' | asset_url }}" defer></script>
   </body>
 </html>

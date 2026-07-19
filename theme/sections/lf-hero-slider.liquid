@@ -56,28 +56,6 @@
 .lf-hero__num { font-family: var(--lf-font-body); font-size: .72rem; letter-spacing: .2em; color: var(--lf-muted); }
 {% endstylesheet %}
 
-{% javascript %}
-  var hero = document.querySelector('[data-lf-hero]');
-  if (hero) {
-    var slides = Array.prototype.slice.call(hero.querySelectorAll('[data-lf-slide]'));
-    var cur = hero.querySelector('[data-lf-current]');
-    var i = 0, n = slides.length, timer = null;
-    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var secs = parseInt(hero.getAttribute('data-autoplay'), 10) || 0;
-
-    function go(next) {
-      slides[i].classList.remove('is-active');
-      i = (next + n) % n;
-      slides[i].classList.add('is-active');
-      cur.textContent = String(i + 1).padStart(2, '0');
-    }
-    function arm() { if (secs > 0 && !reduced && n > 1) { clearInterval(timer); timer = setInterval(function () { go(i + 1); }, secs * 1000); } }
-    hero.querySelector('[data-lf-next]').addEventListener('click', function () { go(i + 1); arm(); });
-    hero.querySelector('[data-lf-prev]').addEventListener('click', function () { go(i - 1); arm(); });
-    arm();
-  }
-{% endjavascript %}
-
 {% schema %}
 {
   "name": "LF Hero Slider",

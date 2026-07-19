@@ -53,6 +53,7 @@
 .lf-drawer__checkout:hover { box-shadow: 0 0 18px var(--lf-neon-halo); }
 .lf-drawer__cartlink { display: block; text-align: center; margin-top: .6rem; color: var(--lf-muted); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; }
 .lf-drawer__empty { color: var(--lf-muted); text-align: center; margin-top: 2rem; font-size: .8rem; }
+.lf-drawer__retry { background: none; border: 0; color: var(--lf-neon-core); text-decoration: underline; cursor: pointer; font: inherit; }
 {% endstylesheet %}
 
 {% javascript %}
@@ -60,27 +61,32 @@
   if (drawer) {
     var itemsEl = drawer.querySelector('[data-lf-cart-items]');
     var subEl = drawer.querySelector('[data-lf-cart-subtotal]');
-    var money = function (cents) { return '$' + (cents / 100).toFixed(2); };
 
+    function fail() {
+      itemsEl.innerHTML = '<p class="lf-drawer__empty" role="alert">Something flickered — <button type="button" class="lf-drawer__retry" data-lf-cart-retry>try again</button></p>';
+    }
     function render(cart) {
       document.querySelectorAll('[data-lf-cart-count]').forEach(function (el) { el.textContent = cart.item_count; });
-      subEl.textContent = money(cart.total_price);
+      subEl.textContent = LF.money(cart.total_price);
       if (!cart.items.length) { itemsEl.innerHTML = '<p class="lf-drawer__empty">The rack is empty.</p>'; return; }
       itemsEl.innerHTML = cart.items.map(function (it) {
         return '<div class="lf-drawer__item">' +
-          '<img src="' + (it.image ? it.image + (it.image.indexOf('?') > -1 ? '&' : '?') + 'width=120' : '') + '" width="60" height="60" alt="">' +
-          '<div><p>' + it.product_title + '</p><p class="muted">' + (it.variant_title || '') + '</p>' +
+          '<img src="' + (it.image ? LF.esc(it.image) + (it.image.indexOf('?') > -1 ? '&' : '?') + 'width=120' : '') + '" width="60" height="60" alt="">' +
+          '<div><p>' + LF.esc(it.product_title) + '</p><p class="muted">' + LF.esc(it.variant_title || '') + '</p>' +
           '<span class="lf-drawer__qty">' +
-          '<button type="button" data-lf-line="' + it.key + '" data-lf-set="' + (it.quantity - 1) + '">−</button>' +
+          '<button type="button" data-lf-line="' + LF.esc(it.key) + '" data-lf-set="' + (it.quantity - 1) + '">−</button>' +
           '<span>' + it.quantity + '</span>' +
-          '<button type="button" data-lf-line="' + it.key + '" data-lf-set="' + (it.quantity + 1) + '">+</button>' +
+          '<button type="button" data-lf-line="' + LF.esc(it.key) + '" data-lf-set="' + (it.quantity + 1) + '">+</button>' +
           '</span></div>' +
-          '<p>' + money(it.final_line_price) + '</p></div>';
+          '<p>' + LF.money(it.final_line_price) + '</p></div>';
       }).join('');
     }
-
-    function refresh() { return fetch('/cart.js').then(function (r) { return r.json(); }).then(render); }
-
+    function refresh() {
+      return fetch('/cart.js').then(function (r) {
+        if (!r.ok) throw new Error('cart fetch failed');
+        return r.json();
+      }).then(render).catch(fail);
+    }
     function open() { drawer.removeAttribute('hidden'); requestAnimationFrame(function () { drawer.classList.add('is-open'); }); refresh(); }
     function close() { drawer.classList.remove('is-open'); setTimeout(function () { drawer.setAttribute('hidden', ''); }, 460); }
 
@@ -88,14 +94,19 @@
       var openBtn = e.target.closest('[data-lf-cart-open]');
       var closeBtn = e.target.closest('[data-lf-cart-close]');
       var qtyBtn = e.target.closest('[data-lf-line]');
+      var retryBtn = e.target.closest('[data-lf-cart-retry]');
       if (openBtn) { e.preventDefault(); open(); }
       if (closeBtn) { close(); }
+      if (retryBtn) { refresh(); }
       if (qtyBtn) {
-        // Line-item keys contain colons ("<variantId>:<hash>") — pass whole, never split.
+        // Line-item keys contain colons — pass whole, never split.
         fetch('/cart/change.js', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: qtyBtn.getAttribute('data-lf-line'), quantity: Math.max(0, parseInt(qtyBtn.getAttribute('data-lf-set'), 10)) })
-        }).then(function (r) { return r.json(); }).then(render);
+        }).then(function (r) {
+          if (!r.ok) throw new Error('change failed');
+          return r.json();
+        }).then(render).catch(fail);
       }
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !drawer.hasAttribute('hidden')) close(); });

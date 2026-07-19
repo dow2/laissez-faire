@@ -16,7 +16,7 @@
   </div>
 
   <div class="lf-pdp__buy">
-    <h1 class="lf-display lf-glow-text">{{ product.title }}</h1>
+    <h1 class="lf-display lf-glow-text" data-lf-ignite>{{ product.title }}</h1>
     <p class="lf-pdp__price" data-lf-price>{{ product.selected_or_first_available_variant.price | money }}</p>
     {% assign edition = product.metafields.lfc.edition_size %}
     {% if edition != blank %}<p class="lf-pdp__edition">Edition of {{ edition }}</p>{% endif %}
@@ -59,8 +59,9 @@
     </div>
   </div>
 
+  {%- comment -%} price is cents; client formats via Intl (LF.money). {%- endcomment -%}
   <script type="application/json" data-lf-variants>
-    [{% for v in product.variants %}{"id":{{ v.id }},"available":{{ v.available }},"price":"{{ v.price | money }}","options":{{ v.options | json }}}{% unless forloop.last %},{% endunless %}{% endfor %}]
+    [{% for v in product.variants %}{{ v | json }}{% unless forloop.last %},{% endunless %}{% endfor %}]
   </script>
 </section>
 
@@ -97,81 +98,6 @@
 .lf-pdp__accordion div { color: var(--lf-muted); font-size: .8rem; line-height: 1.6; padding-top: .5rem; }
 @media (max-width: 849px) { .lf-pdp { display: block; } .lf-pdp__buy { position: static; margin-top: 1.4rem; } }
 {% endstylesheet %}
-
-{% javascript %}
-  var pdp = document.querySelector('[data-lf-pdp]');
-  if (pdp) {
-    var variants = JSON.parse(pdp.querySelector('[data-lf-variants]').textContent);
-    var form = pdp.querySelector('form');
-    var idInput = pdp.querySelector('[data-lf-variant-id]');
-    var priceEl = pdp.querySelector('[data-lf-price]');
-    var addBtn = pdp.querySelector('[data-lf-add]');
-    var addPrice = pdp.querySelector('[data-lf-add-price]');
-    var soldEl = pdp.querySelector('[data-lf-soldout]');
-    var slides = Array.prototype.slice.call(pdp.querySelectorAll('[data-lf-gslide]'));
-    var gnum = pdp.querySelector('[data-lf-gnum]');
-    var gi = 0;
-
-    function selectedOptions() {
-      var opts = [];
-      pdp.querySelectorAll('.lf-pdp__opt').forEach(function (fs, idx) {
-        var checked = fs.querySelector('input:checked');
-        opts[idx] = checked ? checked.value : null;
-      });
-      return opts;
-    }
-    function findVariant(opts) {
-      return variants.find(function (v) { return v.options.every(function (o, idx) { return o === opts[idx]; }); });
-    }
-    function showSlide(n) {
-      if (!slides.length) return;
-      slides[gi].classList.remove('is-active');
-      gi = (n + slides.length) % slides.length;
-      slides[gi].classList.add('is-active');
-      if (gnum) gnum.textContent = (gi + 1) + ' / ' + slides.length;
-    }
-    function syncGalleryTo(garment) {
-      // Image alt convention: alt starts with the garment option value (e.g. "Tee — Black").
-      var target = slides.findIndex(function (s) { return (s.getAttribute('data-alt') || '').indexOf(garment) === 0; });
-      if (target >= 0) showSlide(target);
-    }
-    function update() {
-      var opts = selectedOptions();
-      var v = findVariant(opts);
-      if (v) {
-        idInput.value = v.id;
-        priceEl.textContent = v.price;
-        addPrice.textContent = v.price;
-        addBtn.disabled = !v.available;
-        soldEl.hidden = v.available;
-      }
-      if (opts[0]) syncGalleryTo(opts[0]);
-    }
-    pdp.querySelectorAll('.lf-pdp__opt input').forEach(function (r) { r.addEventListener('change', update); });
-    var prev = pdp.querySelector('[data-lf-gprev]'); var next = pdp.querySelector('[data-lf-gnext]');
-    if (prev) prev.addEventListener('click', function () { showSlide(gi - 1); });
-    if (next) next.addEventListener('click', function () { showSlide(gi + 1); });
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      addBtn.disabled = true;
-      fetch('/cart/add.js', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: parseInt(idInput.value, 10), quantity: 1 })
-      }).then(function (r) {
-        if (!r.ok) throw new Error('add-to-cart failed');
-        return r.json();
-      }).then(function () {
-        addBtn.disabled = false;
-        document.dispatchEvent(new CustomEvent('lf:cart:added'));
-      }).catch(function () {
-        addBtn.disabled = false;
-        window.location.href = '/cart';
-      });
-    });
-    update();
-  }
-{% endjavascript %}
 
 {% schema %}
 {
