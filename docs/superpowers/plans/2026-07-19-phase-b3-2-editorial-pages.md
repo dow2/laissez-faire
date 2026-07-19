@@ -44,7 +44,7 @@
 - [ ] **Step 1: Create `theme/sections/lf-hero-slider-v2.liquid`:**
 
 ```liquid
-<section class="lf-heroV2" data-lf-hero-v2 data-autoplay="{{ section.settings.autoplay_seconds }}">
+<section class="lf-heroV2" data-lf-hero-v2 data-state="idle" data-autoplay="{{ section.settings.autoplay_seconds }}">
   <div class="lf-heroV2__list" data-lf-hero-list>
     {% for block in section.blocks %}
       <div class="lf-heroV2__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }} data-lf-hero-slide data-index="{{ forloop.index0 }}">
@@ -127,9 +127,9 @@
   -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
   filter: drop-shadow(0 0 6px var(--lf-neon-halo));
 }
-@media (prefers-reduced-motion: reduce) {
-  .lf-heroV2__slide { transition: none; }
-}
+/* No CSS transition to disable here — slide motion is entirely GSAP-driven
+   inline clip-path tweening (see LF.init.heroV2's `ctx.reduced` branch in
+   lf-sections.js, which is the actual reduced-motion guard). */
 @media (max-width: 749px) {
   .lf-heroV2__nav, .lf-heroV2__scroll { display: none; }
   .lf-heroV2__copy { bottom: 3.5rem; left: 1.1rem; right: 1.1rem; max-width: none; }
@@ -177,6 +177,7 @@
     var secs = parseInt(hero.getAttribute('data-autoplay'), 10) || 0;
 
     function go(nextIndex, forwards) {
+      if (hero.getAttribute('data-state') === 'animating') return;
       var nextI = (nextIndex + n) % n;
       if (nextI === i) return;
       var prevSlide = slides[i], nextSlide = slides[nextI];
@@ -194,7 +195,11 @@
       var closedTop = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)';
       var closedBottom = 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)';
       nextSlide.classList.add('is-active');
-      var tl = gsap.timeline({ defaults: { duration: 1, ease: 'lf-ease-3' }, onComplete: function () { prevSlide.classList.remove('is-active'); } });
+      hero.setAttribute('data-state', 'animating');
+      var tl = gsap.timeline({
+        defaults: { duration: 1, ease: 'lf-ease-3' },
+        onComplete: function () { prevSlide.classList.remove('is-active'); hero.setAttribute('data-state', 'idle'); }
+      });
       if (forwards) {
         gsap.set(nextSlide, { clipPath: closedTop });
         tl.to(nextSlide, { clipPath: openPoly })
@@ -223,22 +228,31 @@
     });
     // Mobile swipe via native Pointer Events (no Observer plugin per spec constraint).
     var list = hero.querySelector('[data-lf-hero-list]');
-    var downX = null;
-    list.addEventListener('pointerdown', function (e) { downX = e.clientX; });
-    list.addEventListener('pointerup', function (e) {
-      if (downX == null) return;
-      var dx = e.clientX - downX;
+    var downX = null, activePointerId = null;
+    list.addEventListener('pointerdown', function (e) {
+      if (activePointerId != null) return; // ignore a second concurrent pointer
+      activePointerId = e.pointerId;
+      downX = e.clientX;
+    });
+    function endSwipe(e, shouldNavigate) {
+      if (e.pointerId !== activePointerId) return;
+      var dx = shouldNavigate ? e.clientX - downX : 0;
+      activePointerId = null;
       downX = null;
-      if (Math.abs(dx) < 40) return;
+      if (!shouldNavigate || Math.abs(dx) < 40) return;
       go(i + (dx < 0 ? 1 : -1), dx < 0);
       arm();
-    });
+    }
+    list.addEventListener('pointerup', function (e) { endSwipe(e, true); });
+    list.addEventListener('pointercancel', function (e) { endSwipe(e, false); });
     arm();
     LF.teardown.push(function () { clearInterval(timer); });
   };
 ```
 
 > **As-run:** the original code used inline ternary syntax (`loading: forloop.first ? 'eager' : 'lazy'`) inside the `image_tag` filter's arguments — Shopify's Liquid dialect doesn't support `? :` expressions there at all. `shopify theme check` (static linter) didn't catch it; only the live dev-server Liquid parser did, with a hard 500 ("Failed to Upload Theme Files", `Expected end_of_string but found question`). Fixed (already applied above) by computing `lf_hero_v2_loading`/`lf_hero_v2_priority` via a `{% liquid %}` if/assign block ahead of the tag, then referencing the plain variables — same eager/high-priority-on-first-slide behavior, valid syntax. Verified live: forward/backward clip-wipe transitions, swipe, and the reduced-motion fallback all settle to their correct end states with no stuck/incomplete animations.
+
+> **As-run (round 2):** code review found a real Critical bug — `go()` had no re-entrancy guard, so a rapid second nav-dot click during an in-flight ~1s transition reassigned `i` before the first GSAP timeline resolved, letting two overlapping timelines both end up controlling the same slide's `clip-path` (timeline-nested `tl.to()` calls don't auto-overwrite each other the way top-level `gsap.to()` does) and risking a slide left permanently hidden. Fixed with the same `data-state` gate pattern already proven in `LF.init.menu` (`idle`/`animating`, checked at the top of `go()`, cleared in the timeline's `onComplete`) — live-verified with an actual rapid-double-click sequence settling cleanly. Two Important fixes rode along in the same pass: the swipe handler now tracks `activePointerId` (ignoring a second concurrent pointer) and handles `pointercancel`, and the dead `@media (prefers-reduced-motion: reduce) { .lf-heroV2__slide { transition: none; } }` CSS rule (there's no CSS `transition` on that class to disable — motion is entirely GSAP-driven) was replaced with a comment pointing at the real guard in JS. All three fixes are already reflected in the code above.
 
 - [ ] **Step 3: Theme check** — `shopify theme check --path theme 2>&1 | tail -5`. This section isn't referenced by any template yet (Task 7 wires `index.json`), so expect an `UnusedAssign`/no offense change beyond the existing baseline (no `OrphanedSnippet`-equivalent rule fires for sections).
 
