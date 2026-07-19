@@ -856,12 +856,12 @@ git status --short
 ```liquid
 <header class="lf-storyhero">
   <div class="lf-storyhero__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');" data-lf-fadeout></div>
-  <div class="lf-storyhero__head" data-lf-reading-wrap>
-    <div class="lf-storyhero__intro" data-lf-reading-trigger>
+  <div class="lf-storyhero__head">
+    <div class="lf-storyhero__intro">
       <p class="lf-storyhero__kicker" data-lf-fadeout>Est. New Orleans</p>
       <p class="lf-storyhero__name lf-script">{{ section.settings.intro }}</p>
     </div>
-    <h1 class="lf-storyhero__title lf-display lf-glow-text" data-lf-ignite data-lf-reading-target>{{ page.title }}</h1>
+    <h1 class="lf-storyhero__title lf-display lf-glow-text" data-lf-ignite>{{ page.title }}</h1>
   </div>
 </header>
 
@@ -873,15 +873,18 @@ git status --short
   filter: drop-shadow(0 0 8px var(--lf-neon-halo)); transition: opacity .3s ease;
 }
 .lf-storyhero__head { position: relative; max-width: 700px; }
-.lf-storyhero__intro { transition: opacity .3s ease; }
 .lf-storyhero__kicker { font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-muted); margin: 0 0 .6rem; transition: opacity .3s ease; }
 .lf-storyhero__name { font-size: 1.3rem; color: var(--lf-body-text); margin: 0; }
 .lf-storyhero__title { font-size: clamp(2rem, 6vw, 3.4rem); margin: .8rem 0 0; transition: opacity .3s ease; }
-/* Reading-mode hover: hovering the intro fades the headline + page-wide [data-lf-fadeout]
-   elements so the page "makes room" for reading — matches OR's about-head_wrap pattern. */
+/* Reading-mode hover: hovering the intro fades the headline + this section's
+   [data-lf-fadeout] elements so the page "makes room" for reading — matches
+   OR's about-head_wrap pattern. */
 @media (hover: hover) and (pointer: fine) {
   .lf-storyhero__head:has(.lf-storyhero__intro:hover) .lf-storyhero__title { opacity: .12; }
-  body:has(.lf-storyhero__intro:hover) [data-lf-fadeout] { opacity: .12; }
+  /* Scoped to the section, not body — [data-lf-fadeout] is a generic,
+     reusable attribute name other Story-page sections may adopt later;
+     a page-wide selector here would dim their unrelated elements too. */
+  .lf-storyhero:has(.lf-storyhero__intro:hover) [data-lf-fadeout] { opacity: .12; }
 }
 {% endstylesheet %}
 
@@ -905,6 +908,8 @@ git status --short
     hero.setAttribute('data-lf-bound', '1');
   };
 ```
+
+> **As-run:** code review found the `[data-lf-fadeout]` fade rule was scoped to `body`, matching ANY such element anywhere in the page's DOM — a real forward-looking risk given Tasks 9/10 land on this exact Story page next and are natural candidates to reuse the same generic attribute name. Rescoped to `.lf-storyhero:has(...)` (already reflected above). Also dropped three unused `data-lf-reading-*` attributes and one dead `transition` declaration that never had anything wired to them (already reflected above) — verified live: the hover effect still dims this section's own elements correctly, and a probe element with `[data-lf-fadeout]` placed outside `.lf-storyhero` is now correctly unaffected by the hover (previously it would have dimmed too).
 
 - [ ] **Step 3: Commit**
 
