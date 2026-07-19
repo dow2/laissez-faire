@@ -926,6 +926,7 @@ git status --short
 **Files:**
 - Create: `theme/sections/lf-story-editorial.liquid`
 - Modify: `theme/assets/lf-sections.js` (append `LF.init.imgScroll`, `LF.init.flickthrough`)
+- Modify: `theme/assets/lf-chrome.js` (export `LF.FINE` — see as-run note below)
 
 - [ ] **Step 1: Create `theme/sections/lf-story-editorial.liquid`:**
 
@@ -1022,7 +1023,7 @@ git status --short
       imgs[index].classList.add('is-shown');
     }
     if (ctx.reduced) return;
-    if (FINE.matches) {
+    if (LF.FINE.matches) {
       wrap.addEventListener('mouseenter', function () {
         nextImage();
         interval = setInterval(nextImage, 300);
@@ -1035,10 +1036,16 @@ git status --short
   };
 ```
 
+> **As-run:** `LF.init.flickthrough` reads `FINE.matches`, but `FINE` is declared as a private `var` inside `lf-chrome.js`'s own top-level IIFE (`(function () { ... var FINE = ...; ... })();`), not attached to `window` or the shared `LF` namespace — it was never actually accessible from a different file/IIFE like `lf-sections.js`, despite both files sharing `LF.init`/`LF.teardown`/etc. This was a structural assumption error in the original plan (confirmed via live testing: referencing bare `FINE` from `lf-sections.js` throws `ReferenceError: FINE is not defined`, script `defer` order is irrelevant since this is lexical scoping, not a load-timing race). Fixed by exporting it onto the shared namespace — in `theme/assets/lf-chrome.js`, immediately after the existing `var FINE = window.matchMedia('(min-width: 992px) and (pointer: fine)');` line, add:
+> ```js
+>   LF.FINE = FINE; // shared across files via the LF namespace (lf-sections.js reads this)
+> ```
+> and reference it as `LF.FINE.matches` in `LF.init.flickthrough` above (already reflected in the code block). This is the more idiomatic fix versus the alternatives considered (a second independent `matchMedia` call in `lf-sections.js`, which would create a redundant `MediaQueryList`; or inlining the raw query string directly in the function) — `LF` is already the established shared-state namespace for cross-file values (`LF.scrollLock`, `LF.trapFocus`, `LF.money`, `LF.esc`), so `LF.FINE` fits that existing pattern rather than adding a new mechanism. Live-verified after the fix: no `ReferenceError`, hover-cycling on desktop-width/fine-pointer contexts and auto-cycling on coarse/narrow contexts both work correctly.
+
 - [ ] **Step 3: Commit**
 
 ```bash
-git add theme/sections/lf-story-editorial.liquid theme/assets/lf-sections.js
+git add theme/sections/lf-story-editorial.liquid theme/assets/lf-sections.js theme/assets/lf-chrome.js
 git commit -m "feat(b3.2): story editorial band — parallax images + flickthrough zoetrope"
 git status --short
 ```
