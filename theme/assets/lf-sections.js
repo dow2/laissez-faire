@@ -21,7 +21,7 @@
     });
   };
 
-  // ——— PDP: variant sync, gallery, AJAX add-to-cart ———
+  // ——— PDP: variant sync, size availability, AJAX add-to-cart ———
   LF.init.pdp = function (root) {
     var pdp = (root || document).querySelector('[data-lf-pdp]');
     if (!pdp || pdp.hasAttribute('data-lf-bound')) return;
@@ -33,9 +33,6 @@
     var addBtn = pdp.querySelector('[data-lf-add]');
     var addPrice = pdp.querySelector('[data-lf-add-price]');
     var soldEl = pdp.querySelector('[data-lf-soldout]');
-    var slides = Array.prototype.slice.call(pdp.querySelectorAll('[data-lf-gslide]'));
-    var gnum = pdp.querySelector('[data-lf-gnum]');
-    var gi = 0;
     function selectedOptions() {
       var opts = [];
       pdp.querySelectorAll('.lf-pdp__opt').forEach(function (fs, idx) {
@@ -47,17 +44,6 @@
     function findVariant(opts) {
       return variants.find(function (v) { return v.options.every(function (o, idx) { return o === opts[idx]; }); });
     }
-    function showSlide(nn) {
-      if (!slides.length) return;
-      slides[gi].classList.remove('is-active');
-      gi = (nn + slides.length) % slides.length;
-      slides[gi].classList.add('is-active');
-      if (gnum) gnum.textContent = (gi + 1) + ' / ' + slides.length;
-    }
-    function syncGalleryTo(garment) {
-      var target = slides.findIndex(function (s) { return (s.getAttribute('data-alt') || '').indexOf(garment) === 0; });
-      if (target >= 0) showSlide(target);
-    }
     function update() {
       var opts = selectedOptions();
       var v = findVariant(opts);
@@ -68,12 +54,30 @@
         addBtn.disabled = !v.available;
         soldEl.hidden = v.available;
       }
-      if (opts[0]) syncGalleryTo(opts[0]);
     }
     pdp.querySelectorAll('.lf-pdp__opt input').forEach(function (r) { r.addEventListener('change', update); });
-    var gp = pdp.querySelector('[data-lf-gprev]'), gn = pdp.querySelector('[data-lf-gnext]');
-    if (gp) gp.addEventListener('click', function () { showSlide(gi - 1); });
-    if (gn) gn.addEventListener('click', function () { showSlide(gi + 1); });
+    // Sold-out size pills: for the LAST option group (Size), test each value
+    // against the currently selected values of the other groups.
+    var optSets = Array.prototype.slice.call(pdp.querySelectorAll('.lf-pdp__opt'));
+    function refreshSizeAvailability() {
+      if (optSets.length < 2) return;
+      var lastIdx = optSets.length - 1;
+      var chosen = selectedOptions();
+      optSets[lastIdx].querySelectorAll('input').forEach(function (input) {
+        var probe = chosen.slice();
+        probe[lastIdx] = input.value;
+        var match = variants.filter(function (v) {
+          return probe.every(function (val, idx) { return v.options[idx] === val; });
+        })[0];
+        var ok = Boolean(match && match.available);
+        var label = input.closest('label');
+        if (label) label.classList.toggle('is-soldout', !ok);
+      });
+    }
+    refreshSizeAvailability();
+    pdp.querySelectorAll('.lf-pdp__opt input').forEach(function (input) {
+      input.addEventListener('change', refreshSizeAvailability);
+    });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       addBtn.disabled = true;
@@ -437,5 +441,25 @@
     var section = (root || document).querySelector('.lf-contact');
     if (!section || section.hasAttribute('data-lf-bound')) return;
     section.setAttribute('data-lf-bound', '1');
+  };
+
+  // ——— Neon flood: page floods to neon while a [data-lf-flood] section is in view ———
+  // Class sits on <html> (reaches the persistent header outside the Barba
+  // container), so it MUST be torn down on leave — ScrollTrigger's kill alone
+  // does not remove an already-applied class.
+  LF.init.flood = function (root, ctx) {
+    if (ctx.reduced || !window.ScrollTrigger) return;
+    var docEl = document.documentElement;
+    (root || document).querySelectorAll('[data-lf-flood]:not([data-lf-flood-bound])').forEach(function (el) {
+      el.setAttribute('data-lf-flood-bound', '1');
+      ScrollTrigger.create({
+        trigger: el, start: 'top 60%', end: 'bottom 40%',
+        onEnter: function () { docEl.classList.add('lf-flood'); },
+        onEnterBack: function () { docEl.classList.add('lf-flood'); },
+        onLeave: function () { docEl.classList.remove('lf-flood'); },
+        onLeaveBack: function () { docEl.classList.remove('lf-flood'); }
+      });
+      LF.teardown.push(function () { docEl.classList.remove('lf-flood'); });
+    });
   };
 })();

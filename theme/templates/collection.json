@@ -1,4 +1,20 @@
 {
-  "sections": { "main": { "type": "lf-collection", "settings": {} } },
-  "order": ["main"]
+  "sections": {
+    "grid": { "type": "lf-shop-grid-v2", "settings": {} },
+    "band1": { "type": "lf-image-band", "settings": { "stamp_line": "Designed and made locally" } },
+    "pillars": {
+      "type": "lf-pillars",
+      "settings": {
+        "title": "What we stand on",
+        "pillar_title_1": "Culture",
+        "pillar_body_1": "Black Masking Indians, second lines, social aid and pleasure clubs — the traditions that raised us decide what we make, not the trend cycle.",
+        "pillar_title_2": "Craft",
+        "pillar_body_2": "Heavyweight fabric, chain-stitched crests, puff-print done slow. Every piece is built to outlast the season it dropped in.",
+        "pillar_title_3": "Nightlife",
+        "pillar_body_3": "The city runs on its night economy — the musicians, cooks, and bartenders who keep the lights humming. This is their uniform."
+      }
+    },
+    "band2": { "type": "lf-image-band", "settings": { "image": "shopify://shop_images/lf-hero-secondline.jpg" } }
+  },
+  "order": ["grid", "band1", "pillars", "band2"]
 }

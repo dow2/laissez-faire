@@ -111,9 +111,12 @@ Numbering note: the spec's OR teardown describes JS auto-numbering; we render nu
     <div class="lf-shopv2__grid">
       {% for product in collection.products %}
         {% liquid
-          assign lf_num = forloop.index | append: ''
-          if forloop.index < 10
-            assign lf_num = forloop.index | prepend: '0'
+          # forloop.index restarts on every paginated page; offset it so page 2
+          # of a 25-product catalog reads "25 / 25", not "01 / 25".
+          assign lf_idx = paginate.current_offset | plus: forloop.index
+          assign lf_num = lf_idx | append: ''
+          if lf_idx < 10
+            assign lf_num = lf_idx | prepend: '0'
           endif
         %}
         <a class="lf-shopv2__card" href="{{ product.url }}" data-lf-reveal data-cursor="View Piece">
@@ -202,13 +205,30 @@ html.lf-flood .lf-header button,
 html.lf-flood .lf-header { color: var(--lf-ground); }
 html.lf-flood .lf-header__crest { background-color: var(--lf-ground); filter: none; }
 html.lf-flood .lf-glow-text { color: var(--lf-ground); text-shadow: none; }
+/* .lf-header__count has its own neon color rule (lf-header.liquid) that blocks
+   inheritance from the flooded button; hover rules on the cart/menu buttons are
+   (0,2,0) and would beat the plain flood button rule — both need explicit
+   flood-scoped overrides or they render neon-on-neon (invisible) mid-flood. */
+html.lf-flood .lf-header__count { color: var(--lf-ground); text-shadow: none; }
+html.lf-flood .lf-header__cart:hover, html.lf-flood .lf-header__menu:hover { color: var(--lf-ground); }
 body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text {
   transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease);
 }
+/* The group above wins the `transition` property tie against [data-lf-reveal]
+   (same 0,1,0 specificity, later in file) — elements carrying BOTH .lf-glow-text
+   and data-lf-reveal (home statement heading) would lose their reveal fade/slide.
+   The merged rule below out-specifies both and carries the union. */
+.lf-glow-text[data-lf-reveal] {
+  transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease),
+              opacity .7s var(--lf-ease), transform .7s var(--lf-ease);
+}
 @media (prefers-reduced-motion: reduce) {
-  body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text { transition: none; }
+  body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text,
+  .lf-glow-text[data-lf-reveal] { transition: none; }
 }
 ```
+
+> **As-run (combined T1-T3 review, fixed in `e09c51d` — all four were defects in this plan's own authored code, not implementer errors):** (1) the flood transition group's `transition` shorthand tied `[data-lf-reveal]`'s on specificity (0,1,0) and, being later in the file, silently killed the reveal fade/slide on elements carrying both `.lf-glow-text` and `data-lf-reveal` (the home statement heading) — fixed with the merged union rule above. (2) `.lf-header__count` carries its own neon color rule that blocks inheritance from the flooded button — was invisible neon-on-neon mid-flood. (3) `.lf-header__cart:hover`/`.lf-header__menu:hover` (0,2,0) beat the plain flood button rule — hover mid-flood went invisible. (4) Task 2's grid numbering used bare `forloop.index`, which restarts per paginated page while the denominator is collection-global — page 2 of a 25-product catalog would have read "01 / 25"; fixed with `paginate.current_offset` (Task 2's code block above corrected too). Review also confirmed: flood class has exactly one writer (never applied under reduced motion), teardown drains correctly, and `html.lf-flood body` beats every competing background rule including `critical.css`'s.
 
 - [ ] **Step 2: Append `LF.init.flood` to `theme/assets/lf-sections.js`:**
 
@@ -425,11 +445,11 @@ Changes (surgical — keep the form, variants JSON, and buy-column bones):
       %}
       <details name="lf-pdp-acc">
         <summary>Garment Details<span class="lf-pdp__plus" aria-hidden="true"></span></summary>
-        <div>{{ lf_details }}</div>
+        <div>{{ lf_details | newline_to_br }}</div>
       </details>
       <details name="lf-pdp-acc">
         <summary>Wash Care<span class="lf-pdp__plus" aria-hidden="true"></span></summary>
-        <div>{{ lf_care }}</div>
+        <div>{{ lf_care | newline_to_br }}</div>
       </details>
     </div>
 ```
@@ -539,6 +559,8 @@ git commit -m "feat(b3.3): PDP js - remove gallery slider, per-size availability
 git status --short
 ```
 
+> **As-run (T5+T6 combined review, fixed in `c4437a5`):** (1) `lfc.details`/`lfc.care` are multi-line metafields whose newlines collapse to spaces in plain HTML output — care copy written as separate lines would render as one run-on sentence once the operator fills real values. Added `| newline_to_br` to both accordion bodies (Task 5's code block above corrected; works on both the metafield drop and the textarea fallback). (2) Dropped the now-duplicate `.lf-pdp__buy h1` rule (exact copy of the new `.lf-pdp__titlerow h1`). Review also confirmed mechanically: the hardened add-to-cart submit handler is byte-identical to the pre-T6 version; `refreshSizeAvailability`'s index alignment between fieldset DOM order and `variants[].options` is guaranteed (both derive from Shopify's option ordering); the mobile snap gallery needs no `touch-action`/Lenis guard (vendored Lenis keeps touch native and passes pure-horizontal wheel through). Known accepted minors: the `alt: media.alt | default: product.title` fallback is a no-op (Liquid can't nest filters in args; `image_tag` falls back to the media's own alt anyway), and single-option products get no sold-out marks (this store's products are all two-option).
+
 ---
 
 ### Task 7: PDP page composition — lookbook + "complete the look"
@@ -634,6 +656,8 @@ git add theme/templates/policy.liquid
 git commit -m "feat(b3.3): night-styled shared policy template"
 git status --short
 ```
+
+> **As-run (this task's premise was WRONG — reimplemented as CSS-only, commit `aa24d22`):** the implementer created the template verbatim, verified live, and correctly STOPPED without committing: **`templates/policy.liquid` is not a supported template type in current Shopify** (confirmed against shopify.dev's templates list and by live rendering — `/policies/*` pages render Shopify's fixed `shopify-policy__container/__title/__body` markup inside `layout/theme.liquid`, plus an injected storefront stylesheet, and completely ignore a `policy.liquid` template file; the `policy` object also triggered 2 `UndefinedObject` theme-check warnings). The steps above are retained only as a record of original intent — **do not re-create the template**. Actual implementation: the dead template was deleted and a `/* ——— B3.3 policy pages ——— */` block was appended to `theme/assets/lf-tokens.css` targeting the real fixed markup, with every rule prefixed `#lf-main` (the layout's main element) to out-specify Shopify's injected policy stylesheet (65ch container, class-level specificity) without `!important`. Delivered styling matches the dead template's intent: 720px centered container (6rem 1.5rem 5rem), display-font neon-glow title (explicit properties — classes can't be added to fixed markup), `--lf-body-text` body at .9rem/1.75, display-font h2/h3, neon links. Live-verified via computed styles + screenshot; theme check back to the 3-warning baseline. The spec's "image band" element for policy pages is not achievable without fragile layout interception and was dropped — night styling + night footer (automatic via layout) satisfy the spec's intent. Only `/policies/privacy-policy` exists in admin today; refund/terms/shipping 404 until the operator adds them (content task, not code).
 
 ---
 

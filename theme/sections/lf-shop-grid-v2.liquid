@@ -1,0 +1,77 @@
+<section class="lf-shopv2">
+  <header class="lf-shopv2__intro">
+    <h1 class="lf-shopv2__title lf-display lf-glow-text" data-lf-ignite>{{ collection.title | default: 'All Pieces' }}</h1>
+    <p class="lf-shopv2__col lf-display">Collection 01</p>
+    <p class="lf-shopv2__stamp">{% render 'lf-stamp' %}</p>
+  </header>
+  {% paginate collection.products by 24 %}
+    {% assign lf_total = collection.products_count %}
+    {% liquid
+      assign lf_total_padded = lf_total | append: ''
+      if lf_total < 10
+        assign lf_total_padded = lf_total | prepend: '0'
+      endif
+    %}
+    <div class="lf-shopv2__grid">
+      {% for product in collection.products %}
+        {% liquid
+          # forloop.index restarts on every paginated page; offset it so page 2
+          # of a 25-product catalog reads "25 / 25", not "01 / 25".
+          assign lf_idx = paginate.current_offset | plus: forloop.index
+          assign lf_num = lf_idx | append: ''
+          if lf_idx < 10
+            assign lf_num = lf_idx | prepend: '0'
+          endif
+        %}
+        <a class="lf-shopv2__card" href="{{ product.url }}" data-lf-reveal data-cursor="View Piece">
+          <div class="lf-shopv2__imgwrap">
+            {{ product.featured_image | image_url: width: 900 | image_tag: loading: 'lazy', alt: product.title, class: 'lf-shopv2__img is-primary' }}
+            {% if product.images[1] %}
+              {{ product.images[1] | image_url: width: 900 | image_tag: loading: 'lazy', alt: '', class: 'lf-shopv2__img is-alt' }}
+            {% endif %}
+            <div class="lf-shopv2__overlay"></div>
+          </div>
+          <div class="lf-shopv2__meta">
+            <span class="lf-shopv2__num" aria-hidden="true">{{ lf_num }} / {{ lf_total_padded }}</span>
+            <span class="lf-shopv2__code">{% render 'lf-code', product: product %}</span>
+          </div>
+          <p class="lf-shopv2__name lf-display">{{ product.title }}</p>
+          <p class="lf-shopv2__price">{{ product.price_min | money }}{% if product.price_varies %} — {{ product.price_max | money }}{% endif %}</p>
+        </a>
+      {% endfor %}
+      {% if paginate.pages > 1 %}
+        <nav class="lf-shopv2__pagination" aria-label="Pagination">
+          {% if paginate.previous %}<a href="{{ paginate.previous.url }}">&larr; Prev</a>{% endif %}
+          {% if paginate.next %}<a href="{{ paginate.next.url }}">Next &rarr;</a>{% endif %}
+        </nav>
+      {% endif %}
+    </div>
+  {% endpaginate %}
+</section>
+
+{% stylesheet %}
+.lf-shopv2 { padding: 3.5rem 1.25rem 5rem; max-width: 1180px; margin: 0 auto; }
+.lf-shopv2__intro { display: flex; align-items: baseline; gap: 1.4rem; flex-wrap: wrap; margin-bottom: 2.4rem; }
+.lf-shopv2__title { font-size: clamp(1.6rem, 4.5vw, 2.6rem); margin: 0; }
+.lf-shopv2__col { color: var(--lf-muted); font-size: .74rem; letter-spacing: .3em; margin: 0; }
+.lf-shopv2__stamp { color: var(--lf-muted); font-size: .68rem; letter-spacing: .22em; margin: 0 0 0 auto; }
+.lf-shopv2__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.lf-shopv2__card { text-decoration: none; }
+.lf-shopv2__imgwrap { position: relative; overflow: hidden; border: 1px solid #1e1e26; background: var(--lf-panel); }
+.lf-shopv2__img { width: 100%; height: auto; display: block; }
+.lf-shopv2__img.is-alt { position: absolute; inset: 0; opacity: 0; transition: opacity .35s var(--lf-ease); }
+.lf-shopv2__overlay { position: absolute; inset: 0; background: rgba(13,13,17,0); transition: background .35s var(--lf-ease); }
+.lf-shopv2__card:hover .lf-shopv2__img.is-alt { opacity: 1; }
+.lf-shopv2__card:hover .lf-shopv2__overlay { background: rgba(13,13,17,.18); }
+@media (prefers-reduced-motion: reduce) { .lf-shopv2__img.is-alt, .lf-shopv2__overlay { transition: none; } }
+.lf-shopv2__meta { display: flex; justify-content: space-between; margin: .7rem 0 .15rem; color: #55555f; font-size: .64rem; letter-spacing: .14em; }
+.lf-shopv2__name { color: var(--lf-body-text); font-size: .76rem; letter-spacing: .16em; margin: 0 0 .15rem; }
+.lf-shopv2__price { color: var(--lf-muted); font-size: .74rem; margin: 0; }
+.lf-shopv2__pagination { grid-column: 1 / -1; display: flex; justify-content: center; gap: 2rem; margin-top: 1.5rem; }
+.lf-shopv2__pagination a { color: var(--lf-neon-core); text-decoration: none; letter-spacing: .15em; font-size: .78rem; }
+@media (max-width: 749px) { .lf-shopv2__grid { grid-template-columns: repeat(2, 1fr); gap: 9px; } .lf-shopv2__stamp { margin-left: 0; } }
+{% endstylesheet %}
+
+{% schema %}
+{ "name": "LF Shop Grid v2", "settings": [] }
+{% endschema %}

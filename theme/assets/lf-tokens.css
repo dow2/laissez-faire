@@ -139,3 +139,55 @@ body.lf-cursor-on .lf-cursor { opacity: 1; }
    scroll so the next section appears to scroll up over it. Positioning
    context only — the yPercent tween itself is applied by ScrollTrigger. */
 [data-lf-overlap] { position: relative; z-index: 1; will-change: transform; }
+
+/* Neon flood (B3.3): [data-lf-flood] section entry floods the page to neon.
+   Class is toggled on <html> by LF.init.flood (ScrollTrigger); a LF.teardown
+   entry removes it on every Barba leave so it can never leak across pages. */
+html.lf-flood body { background: var(--lf-neon-core); color: var(--lf-ground); }
+html.lf-flood .lf-header a,
+html.lf-flood .lf-header button,
+html.lf-flood .lf-header { color: var(--lf-ground); }
+html.lf-flood .lf-header__crest { background-color: var(--lf-ground); filter: none; }
+html.lf-flood .lf-glow-text { color: var(--lf-ground); text-shadow: none; }
+/* .lf-header__count has its own neon color rule (lf-header.liquid) that blocks
+   inheritance from the flooded button; hover rules on the cart/menu buttons are
+   (0,2,0) and would beat the plain flood button rule — both need explicit
+   flood-scoped overrides or they render neon-on-neon (invisible) mid-flood. */
+html.lf-flood .lf-header__count { color: var(--lf-ground); text-shadow: none; }
+html.lf-flood .lf-header__cart:hover, html.lf-flood .lf-header__menu:hover { color: var(--lf-ground); }
+body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text {
+  transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease);
+}
+/* The group above wins the `transition` property tie against [data-lf-reveal]
+   (same 0,1,0 specificity, later in file) — elements carrying BOTH .lf-glow-text
+   and data-lf-reveal (home statement heading) would lose their reveal fade/slide.
+   The merged rule below out-specifies both and carries the union. */
+.lf-glow-text[data-lf-reveal] {
+  transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease),
+              opacity .7s var(--lf-ease), transform .7s var(--lf-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text,
+  .lf-glow-text[data-lf-reveal] { transition: none; }
+}
+
+/* ——— B3.3 policy pages ——— */
+/* No `policy` template type exists in current Shopify — templates/policy.liquid is
+   ignored (verified live + shopify.dev templates list). /policies/* render fixed
+   shopify-policy__* markup (h1 nested inside .shopify-policy__title) within
+   layout/theme.liquid, plus an injected storefront stylesheet (65ch container,
+   class specificity, no !important). CSS is the only control surface; the
+   #lf-main prefix out-specifies the injected sheet regardless of load order. */
+#lf-main .shopify-policy__container { max-width: 720px; margin: 0 auto; padding: 6rem 1.5rem 5rem; }
+#lf-main .shopify-policy__title { text-align: center; margin: 0 0 3rem; }
+#lf-main .shopify-policy__title h1 {
+  font-family: var(--lf-font-display); letter-spacing: .04em; text-transform: uppercase;
+  color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo), 0 0 28px var(--lf-neon-halo);
+  font-size: clamp(1.5rem, 4vw, 2.3rem); margin: 0;
+}
+#lf-main .shopify-policy__body { color: var(--lf-body-text); font-size: .9rem; line-height: 1.75; }
+#lf-main .shopify-policy__body h2, #lf-main .shopify-policy__body h3 {
+  color: var(--lf-body-text); font-family: var(--lf-font-display); letter-spacing: .04em;
+  text-transform: uppercase; font-size: 1rem; margin: 2rem 0 .6rem;
+}
+#lf-main .shopify-policy__body a { color: var(--lf-neon-core); }

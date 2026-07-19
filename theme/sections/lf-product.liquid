@@ -1,23 +1,26 @@
 <section class="lf-pdp" data-lf-pdp>
-  <div class="lf-pdp__gallery" data-lf-gallery>
-    {% for media in product.media %}
-      <div class="lf-pdp__slide {% if forloop.first %}is-active{% endif %}" data-lf-gslide data-alt="{{ media.alt | escape }}">
-        {% if forloop.first %}{% assign img_loading = 'eager' %}{% else %}{% assign img_loading = 'lazy' %}{% endif %}
-        {{ media | image_url: width: 1400 | image_tag: loading: img_loading, alt: media.alt | default: product.title }}
-      </div>
-    {% endfor %}
-    {% if product.media.size > 1 %}
-      <div class="lf-pdp__gnav">
-        <button type="button" data-lf-gprev aria-label="Previous image">&larr;</button>
-        <span data-lf-gnum>1 / {{ product.media.size }}</span>
-        <button type="button" data-lf-gnext aria-label="Next image">&rarr;</button>
-      </div>
-    {% endif %}
+  <div class="lf-pdp__gallery">
+    <div class="lf-pdp__swipe lf-display" aria-hidden="true">(&nbsp;&nbsp;swipe&nbsp;&nbsp;)</div>
+    <div class="lf-pdp__media">
+      {% for media in product.media %}
+        {% liquid
+          assign lf_img_loading = 'lazy'
+          if forloop.first
+            assign lf_img_loading = 'eager'
+          endif
+        %}
+        <div class="lf-pdp__frame">
+          {{ media | image_url: width: 1400 | image_tag: loading: lf_img_loading, alt: media.alt | default: product.title }}
+        </div>
+      {% endfor %}
+    </div>
   </div>
 
   <div class="lf-pdp__buy">
-    <h1 class="lf-display lf-glow-text" data-lf-ignite>{{ product.title }}</h1>
-    <p class="lf-pdp__price" data-lf-price>{{ product.selected_or_first_available_variant.price | money }}</p>
+    <div class="lf-pdp__titlerow">
+      <h1 class="lf-display lf-glow-text" data-lf-ignite>{{ product.title }}</h1>
+      <p class="lf-pdp__price" data-lf-price>{{ product.selected_or_first_available_variant.price | money }}</p>
+    </div>
     {% assign edition = product.metafields.lfc.edition_size %}
     {% if edition != blank %}<p class="lf-pdp__edition">Edition of {{ edition }}</p>{% endif %}
     {% assign story = product.metafields.lfc.story %}
@@ -46,16 +49,24 @@
     {% endform %}
 
     <div class="lf-pdp__accordion">
-      {% for i in (1..3) %}
-        {% assign t = 'acc_title_' | append: i %}
-        {% assign b = 'acc_body_' | append: i %}
-        {% if section.settings[t] != blank %}
-          <details>
-            <summary>{{ section.settings[t] }}</summary>
-            <div>{{ section.settings[b] }}</div>
-          </details>
-        {% endif %}
-      {% endfor %}
+      {% liquid
+        assign lf_details = product.metafields.lfc.details
+        if lf_details == blank
+          assign lf_details = section.settings.details_fallback
+        endif
+        assign lf_care = product.metafields.lfc.care
+        if lf_care == blank
+          assign lf_care = section.settings.care_fallback
+        endif
+      %}
+      <details name="lf-pdp-acc">
+        <summary>Garment Details<span class="lf-pdp__plus" aria-hidden="true"></span></summary>
+        <div>{{ lf_details | newline_to_br }}</div>
+      </details>
+      <details name="lf-pdp-acc">
+        <summary>Wash Care<span class="lf-pdp__plus" aria-hidden="true"></span></summary>
+        <div>{{ lf_care | newline_to_br }}</div>
+      </details>
     </div>
   </div>
 
@@ -68,15 +79,13 @@
 {% stylesheet %}
 .lf-pdp { display: grid; grid-template-columns: 1.15fr 1fr; gap: 2.5rem; max-width: 1180px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; align-items: start; }
 .lf-pdp__gallery { position: relative; }
-.lf-pdp__slide { display: none; }
-.lf-pdp__slide.is-active { display: block; }
-.lf-pdp__slide img { width: 100%; height: auto; display: block; border: 1px solid #1e1e26; }
-.lf-pdp__gnav { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: .8rem; }
-.lf-pdp__gnav button { background: none; border: 1px solid #2a2a33; color: var(--lf-body-text); width: 34px; height: 34px; cursor: pointer; }
-.lf-pdp__gnav button:hover { border-color: var(--lf-neon-halo); color: var(--lf-neon-core); }
-.lf-pdp__gnav span { color: var(--lf-muted); font-size: .72rem; letter-spacing: .2em; }
-.lf-pdp__buy { position: sticky; top: 5rem; }
-.lf-pdp__buy h1 { font-size: clamp(1.4rem, 3.6vw, 2.1rem); margin: 0 0 .4rem; }
+.lf-pdp__swipe { display: none; }
+.lf-pdp__media { display: flex; flex-direction: column; gap: 1rem; }
+.lf-pdp__frame { aspect-ratio: 4/5; overflow: hidden; border: 1px solid #1e1e26; }
+.lf-pdp__frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-pdp__titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.lf-pdp__titlerow h1 { font-size: clamp(1.4rem, 3.6vw, 2.1rem); margin: 0 0 .4rem; }
+.lf-pdp__buy { position: sticky; top: 6.5rem; }
 .lf-pdp__price { font-size: 1rem; color: var(--lf-body-text); margin: 0 0 .2rem; }
 .lf-pdp__edition { color: var(--lf-muted); font-size: .7rem; letter-spacing: .25em; text-transform: uppercase; margin: 0 0 1rem; }
 .lf-pdp__story { font-size: 1.05rem; margin: 0 0 .8rem; }
@@ -94,21 +103,35 @@
 .lf-pdp__soldout { color: #ff8896; font-size: .8rem; }
 .lf-pdp__accordion { margin-top: 1.6rem; }
 .lf-pdp__accordion details { border-top: 1px solid #22222a; padding: .7rem 0; }
-.lf-pdp__accordion summary { cursor: pointer; color: var(--lf-body-text); font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; }
+.lf-pdp__accordion summary {
+  cursor: pointer; color: var(--lf-body-text); font-size: .8rem; letter-spacing: .12em;
+  text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;
+  list-style: none;
+}
+.lf-pdp__accordion summary::-webkit-details-marker { display: none; }
+.lf-pdp__plus { position: relative; width: 12px; height: 12px; transition: transform .3s var(--lf-ease); }
+.lf-pdp__plus::before, .lf-pdp__plus::after { content: ''; position: absolute; background: var(--lf-muted); }
+.lf-pdp__plus::before { left: 5px; top: 0; width: 2px; height: 12px; }
+.lf-pdp__plus::after { left: 0; top: 5px; width: 12px; height: 2px; }
+details[open] .lf-pdp__plus { transform: rotate(45deg); }
+@media (prefers-reduced-motion: reduce) { .lf-pdp__plus { transition: none; } }
 .lf-pdp__accordion div { color: var(--lf-muted); font-size: .8rem; line-height: 1.6; padding-top: .5rem; }
-@media (max-width: 849px) { .lf-pdp { display: block; } .lf-pdp__buy { position: static; margin-top: 1.4rem; } }
+.lf-pdp__opt label.is-soldout span { text-decoration: line-through; opacity: .2; }
+@media (max-width: 849px) {
+  .lf-pdp { display: block; }
+  .lf-pdp__buy { position: static; margin-top: 1.4rem; }
+  .lf-pdp__swipe { display: block; color: var(--lf-muted); font-size: .64rem; letter-spacing: .3em; margin-bottom: .5rem; }
+  .lf-pdp__media { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+  .lf-pdp__frame { flex: 0 0 82vw; scroll-snap-align: center; }
+}
 {% endstylesheet %}
 
 {% schema %}
 {
   "name": "LF Product",
   "settings": [
-    { "type": "text", "id": "acc_title_1", "label": "Accordion 1 title", "default": "Materials & Care" },
-    { "type": "textarea", "id": "acc_body_1", "label": "Accordion 1 body", "default": "Heavyweight cotton. Wash cold, inside out, hang dry. Built to break in, not break down." },
-    { "type": "text", "id": "acc_title_2", "label": "Accordion 2 title", "default": "Sizing" },
-    { "type": "textarea", "id": "acc_body_2", "label": "Accordion 2 body", "default": "Cut roomy through the chest — New Orleans proportions. Between sizes, size down." },
-    { "type": "text", "id": "acc_title_3", "label": "Accordion 3 title", "default": "Shipping" },
-    { "type": "textarea", "id": "acc_body_3", "label": "Accordion 3 body", "default": "Ships from New Orleans within 3–5 business days." }
+    { "type": "textarea", "id": "details_fallback", "label": "Garment Details fallback (used when metafield lfc.details is empty)", "default": "Heavyweight 340gsm cotton, puff-print front graphic, chain-stitched crest at the hem. Cut roomy through the chest — New Orleans proportions; between sizes, size down." },
+    { "type": "textarea", "id": "care_fallback", "label": "Wash Care fallback (used when metafield lfc.care is empty)", "default": "Wash cold, inside out, with its own kind. Hang dry in the shade — the print ages like the city, slowly and on purpose. No bleach, no tumble." }
   ]
 }
 {% endschema %}

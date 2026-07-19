@@ -1,7 +1,16 @@
 {
   "sections": {
     "main": { "type": "lf-product", "settings": {} },
+    "lookbook": {
+      "type": "lf-lookbook",
+      "blocks": {
+        "slide1": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-hero-chief.jpg", "caption": "Won't Bow Down" } },
+        "slide2": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-hero-secondline.jpg", "caption": "Kill 'Em Dead, Needle & Thread" } }
+      },
+      "block_order": ["slide1", "slide2"],
+      "settings": {}
+    },
     "related": { "type": "lf-related", "settings": {} }
   },
-  "order": ["main", "related"]
+  "order": ["main", "lookbook", "related"]
 }
