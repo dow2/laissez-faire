@@ -60,21 +60,12 @@
     if (next) next.addEventListener('click', function () { go(i + 1); arm(); });
     if (prev) prev.addEventListener('click', function () { go(i - 1); arm(); });
     arm();
-    var observer = null;
-    // Horizontal-only gestures; vertical scroll stays native.
-    if (!ctx.reduced && window.Observer && n > 1) {
-      observer = Observer.create({
-        target: hero, type: 'touch,wheel', lockAxis: true, tolerance: 60, preventDefault: false,
-        onLeft: function () { go(i + 1); arm(); },
-        onRight: function () { go(i - 1); arm(); }
-      });
-    }
-    // This closure's timer/Observer belong to THIS hero instance and won't
-    // self-clean when Barba discards its container on the next navigation.
-    LF.teardown.push(function () {
-      clearInterval(timer);
-      if (observer) observer.kill();
-    });
+    // Observer-driven swipe/wheel gestures were dropped here (Task 10, Lighthouse
+    // fallback ladder rung 2) — the vendor + its setup cost pushed mobile TBT
+    // over budget. Arrow buttons + autoplay remain fully functional.
+    // This closure's timer belongs to THIS hero instance and won't self-clean
+    // when Barba discards its container on the next navigation.
+    LF.teardown.push(function () { clearInterval(timer); });
   };
 
   // ——— PDP: variant sync, gallery, AJAX add-to-cart ———

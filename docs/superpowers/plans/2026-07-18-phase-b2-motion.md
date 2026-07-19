@@ -105,7 +105,6 @@ git add theme/assets && git commit -m "Vendor SplitText, Observer, Barba for the
     <script src="{{ 'gsap.min.js' | asset_url }}" defer></script>
     <script src="{{ 'ScrollTrigger.min.js' | asset_url }}" defer></script>
     <script src="{{ 'SplitText.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'Observer.min.js' | asset_url }}" defer></script>
     <script src="{{ 'barba.min.js' | asset_url }}" defer></script>
     <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
     <script src="{{ 'lf-sections.js' | asset_url }}" defer></script>
@@ -114,7 +113,7 @@ git add theme/assets && git commit -m "Vendor SplitText, Observer, Barba for the
 </html>
 ```
 
-> **Amendment (Task 10, Lighthouse fallback ladder rung 1):** the 8 `defer` script tags above were replaced with a sequential post-load loader — `defer` still competes for main-thread time during the initial parse, and ~170KB of GSAP-family JS dropped mobile perf from 87 to 51. The as-shipped block (see Task 10) loads all 8 vendors after `window.onload` via chained `<script>` injection, preserving execution order.
+> **Amendment (Task 10, Lighthouse fallback ladder):** rung 1 (swap `defer` for a sequential post-load loader) was tried and made things WORSE (perf 51→41) — native `defer` lets the browser fetch all vendors in parallel during HTML parse, while the sequential loader serialized 8 fetch+execute round trips under Lighthouse's simulated mobile network throttling, costing far more than it saved. Reverted to `defer`. Rung 2 (drop `Observer.min.js` + the hero's swipe/wheel gesture code) was applied instead — see Task 5's amendment. The 8 script tags below reflect the final as-shipped state (7 vendors, no Observer).
 
 (Order matters: `lf-sections.js` registers inits; `lf-motion.js` dispatches them. Both deferred, so DOM is parsed first. `lf-sections.js` doesn't exist until Task 5 — the resulting `MissingTemplate`-style asset 404 is inert at runtime and `theme check` does not flag asset_url references; note any new offense honestly.)
 
@@ -411,21 +410,12 @@ git add theme/assets/lf-tokens.css && git commit -m "Motion CSS: hover buzz, ign
     if (next) next.addEventListener('click', function () { go(i + 1); arm(); });
     if (prev) prev.addEventListener('click', function () { go(i - 1); arm(); });
     arm();
-    var observer = null;
-    // Horizontal-only gestures; vertical scroll stays native.
-    if (!ctx.reduced && window.Observer && n > 1) {
-      observer = Observer.create({
-        target: hero, type: 'touch,wheel', lockAxis: true, tolerance: 60, preventDefault: false,
-        onLeft: function () { go(i + 1); arm(); },
-        onRight: function () { go(i - 1); arm(); }
-      });
-    }
-    // This closure's timer/Observer belong to THIS hero instance and won't
-    // self-clean when Barba discards its container on the next navigation.
-    LF.teardown.push(function () {
-      clearInterval(timer);
-      if (observer) observer.kill();
-    });
+    // Observer-driven swipe/wheel gestures were dropped here (Task 10, Lighthouse
+    // fallback ladder rung 2) — the vendor + its setup cost pushed mobile TBT
+    // over budget. Arrow buttons + autoplay remain fully functional.
+    // This closure's timer belongs to THIS hero instance and won't self-clean
+    // when Barba discards its container on the next navigation.
+    LF.teardown.push(function () { clearInterval(timer); });
   };
 
   // ——— PDP: variant sync, gallery, AJAX add-to-cart ———
@@ -863,7 +853,7 @@ for n,p in [('home','/tmp/lh-b2-home.json'),('pdp','/tmp/lh-b2-pdp.json')]:
 
 Expected: ≥85 / ≥90 both pages. If perf fails: apply the spec §4 fallback ladder in order — (1) swap the five vendor `<script defer>` tags for a post-`load` injector snippet, re-measure; (2) drop Observer.min.js + the gesture block, re-measure. Document whichever rung shipped.
 
-> **As-run:** initial Lighthouse mobile came in at home 51 / pdp 77 (both below the ≥85 gate) — ~170KB of new GSAP-family JS on `defer` was competing for main-thread time during initial parse (TBT 1,530ms on home). Applied fallback rung 1: `theme/layout/theme.liquid`'s 8 vendor `<script defer>` tags were replaced with a small inline loader that injects them sequentially after `window.onload` (see Task 2's amendment for the exact code). Also fixed in this pass, found by manual behind-the-gate testing (not Lighthouse): `LF.init.ignite`'s `ScrollTrigger.create({ start: 'top 55%', once: true })` never fires `onEnter` for elements already above-the-fold at bind time (collection/story/PDP page H1 titles) — `onEnter` only fires on a scroll crossing INTO the zone, and an already-visible element is already inside it. Fixed by checking `getBoundingClientRect()` at bind time and firing immediately for anything already past the trigger line (see Task 5's ignite code, now amended).
+> **As-run:** initial Lighthouse mobile came in at home 51 / pdp 77 (both below the ≥85 gate) — ~170KB of new GSAP-family JS on `defer` was competing for main-thread time during initial parse (TBT 1,530ms on home). **Rung 1 tried and reverted:** swapped the 8 `defer` tags for a sequential post-load loader — this made it WORSE (perf 41, TBT 4,380ms), because native `defer` fetches all vendors in parallel during HTML parse while the sequential loader serialized 8 fetch+execute round trips under Lighthouse's simulated mobile throttling. Reverted to `defer`. **Rung 2 applied:** dropped `Observer.min.js` and the hero's swipe/wheel gesture code (arrow buttons + autoplay unaffected) — see Task 2's and Task 5's amendments for the exact reverted/final code. Also fixed in this pass, found by manual behind-the-gate testing (not Lighthouse): `LF.init.ignite`'s `ScrollTrigger.create({ start: 'top 55%', once: true })` never fires `onEnter` for elements already above-the-fold at bind time (collection/story/PDP page H1 titles) — `onEnter` only fires on a scroll crossing INTO the zone, and an already-visible element is already inside it. Fixed by checking `getBoundingClientRect()` at bind time and firing immediately for anything already past the trigger line (see Task 5's ignite code, now amended).
 
 - [ ] **Step 4: Fix findings, commit** (`git add -A && git commit -m "Phase B2 review fixes"` — skip if clean).
 
