@@ -1,4 +1,27 @@
 {
-  "sections": { "main": { "type": "lf-story", "settings": {} } },
-  "order": ["main"]
+  "sections": {
+    "hero": { "type": "lf-story-hero", "settings": {} },
+    "editorial": {
+      "type": "lf-story-editorial",
+      "settings": {
+        "image_left": "shopify://shop_images/lf-hero-chief.jpg",
+        "image_right": "shopify://shop_images/lf-hero-secondline.jpg",
+        "flick_image_1": "shopify://shop_images/lf-hero-chief.jpg",
+        "flick_image_2": "shopify://shop_images/lf-hero-secondline.jpg",
+        "flick_image_3": "shopify://shop_images/lf-hero-chief.jpg"
+      }
+    },
+    "sticky": {
+      "type": "lf-story-sticky",
+      "settings": {
+        "panel_image_1": "shopify://shop_images/lf-hero-chief.jpg",
+        "panel_image_2": "shopify://shop_images/lf-hero-secondline.jpg",
+        "panel_image_3": "shopify://shop_images/lf-hero-chief.jpg",
+        "panel_image_4": "shopify://shop_images/lf-hero-secondline.jpg",
+        "panel_image_5": "shopify://shop_images/lf-hero-chief.jpg"
+      }
+    },
+    "footer": { "type": "lf-footer", "settings": { "full_height": true } }
+  },
+  "order": ["hero", "editorial", "sticky", "footer"]
 }

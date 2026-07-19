@@ -143,7 +143,11 @@
         el.classList.add('lf-lit');
         return;
       }
-      var split = new SplitText(el, { type: 'chars', charsClass: 'lf-ignite-char' });
+      // type must include 'words' — 'chars' alone wraps every character in its
+      // own atomic inline-block with no word-level grouping, so the browser has
+      // no concept of "word" for line-wrapping and can (and does) break between
+      // any two adjacent character boxes instead of only at spaces.
+      var split = new SplitText(el, { type: 'words, chars', wordsClass: 'lf-ignite-word', charsClass: 'lf-ignite-char' });
       var per = Math.min(0.055, 0.9 / Math.max(split.chars.length, 1));
       function fire() {
         gsap.to(split.chars, {
@@ -166,5 +170,293 @@
         ScrollTrigger.create({ trigger: el, start: 'top 55%', once: true, onEnter: fire });
       }
     });
+  };
+
+  // ——— Home hero v2: numbered nav, directional clip wipes, swipe ———
+  LF.init.heroV2 = function (root, ctx) {
+    var hero = (root || document).querySelector('[data-lf-hero-v2]');
+    if (!hero || hero.hasAttribute('data-lf-bound')) return;
+    hero.setAttribute('data-lf-bound', '1');
+    var slides = Array.prototype.slice.call(hero.querySelectorAll('[data-lf-hero-slide]'));
+    var dots = Array.prototype.slice.call(hero.querySelectorAll('[data-lf-hero-dot]'));
+    var n = slides.length;
+    if (n < 2) return;
+    var i = 0, timer = null;
+    var secs = parseInt(hero.getAttribute('data-autoplay'), 10) || 0;
+
+    function go(nextIndex, forwards) {
+      if (hero.getAttribute('data-state') === 'animating') return;
+      var nextI = (nextIndex + n) % n;
+      if (nextI === i) return;
+      var prevSlide = slides[i], nextSlide = slides[nextI];
+      var prevVisual = prevSlide.querySelector('[data-lf-hero-visual]');
+      var nextVisual = nextSlide.querySelector('[data-lf-hero-visual]');
+      dots[i].classList.remove('is-active');
+      dots[nextI].classList.add('is-active');
+      i = nextI;
+      if (ctx.reduced || !window.gsap) {
+        prevSlide.classList.remove('is-active');
+        nextSlide.classList.add('is-active');
+        return;
+      }
+      var openPoly = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+      var closedTop = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)';
+      var closedBottom = 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)';
+      nextSlide.classList.add('is-active');
+      hero.setAttribute('data-state', 'animating');
+      var tl = gsap.timeline({
+        defaults: { duration: 1, ease: 'lf-ease-3' },
+        onComplete: function () { prevSlide.classList.remove('is-active'); hero.setAttribute('data-state', 'idle'); }
+      });
+      if (forwards) {
+        gsap.set(nextSlide, { clipPath: closedTop });
+        tl.to(nextSlide, { clipPath: openPoly })
+          .to(prevSlide, { clipPath: closedBottom }, '<')
+          .fromTo(prevVisual, { yPercent: 0 }, { yPercent: 10 }, '<')
+          .fromTo(nextVisual, { yPercent: -10 }, { yPercent: 0 }, '<');
+      } else {
+        gsap.set(nextSlide, { clipPath: closedBottom });
+        tl.to(nextSlide, { clipPath: openPoly })
+          .to(prevSlide, { clipPath: closedTop }, '<')
+          .fromTo(prevVisual, { yPercent: 0 }, { yPercent: -10 }, '<')
+          .fromTo(nextVisual, { yPercent: 10 }, { yPercent: 0 }, '<');
+      }
+    }
+    function arm() {
+      if (secs > 0 && !ctx.reduced && n > 1) { clearInterval(timer); timer = setInterval(function () { go(i + 1, true); }, secs * 1000); }
+    }
+    var nextBtn = hero.querySelector('[data-lf-hero-next]');
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(i + 1, true); arm(); });
+    dots.forEach(function (dot) {
+      dot.querySelector('button').addEventListener('click', function () {
+        var target = parseInt(dot.getAttribute('data-index'), 10);
+        go(target, target > i);
+        arm();
+      });
+    });
+    // Mobile swipe via native Pointer Events (no Observer plugin per spec constraint).
+    var list = hero.querySelector('[data-lf-hero-list]');
+    var downX = null, activePointerId = null;
+    list.addEventListener('pointerdown', function (e) {
+      if (activePointerId != null) return; // ignore a second concurrent pointer
+      activePointerId = e.pointerId;
+      downX = e.clientX;
+    });
+    function endSwipe(e, shouldNavigate) {
+      if (e.pointerId !== activePointerId) return;
+      var dx = shouldNavigate ? e.clientX - downX : 0;
+      activePointerId = null;
+      downX = null;
+      if (!shouldNavigate || Math.abs(dx) < 40) return;
+      go(i + (dx < 0 ? 1 : -1), dx < 0);
+      arm();
+    }
+    list.addEventListener('pointerup', function (e) { endSwipe(e, true); });
+    list.addEventListener('pointercancel', function (e) { endSwipe(e, false); });
+    arm();
+    LF.teardown.push(function () { clearInterval(timer); });
+  };
+
+  // ——— CTA row: cursor-following label pill per card (desktop only) ———
+  LF.init.ctaFollow = function (root, ctx) {
+    var row = (root || document).querySelector('.lf-ctarow');
+    if (!row || row.hasAttribute('data-lf-bound')) return;
+    row.setAttribute('data-lf-bound', '1');
+    // Cursor labels themselves are handled globally by LF.init.cursor (lf-chrome.js)
+    // via [data-cursor] — nothing further needed here beyond marking bound so
+    // this init is idempotent; kept as its own function for clarity/future growth.
+  };
+
+  // ——— Draggable infinite product marquee (native Pointer Events, no Observer plugin) ———
+  LF.init.marquee = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-marquee]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !window.gsap) return;
+    var track = wrap.querySelector('[data-lf-marquee-track]');
+    if (!track) return;
+    var section = wrap.closest('.lf-marquee-section');
+    // The transform-driven track has no native scroll position of its own,
+    // but its overflow:hidden ancestor (which also wraps the unrelated
+    // statement text as a sibling) is still a valid target for the browser's
+    // native focus-scroll-into-view behavior on every Tab keystroke. Left
+    // alone, that native scrollLeft adjustment fights the GSAP transform and
+    // can visibly drift the statement text sideways. Snap it back to 0 so
+    // the GSAP transform stays the only source of truth for position.
+    if (section) {
+      section.addEventListener('focusin', function () {
+        if (section.scrollLeft !== 0) section.scrollLeft = 0;
+      });
+    }
+    var half = track.scrollWidth / 2; // second half is the duplicated loop content
+    var wrapFn = gsap.utils.wrap(-half, 0);
+    var total = 0;
+    var xTo = gsap.quickTo(track, 'x', {
+      duration: .5, ease: 'power3',
+      modifiers: { x: gsap.utils.unitize(wrapFn) }
+    });
+    var dragging = false, startX = 0, startTotal = 0, activePointer = null, lastDragDistance = 0;
+
+    function onDown(e) {
+      dragging = true; startX = e.clientX; startTotal = total; activePointer = e.pointerId;
+      wrap.classList.add('is-dragging');
+      // Capture on the actual event target, not `track` — capturing on an
+      // ancestor disrupts the browser's native click-event synthesis for
+      // the descendant that was really interacted with, suppressing
+      // navigation on every click (drag or not), not just genuine drags.
+      try { e.target.setPointerCapture(activePointer); } catch (err) {}
+    }
+    function onMove(e) {
+      if (!dragging || e.pointerId !== activePointer) return;
+      total = startTotal + (e.clientX - startX);
+      xTo(total);
+    }
+    function onUp(e) {
+      if (!dragging || e.pointerId !== activePointer) return;
+      // Capture the drag distance BEFORE resetting `dragging` — the click
+      // handler runs after pointerup in the same interaction, so checking
+      // `dragging` there would always read the just-reset false value.
+      lastDragDistance = Math.abs(total - startTotal);
+      dragging = false;
+      wrap.classList.remove('is-dragging');
+      try { e.target.releasePointerCapture(activePointer); } catch (err) {}
+      activePointer = null;
+    }
+    track.addEventListener('pointerdown', onDown);
+    track.addEventListener('pointermove', onMove);
+    track.addEventListener('pointerup', onUp);
+    track.addEventListener('pointercancel', onUp);
+    track.addEventListener('click', function (e) {
+      // A genuine drag (moved more than a few px) shouldn't navigate; a tap/
+      // click that barely moved should behave like a normal link click.
+      if (lastDragDistance > 6) e.preventDefault();
+    });
+
+    function tick(time, deltaTime) {
+      if (!dragging) { total -= deltaTime / 20; xTo(total); }
+    }
+    gsap.ticker.add(tick);
+    LF.teardown.push(function () { gsap.ticker.remove(tick); gsap.killTweensOf(track); });
+  };
+
+  // ——— Lookbook slider: simple crossfade + counter ———
+  LF.init.lookbook = function (root, ctx) {
+    var section = (root || document).querySelector('[data-lf-lookbook]');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
+    var slides = Array.prototype.slice.call(section.querySelectorAll('.lf-lookbook__slide'));
+    var n = slides.length;
+    if (n < 2) return;
+    var i = 0;
+    var counter = section.querySelector('[data-lf-lookbook-current]');
+    function go(next) {
+      slides[i].classList.remove('is-active');
+      i = (next + n) % n;
+      slides[i].classList.add('is-active');
+      if (counter) counter.textContent = String(i + 1).padStart(2, '0');
+    }
+    var prevBtn = section.querySelector('[data-lf-lookbook-prev]');
+    var nextBtn = section.querySelector('[data-lf-lookbook-next]');
+    if (prevBtn) prevBtn.addEventListener('click', function () { go(i - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(i + 1); });
+  };
+
+  // ——— Community section: reveal-on-scroll only (data-lf-reveal handles it), no extra JS needed ———
+  LF.init.community = function (root, ctx) {
+    var section = (root || document).querySelector('.lf-community');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
+  };
+
+  // ——— Story hero: reading-mode hover is pure CSS (:has()); nothing to bind ———
+  LF.init.storyHero = function (root, ctx) {
+    var hero = (root || document).querySelector('.lf-storyhero');
+    if (!hero || hero.hasAttribute('data-lf-bound')) return;
+    hero.setAttribute('data-lf-bound', '1');
+  };
+
+  // ——— Overlap-scroll stitching: pinned section slides under the next as you scroll past ———
+  LF.init.scrollOverlap = function (root, ctx) {
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    (root || document).querySelectorAll('[data-lf-overlap]:not([data-lf-overlap-bound])').forEach(function (el) {
+      el.setAttribute('data-lf-overlap-bound', '1');
+      gsap.timeline({
+        scrollTrigger: { trigger: el, start: 'top top', end: '+=500', scrub: true }
+      }).to(el, { yPercent: 50, ease: 'power1.in' });
+    });
+  };
+
+  // ——— Editorial image parallax (scrubbed to scroll) ———
+  LF.init.imgScroll = function (root, ctx) {
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    (root || document).querySelectorAll('[data-lf-img-scroll]:not([data-lf-imgscroll-bound])').forEach(function (wrap) {
+      wrap.setAttribute('data-lf-imgscroll-bound', '1');
+      var img = wrap.querySelector('img');
+      if (!img) return;
+      gsap.fromTo(img, { yPercent: 0 }, {
+        yPercent: 20, ease: 'linear',
+        scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true }
+      });
+    });
+  };
+
+  // ——— Flickthrough hover zoetrope (desktop hover, mobile auto-cycle) ———
+  LF.init.flickthrough = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-flickthrough]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    var imgs = Array.prototype.slice.call(wrap.querySelectorAll('.lf-flickthrough__img'));
+    if (imgs.length < 2) return;
+    var index = 0, interval = null;
+    function nextImage() {
+      imgs[index].classList.remove('is-shown');
+      index = (index + 1) % imgs.length;
+      imgs[index].classList.add('is-shown');
+    }
+    if (ctx.reduced) return;
+    if (LF.FINE.matches) {
+      wrap.addEventListener('mouseenter', function () {
+        nextImage();
+        clearInterval(interval);
+        interval = setInterval(nextImage, 300);
+      });
+      wrap.addEventListener('mouseleave', function () { clearInterval(interval); });
+    } else {
+      interval = setInterval(nextImage, 500);
+    }
+    LF.teardown.push(function () { clearInterval(interval); });
+  };
+
+  // ——— Sticky story stack: pure CSS position:sticky, JS only for reduced-motion no-op guard ———
+  LF.init.stickyStack = function (root, ctx) {
+    var stack = (root || document).querySelector('.lf-storysticky__stack');
+    if (!stack || stack.hasAttribute('data-lf-bound')) return;
+    stack.setAttribute('data-lf-bound', '1');
+  };
+
+  // ——— Floating crests: cycle visibility scrubbed to scroll position ———
+  LF.init.floatingCrests = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-floating-crests]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    var crests = Array.prototype.slice.call(wrap.querySelectorAll('.lf-storysticky__crest'));
+    if (crests.length < 2) return;
+    var tl = gsap.timeline({
+      scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true }
+    });
+    crests.forEach(function (c, idx) {
+      tl.set(crests, {
+        autoAlpha: function (i) { return i === idx ? 1 : 0; },
+        overwrite: 'auto'
+      }, idx / (crests.length - 1));
+    });
+  };
+
+  // ——— Contact split layout: pure CSS sticky, nothing to bind beyond the idempotency guard ———
+  LF.init.contactSplit = function (root, ctx) {
+    var section = (root || document).querySelector('.lf-contact');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
   };
 })();

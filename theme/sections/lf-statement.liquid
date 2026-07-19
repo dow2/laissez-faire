@@ -1,0 +1,27 @@
+<section class="lf-statement" data-lf-overlap>
+  <div class="lf-statement__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
+  <h2 class="lf-statement__text lf-display lf-glow-text" data-lf-ignite data-lf-reveal>{{ section.settings.statement }}</h2>
+</section>
+
+{% stylesheet %}
+.lf-statement {
+  min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: 2rem; padding: 4rem 1.5rem; background: #08080b;
+}
+.lf-statement__crest {
+  width: 72px; aspect-ratio: 300/320; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat;
+  filter: drop-shadow(0 0 8px var(--lf-neon-halo)) drop-shadow(0 0 24px var(--lf-neon-halo));
+  opacity: .8;
+}
+.lf-statement__text { font-size: clamp(1.4rem, 4.2vw, 2.6rem); line-height: 1.35; max-width: 22ch; margin: 0; }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Statement",
+  "settings": [
+    { "type": "textarea", "id": "statement", "label": "Statement", "default": "Born from a shared love of the city, rooted in a vision of authenticity and craft." }
+  ]
+}
+{% endschema %}

@@ -10,6 +10,7 @@
   LF.teardown = LF.teardown || [];
 
   var FINE = window.matchMedia('(min-width: 992px) and (pointer: fine)');
+  LF.FINE = FINE; // shared across files via the LF namespace (lf-sections.js reads this)
 
   // Body scroll lock shared by menu + popup. Counted so nested opens are safe.
   var lockCount = 0;

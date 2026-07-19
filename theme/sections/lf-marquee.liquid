@@ -1,0 +1,55 @@
+<section class="lf-marquee-section">
+  <div class="lf-marquee-section__statement" data-lf-reveal>
+    <p class="lf-marquee-section__stamp">{% render 'lf-stamp' %} — Designed and made locally</p>
+    <p class="lf-marquee-section__body">{{ section.settings.statement }}</p>
+    <p class="lf-marquee-section__place">New Orleans, Louisiana</p>
+  </div>
+  <div class="lf-marquee" data-lf-marquee>
+    <div class="lf-marquee__track" data-lf-marquee-track>
+      {% assign products = collections.all.products %}
+      {% for product in products limit: 12 %}
+        <a class="lf-marquee__card" href="{{ product.url }}">
+          {{ product.featured_image | image_url: width: 500 | image_tag: loading: 'lazy', alt: product.title, class: 'lf-marquee__img' }}
+          <span class="lf-marquee__name">{{ product.title }}</span>
+          <span class="lf-marquee__price">{{ product.price_min | money }}</span>
+        </a>
+      {% endfor %}
+      {% for product in products limit: 12 %}
+        <a class="lf-marquee__card" href="{{ product.url }}" aria-hidden="true" tabindex="-1">
+          {{ product.featured_image | image_url: width: 500 | image_tag: loading: 'lazy', alt: '', class: 'lf-marquee__img' }}
+          <span class="lf-marquee__name">{{ product.title }}</span>
+          <span class="lf-marquee__price">{{ product.price_min | money }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-marquee-section { padding: 4rem 0; overflow: hidden; }
+.lf-marquee-section__statement { max-width: 640px; margin: 0 auto 3rem; padding: 0 1.5rem; text-align: center; }
+.lf-marquee-section__stamp { color: var(--lf-neon-core); font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; margin: 0 0 1rem; }
+.lf-marquee-section__body { font-size: 1.05rem; line-height: 1.7; color: var(--lf-body-text); margin: 0 0 .6rem; }
+.lf-marquee-section__place { color: var(--lf-muted); font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; margin: 0; }
+.lf-marquee { cursor: grab; touch-action: pan-y; }
+.lf-marquee.is-dragging { cursor: grabbing; }
+.lf-marquee__track { display: flex; gap: 1.2rem; padding: 0 1.5rem; width: max-content; }
+.lf-marquee__card { flex: 0 0 200px; text-decoration: none; color: var(--lf-body-text); user-select: none; }
+.lf-marquee__img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; margin-bottom: .6rem; pointer-events: none; -webkit-user-drag: none; }
+.lf-marquee__name { display: block; font-size: .78rem; letter-spacing: .05em; }
+.lf-marquee__price { display: block; color: var(--lf-muted); font-size: .74rem; margin-top: .2rem; }
+@media (prefers-reduced-motion: reduce) {
+  .lf-marquee { cursor: default; }
+  .lf-marquee__track { flex-wrap: wrap; width: auto; transform: none !important; overflow: visible; justify-content: center; }
+  .lf-marquee__card[aria-hidden="true"] { display: none; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Marquee",
+  "settings": [
+    { "type": "textarea", "id": "statement", "label": "Statement", "default": "Our city is rich in culture, diversity, and heritage — producing locally is harder, but it's the only way this ever made sense to us." }
+  ]
+}
+{% endschema %}

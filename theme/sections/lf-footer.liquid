@@ -51,14 +51,14 @@
 
 {% stylesheet %}
 .lf-footer { padding: 4rem 1.25rem 1.5rem; border-top: 1px solid #1a1a22; overflow-x: clip; }
-.lf-footer--full { min-height: 100dvh; display: flex; flex-direction: column; justify-content: space-between; }
+.lf-footer--full { min-height: 100svh; display: flex; flex-direction: column; justify-content: space-between; }
 .lf-footer__wordmark {
   width: min(88vw, 900px); aspect-ratio: 2129/749; margin: 0 auto;
   background-color: var(--lf-neon-core);
   -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
   filter: drop-shadow(0 0 8px var(--lf-neon-halo)) drop-shadow(0 0 30px var(--lf-neon-halo));
 }
-.lf-footer__club { text-align: center; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); font-size: 1.05rem; margin: .6rem 0 2.4rem; }
+.lf-footer__brand .lf-footer__club { text-align: center; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); font-size: 1.05rem; margin: .6rem 0 4.5rem; }
 .lf-footer__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 1100px; margin: 0 auto 2.5rem; }
 .lf-footer__col { display: flex; flex-direction: column; gap: .55rem; position: relative; }
 .lf-footer__label { color: var(--lf-neon-core); font-size: .66rem; letter-spacing: .3em; text-transform: uppercase; margin: 0 0 .4rem; }

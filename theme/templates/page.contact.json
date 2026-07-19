@@ -1,0 +1,6 @@
+{
+  "sections": {
+    "main": { "type": "lf-contact-split", "settings": {} }
+  },
+  "order": ["main"]
+}

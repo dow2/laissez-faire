@@ -1,0 +1,65 @@
+<section class="lf-contact">
+  <div class="lf-contact__imgs" data-lf-reveal>
+    {% for i in (1..4) %}
+      {% assign img_key = 'image_' | append: i %}
+      {% if section.settings[img_key] != blank %}
+        <div class="lf-contact__imgwrap">
+          {{ section.settings[img_key] | image_url: width: 900 | image_tag: loading: 'lazy', alt: '' }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="lf-contact__info">
+    <p class="lf-contact__label">{% render 'lf-eyebrow', text: 'contact us' %}</p>
+    {% if section.settings.email != blank %}<a class="lf-contact__link lf-display" href="mailto:{{ section.settings.email | escape }}">{{ section.settings.email }}</a>{% endif %}
+    <p class="lf-contact__sub">{{ section.settings.body }}</p>
+    {% if section.settings.instagram_url != blank %}<a class="lf-contact__ig" href="{{ section.settings.instagram_url }}" target="_blank" rel="me noopener" data-cursor="Follow">Instagram</a>{% endif %}
+    <div class="lf-contact__mini-footer">
+      <div class="lf-contact__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
+           style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
+      <p class="lf-contact__legal">{% render 'lf-stamp' %} — New Orleans, Louisiana</p>
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-contact { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+.lf-contact__imgs { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; overflow-y: auto; }
+.lf-contact__imgwrap { aspect-ratio: 4/5; overflow: hidden; }
+.lf-contact__imgwrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-contact__info {
+  position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column;
+  justify-content: center; gap: 1rem; padding: 2rem 2.5rem; min-width: 0;
+}
+.lf-contact__label { margin: 0; }
+.lf-contact__link { font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); text-decoration: none; overflow-wrap: break-word; display: inline-block; max-width: 100%; }
+.lf-contact__sub { color: var(--lf-body-text); font-size: .9rem; line-height: 1.6; max-width: 40ch; margin: 0; }
+.lf-contact__ig { color: var(--lf-muted); font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; }
+.lf-contact__ig:hover { color: var(--lf-neon-core); }
+.lf-contact__mini-footer { margin-top: 2.5rem; }
+.lf-contact__wordmark {
+  width: 220px; aspect-ratio: 2129/749; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
+  filter: drop-shadow(0 0 6px var(--lf-neon-halo)); margin-bottom: .6rem;
+}
+.lf-contact__legal { color: var(--lf-muted); font-size: .64rem; letter-spacing: .1em; margin: 0; }
+@media (max-width: 749px) {
+  .lf-contact { grid-template-columns: 1fr; }
+  .lf-contact__info { position: relative; height: auto; padding: 2.5rem 1.25rem; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Contact Split",
+  "settings": [
+    { "type": "text", "id": "email", "label": "Email", "default": "hello@laissezfaireleisureclub.com" },
+    { "type": "textarea", "id": "body", "label": "Body copy", "default": "Questions about a drop, a fit, or the club — we read everything." },
+    { "type": "url", "id": "instagram_url", "label": "Instagram URL" },
+    { "type": "image_picker", "id": "image_1", "label": "Image 1" },
+    { "type": "image_picker", "id": "image_2", "label": "Image 2" },
+    { "type": "image_picker", "id": "image_3", "label": "Image 3" },
+    { "type": "image_picker", "id": "image_4", "label": "Image 4" }
+  ]
+}
+{% endschema %}

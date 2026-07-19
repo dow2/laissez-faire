@@ -1,7 +1,7 @@
 {
   "sections": {
     "hero": {
-      "type": "lf-hero-slider",
+      "type": "lf-hero-slider-v2",
       "blocks": {
         "slide1": {
           "type": "slide",
@@ -16,7 +16,7 @@
         "slide2": {
           "type": "slide",
           "settings": {
-            "kicker": "Nouvelle-Orl\u00e9ans",
+            "kicker": "Nouvelle-Orléans",
             "heading": "Kill 'Em Dead, Needle & Thread",
             "cta_label": "Our Story",
             "link": "shopify://pages/story",
@@ -24,61 +24,81 @@
           }
         }
       },
-      "block_order": [
-        "slide1",
-        "slide2"
-      ],
-      "settings": {
-        "autoplay_seconds": 6
-      }
+      "block_order": ["slide1", "slide2"],
+      "settings": { "autoplay_seconds": 6 }
     },
-    "featured": {
-      "type": "lf-featured-story",
+    "statement": { "type": "lf-statement", "settings": {} },
+    "ctarow": {
+      "type": "lf-cta-row",
       "blocks": {
-        "f1": {
-          "type": "feature",
+        "card1": {
+          "type": "card",
           "settings": {
-            "kicker": "Drop 001 \u2014 Featured",
-            "story": "Our Lady in blue neon \u2014 protection for the ones who move at night.",
-            "product": "maria"
+            "eyebrow": "our products",
+            "title": "Shop the Drop",
+            "cta_label": "Shop",
+            "link": "shopify://collections/all",
+            "image": "shopify://shop_images/lf-hero-chief.jpg"
           }
         },
-        "f2": {
-          "type": "feature",
+        "card2": {
+          "type": "card",
           "settings": {
-            "kicker": "Drop 001 \u2014 Featured",
-            "story": "The city's oldest mark, drawn in tube light.",
-            "product": "fluerdelis"
+            "eyebrow": "our story",
+            "title": "Read More",
+            "cta_label": "Read",
+            "link": "shopify://pages/story",
+            "image": "shopify://shop_images/lf-hero-secondline.jpg"
+          }
+        },
+        "card3": {
+          "type": "card",
+          "settings": {
+            "eyebrow": "our community",
+            "title": "Get in Touch",
+            "cta_label": "Connect",
+            "link": "shopify://pages/contact",
+            "image": "shopify://shop_images/lf-hero-chief.jpg"
           }
         }
       },
-      "block_order": [
-        "f1",
-        "f2"
-      ]
-    },
-    "grid": {
-      "type": "lf-drop-grid",
-      "settings": {
-        "kicker": "The Rest of the Drop",
-        "limit": 6,
-        "show_cta": true
-      }
-    },
-    "culture": {
-      "type": "lf-culture-strip",
+      "block_order": ["card1", "card2", "card3"],
       "settings": {}
     },
-    "email": {
-      "type": "lf-email-block",
+    "marquee": { "type": "lf-marquee", "settings": {} },
+    "lookbook": {
+      "type": "lf-lookbook",
+      "blocks": {
+        "slide1": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/lf-hero-chief.jpg",
+            "caption": "Won't Bow Down"
+          }
+        },
+        "slide2": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/lf-hero-secondline.jpg",
+            "caption": "Kill 'Em Dead, Needle & Thread"
+          }
+        }
+      },
+      "block_order": ["slide1", "slide2"],
       "settings": {}
-    }
+    },
+    "community": {
+      "type": "lf-community",
+      "blocks": {
+        "partner1": { "type": "partner", "settings": { "name": "NOLA Second Line Society", "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "partner2": { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.", "image": "shopify://shop_images/lf-hero-chief.jpg" } },
+        "partner3": { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "partner4": { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.", "image": "shopify://shop_images/lf-hero-chief.jpg" } }
+      },
+      "block_order": ["partner1", "partner2", "partner3", "partner4"],
+      "settings": {}
+    },
+    "email": { "type": "lf-email-block", "settings": {} }
   },
-  "order": [
-    "hero",
-    "featured",
-    "grid",
-    "culture",
-    "email"
-  ]
+  "order": ["hero", "statement", "ctarow", "marquee", "lookbook", "community", "email"]
 }

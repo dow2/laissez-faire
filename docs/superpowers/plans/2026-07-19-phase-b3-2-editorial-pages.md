@@ -44,7 +44,7 @@
 - [ ] **Step 1: Create `theme/sections/lf-hero-slider-v2.liquid`:**
 
 ```liquid
-<section class="lf-heroV2" data-lf-hero-v2 data-autoplay="{{ section.settings.autoplay_seconds }}">
+<section class="lf-heroV2" data-lf-hero-v2 data-state="idle" data-autoplay="{{ section.settings.autoplay_seconds }}">
   <div class="lf-heroV2__list" data-lf-hero-list>
     {% for block in section.blocks %}
       <div class="lf-heroV2__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }} data-lf-hero-slide data-index="{{ forloop.index0 }}">
@@ -52,14 +52,22 @@
           {% if block.settings.video != blank %}
             <video class="lf-heroV2__img" src="{{ block.settings.video }}" autoplay muted loop playsinline></video>
           {% elsif block.settings.image != blank %}
-            {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-heroV2__img', loading: forloop.first ? 'eager' : 'lazy', fetchpriority: forloop.first ? 'high' : 'auto', alt: block.settings.heading }}
+            {% liquid
+              assign lf_hero_v2_loading = 'lazy'
+              assign lf_hero_v2_priority = 'auto'
+              if forloop.first
+                assign lf_hero_v2_loading = 'eager'
+                assign lf_hero_v2_priority = 'high'
+              endif
+            %}
+            {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-heroV2__img', loading: lf_hero_v2_loading, fetchpriority: lf_hero_v2_priority, alt: block.settings.heading }}
           {% endif %}
         </div>
         <div class="lf-heroV2__shade"></div>
         <div class="lf-heroV2__copy">
           {% if block.settings.kicker != blank %}<p class="lf-heroV2__kicker">{{ block.settings.kicker }}</p>{% endif %}
           {% if block.settings.heading != blank %}<h2 class="lf-heroV2__heading lf-display lf-glow-text" data-lf-ignite>{{ block.settings.heading }}</h2>{% endif %}
-          {% if block.settings.link != blank %}<a class="lf-heroV2__cta lf-display" href="{{ block.settings.link }}" data-cursor="{{ block.settings.cta_label | default: 'Shop' }}">{{ block.settings.cta_label | default: 'Shop' }}</a>{% endif %}
+          {% if block.settings.link != blank %}<a class="lf-heroV2__cta lf-display" href="{{ block.settings.link }}" data-cursor="{{ block.settings.cta_label | default: 'Shop' | escape }}">{{ block.settings.cta_label | default: 'Shop' }}</a>{% endif %}
         </div>
       </div>
     {% endfor %}
@@ -76,11 +84,6 @@
   </nav>
   <p class="lf-heroV2__scroll" aria-hidden="true">Scroll</p>
   <button type="button" class="lf-heroV2__next" data-lf-hero-next aria-label="Next slide">Next</button>
-
-  <div class="lf-heroV2__lockup">
-    <div class="lf-heroV2__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
-         style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
-  </div>
 </section>
 
 {% stylesheet %}
@@ -90,7 +93,7 @@
 .lf-heroV2__slide.is-active { visibility: visible; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); }
 .lf-heroV2__img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .lf-heroV2__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,13,17,.55) 0%, rgba(13,13,17,.2) 45%, rgba(13,13,17,.85) 100%); }
-.lf-heroV2__copy { position: absolute; left: 1.5rem; bottom: 6rem; max-width: 34ch; z-index: 2; }
+.lf-heroV2__copy { position: absolute; left: 1.5rem; bottom: 7.25rem; max-width: 34ch; z-index: 2; }
 .lf-heroV2__kicker { font-size: .7rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); margin: 0 0 .6rem; }
 .lf-heroV2__heading { font-size: clamp(1.8rem, 6vw, 3.6rem); line-height: 1.05; margin: 0 0 1.2rem; }
 .lf-heroV2__cta { color: var(--lf-body-text); text-decoration: none; letter-spacing: .18em; text-transform: uppercase; font-size: .8rem; border-bottom: 1px solid currentColor; padding-bottom: .2rem; }
@@ -113,15 +116,9 @@
   background: none; border: 0; cursor: pointer; color: var(--lf-body-text);
   font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
 }
-.lf-heroV2__lockup { position: absolute; left: 1.5rem; top: 1.5rem; z-index: 2; }
-.lf-heroV2__wordmark {
-  width: 160px; aspect-ratio: 2129/749; background-color: var(--lf-neon-core);
-  -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
-  filter: drop-shadow(0 0 6px var(--lf-neon-halo));
-}
-@media (prefers-reduced-motion: reduce) {
-  .lf-heroV2__slide { transition: none; }
-}
+/* No CSS transition to disable here — slide motion is entirely GSAP-driven
+   inline clip-path tweening (see LF.init.heroV2's `ctx.reduced` branch in
+   lf-sections.js, which is the actual reduced-motion guard). */
 @media (max-width: 749px) {
   .lf-heroV2__nav, .lf-heroV2__scroll { display: none; }
   .lf-heroV2__copy { bottom: 3.5rem; left: 1.1rem; right: 1.1rem; max-width: none; }
@@ -169,6 +166,7 @@
     var secs = parseInt(hero.getAttribute('data-autoplay'), 10) || 0;
 
     function go(nextIndex, forwards) {
+      if (hero.getAttribute('data-state') === 'animating') return;
       var nextI = (nextIndex + n) % n;
       if (nextI === i) return;
       var prevSlide = slides[i], nextSlide = slides[nextI];
@@ -186,7 +184,11 @@
       var closedTop = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)';
       var closedBottom = 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)';
       nextSlide.classList.add('is-active');
-      var tl = gsap.timeline({ defaults: { duration: 1, ease: 'lf-ease-3' }, onComplete: function () { prevSlide.classList.remove('is-active'); } });
+      hero.setAttribute('data-state', 'animating');
+      var tl = gsap.timeline({
+        defaults: { duration: 1, ease: 'lf-ease-3' },
+        onComplete: function () { prevSlide.classList.remove('is-active'); hero.setAttribute('data-state', 'idle'); }
+      });
       if (forwards) {
         gsap.set(nextSlide, { clipPath: closedTop });
         tl.to(nextSlide, { clipPath: openPoly })
@@ -215,20 +217,33 @@
     });
     // Mobile swipe via native Pointer Events (no Observer plugin per spec constraint).
     var list = hero.querySelector('[data-lf-hero-list]');
-    var downX = null;
-    list.addEventListener('pointerdown', function (e) { downX = e.clientX; });
-    list.addEventListener('pointerup', function (e) {
-      if (downX == null) return;
-      var dx = e.clientX - downX;
+    var downX = null, activePointerId = null;
+    list.addEventListener('pointerdown', function (e) {
+      if (activePointerId != null) return; // ignore a second concurrent pointer
+      activePointerId = e.pointerId;
+      downX = e.clientX;
+    });
+    function endSwipe(e, shouldNavigate) {
+      if (e.pointerId !== activePointerId) return;
+      var dx = shouldNavigate ? e.clientX - downX : 0;
+      activePointerId = null;
       downX = null;
-      if (Math.abs(dx) < 40) return;
+      if (!shouldNavigate || Math.abs(dx) < 40) return;
       go(i + (dx < 0 ? 1 : -1), dx < 0);
       arm();
-    });
+    }
+    list.addEventListener('pointerup', function (e) { endSwipe(e, true); });
+    list.addEventListener('pointercancel', function (e) { endSwipe(e, false); });
     arm();
     LF.teardown.push(function () { clearInterval(timer); });
   };
 ```
+
+> **As-run:** the original code used inline ternary syntax (`loading: forloop.first ? 'eager' : 'lazy'`) inside the `image_tag` filter's arguments — Shopify's Liquid dialect doesn't support `? :` expressions there at all. `shopify theme check` (static linter) didn't catch it; only the live dev-server Liquid parser did, with a hard 500 ("Failed to Upload Theme Files", `Expected end_of_string but found question`). Fixed (already applied above) by computing `lf_hero_v2_loading`/`lf_hero_v2_priority` via a `{% liquid %}` if/assign block ahead of the tag, then referencing the plain variables — same eager/high-priority-on-first-slide behavior, valid syntax. Verified live: forward/backward clip-wipe transitions, swipe, and the reduced-motion fallback all settle to their correct end states with no stuck/incomplete animations.
+
+> **As-run (round 2):** code review found a real Critical bug — `go()` had no re-entrancy guard, so a rapid second nav-dot click during an in-flight ~1s transition reassigned `i` before the first GSAP timeline resolved, letting two overlapping timelines both end up controlling the same slide's `clip-path` (timeline-nested `tl.to()` calls don't auto-overwrite each other the way top-level `gsap.to()` does) and risking a slide left permanently hidden. Fixed with the same `data-state` gate pattern already proven in `LF.init.menu` (`idle`/`animating`, checked at the top of `go()`, cleared in the timeline's `onComplete`) — live-verified with an actual rapid-double-click sequence settling cleanly. Two Important fixes rode along in the same pass: the swipe handler now tracks `activePointerId` (ignoring a second concurrent pointer) and handles `pointercancel`, and the dead `@media (prefers-reduced-motion: reduce) { .lf-heroV2__slide { transition: none; } }` CSS rule (there's no CSS `transition` on that class to disable — motion is entirely GSAP-driven) was replaced with a comment pointing at the real guard in JS. All three fixes are already reflected in the code above.
+
+> **As-run (round 3):** Task 3's code review caught the same unescaped-`data-cursor`-attribute pattern in `lf-cta-row.liquid`; the identical fix was backported here (`| escape` added to the CTA link's `data-cursor` value) since this section has the exact same construct — already reflected in the code above.
 
 - [ ] **Step 3: Theme check** — `shopify theme check --path theme 2>&1 | tail -5`. This section isn't referenced by any template yet (Task 7 wires `index.json`), so expect an `UnusedAssign`/no offense change beyond the existing baseline (no `OrphanedSnippet`-equivalent rule fires for sections).
 
@@ -240,6 +255,11 @@ git commit -m "feat(b3.2): home hero slider v2 — numbered nav, clip-wipe trans
 git status --short
 ```
 
+**As-run notes (found during Task 12 user visual pass, fixed in `4d43f27`/`8b37510`/`4f9dced`):**
+- **Duplicate logo overlap:** the original Step 1 markup included a `.lf-heroV2__lockup` wordmark at `left:1.5rem;top:1.5rem`, which visually overlapped the persistent site header's own crest icon (`lf-header.liquid`, `position:fixed`, always rendered top-left on every page) — nothing hides the header over the hero. Removed the lockup markup and its CSS entirely; the code above reflects this. The header's own logo is sufficient.
+- **CTA/scroll indicator collision:** `.lf-heroV2__copy`'s `bottom` was `6rem`, leaving only ~3px clearance (a true overlap at every tested viewport) against `.lf-heroV2__scroll`'s `bottom: 2.2rem`. Bumped to `7.25rem`, giving ~17px clearance. Reflected above.
+- **Mid-word heading breaks:** `LF.init.ignite` (defined once, shared across sections, not part of this task's own code block) used `new SplitText(el, { type: 'chars' })`, giving the browser no word-level grouping to wrap on — confirmed live that "Needle" fit its container width yet still split mid-word. Fixed by changing to `type: 'words, chars'`. This function lives outside Task 1's file scope; see wherever `LF.init.ignite` is defined in `theme/assets/lf-sections.js` for the corrected version.
+
 ---
 
 ### Task 2: Home — Statement band
@@ -250,14 +270,14 @@ git status --short
 - [ ] **Step 1: Create `theme/sections/lf-statement.liquid`:**
 
 ```liquid
-<section class="lf-statement">
+<section class="lf-statement" data-lf-overlap>
   <div class="lf-statement__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
   <h2 class="lf-statement__text lf-display lf-glow-text" data-lf-ignite data-lf-reveal>{{ section.settings.statement }}</h2>
 </section>
 
 {% stylesheet %}
 .lf-statement {
-  min-height: 70svh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; gap: 2rem; padding: 4rem 1.5rem; background: #08080b;
 }
 .lf-statement__crest {
@@ -287,6 +307,8 @@ git commit -m "feat(b3.2): home statement band"
 git status --short
 ```
 
+> **As-run (site-wide directive, fixed in `6caeda2`):** the user explicitly directed that major editorial/visual "scene" sections fill exactly one viewport, with nothing from the next section visible until scrolling (confirmed scope via clarifying question: applies to hero/statement/story-hero/lookbook/story-editorial-images, NOT to CTA row/marquee/community/email/footer, which stay their compact size). `min-height: 70svh` → `100svh`; reflected above. Simple flex-centered text+crest, no crop/composition concerns. Verified: 900/900px @ 1440×900, 1080/1080px @ 1920×1080 (exact fill both sizes); `data-lf-overlap`'s scroll-stitch pin effect confirmed unaffected (height-independent).
+
 ---
 
 ### Task 3: Home — CTA row
@@ -298,11 +320,11 @@ git status --short
 - [ ] **Step 1: Create `theme/sections/lf-cta-row.liquid`:**
 
 ```liquid
-<section class="lf-ctarow">
+<section class="lf-ctarow" data-lf-overlap style="--lf-ctarow-cols: {{ section.blocks.size | at_least: 1 }};">
   {% for block in section.blocks %}
-    <a class="lf-ctarow__card" href="{{ block.settings.link }}" {{ block.shopify_attributes }} data-cursor="{{ block.settings.cta_label | default: 'View' }}">
+    <a class="lf-ctarow__card" href="{{ block.settings.link }}" {{ block.shopify_attributes }} data-cursor="{{ block.settings.cta_label | default: 'View' | escape }}">
       {% if block.settings.image != blank %}
-        {{ block.settings.image | image_url: width: 900 | image_tag: loading: 'lazy', class: 'lf-ctarow__img', alt: block.settings.title }}
+        {{ block.settings.image | image_url: width: 900 | image_tag: loading: 'lazy', class: 'lf-ctarow__img', alt: '' }}
       {% endif %}
       <div class="lf-ctarow__overlay"></div>
       <div class="lf-ctarow__copy">
@@ -314,8 +336,8 @@ git status --short
 </section>
 
 {% stylesheet %}
-.lf-ctarow { display: grid; grid-template-columns: repeat(3, 1fr); }
-.lf-ctarow__card { position: relative; display: block; aspect-ratio: 3/4; text-decoration: none; overflow: hidden; }
+.lf-ctarow { display: grid; grid-template-columns: repeat(var(--lf-ctarow-cols, 3), 1fr); }
+.lf-ctarow__card { position: relative; display: block; aspect-ratio: 4/3; text-decoration: none; overflow: hidden; }
 .lf-ctarow__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--lf-ease); }
 .lf-ctarow__card:hover .lf-ctarow__img { transform: scale(1.04); }
 .lf-ctarow__overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,13,17,.1) 0%, rgba(13,13,17,.75) 100%); }
@@ -366,6 +388,9 @@ git status --short
     // this init is idempotent; kept as its own function for clarity/future growth.
   };
 ```
+
+> **As-run:** code review found three Important issues, all already reflected in the code above: (1) `data-cursor="{{ block.settings.cta_label | default: 'View' }}"` was unescaped in an HTML attribute — a merchant label containing `"` would break the tag; added `| escape`, matching the codebase's established convention (`lf-product.liquid`'s `data-alt`, `meta-tags.liquid`'s `content` attributes). (2) The grid was a fixed `repeat(3, 1fr)` with no degrade path for the 1-2 block case `max_blocks: 3` explicitly permits — fixed via a `--lf-ctarow-cols` custom property driven by `section.blocks.size`. (3) Each card's accessible name was duplicated (image `alt` repeated the same text as the adjacent visible `<h3>`) — changed the image to `alt: ''` since it's purely decorative next to a real heading.
+> **As-run (found in the user's post-fix visual pass, fixed in `9990561`):** `aspect-ratio: 3/4` (portrait) combined with `object-fit: cover` on the seeded 2000×2000 square filler images produced cards measuring ~71-79% of viewport height at common desktop sizes — confirmed live via `getBoundingClientRect()` at 1440×900 (640px card height) and 1920×1080 (854px). The section visually dominated the screen and read as broken/oversized rather than a clean editorial row. Changed to `aspect-ratio: 4/3` (landscape) — no `object-position` tuning needed since the source photos are full-bleed subject shots that frame well at default center-center. Re-verified: 1440×900 dropped to 360px (0.40 of viewport), 1920×1080 to 480px (0.44), mobile stacked height dropped from ~1560px to ~877px.
 
 - [ ] **Step 3: Commit**
 
@@ -454,6 +479,19 @@ git status --short
     if (ctx.reduced || !window.gsap) return;
     var track = wrap.querySelector('[data-lf-marquee-track]');
     if (!track) return;
+    var section = wrap.closest('.lf-marquee-section');
+    // The transform-driven track has no native scroll position of its own,
+    // but its overflow:hidden ancestor (which also wraps the unrelated
+    // statement text as a sibling) is still a valid target for the browser's
+    // native focus-scroll-into-view behavior on every Tab keystroke. Left
+    // alone, that native scrollLeft adjustment fights the GSAP transform and
+    // can visibly drift the statement text sideways. Snap it back to 0 so
+    // the GSAP transform stays the only source of truth for position.
+    if (section) {
+      section.addEventListener('focusin', function () {
+        if (section.scrollLeft !== 0) section.scrollLeft = 0;
+      });
+    }
     var half = track.scrollWidth / 2; // second half is the duplicated loop content
     var wrapFn = gsap.utils.wrap(-half, 0);
     var total = 0;
@@ -461,12 +499,16 @@ git status --short
       duration: .5, ease: 'power3',
       modifiers: { x: gsap.utils.unitize(wrapFn) }
     });
-    var dragging = false, startX = 0, startTotal = 0, activePointer = null;
+    var dragging = false, startX = 0, startTotal = 0, activePointer = null, lastDragDistance = 0;
 
     function onDown(e) {
       dragging = true; startX = e.clientX; startTotal = total; activePointer = e.pointerId;
       wrap.classList.add('is-dragging');
-      try { track.setPointerCapture(activePointer); } catch (err) {}
+      // Capture on the actual event target, not `track` — capturing on an
+      // ancestor disrupts the browser's native click-event synthesis for
+      // the descendant that was really interacted with, suppressing
+      // navigation on every click (drag or not), not just genuine drags.
+      try { e.target.setPointerCapture(activePointer); } catch (err) {}
     }
     function onMove(e) {
       if (!dragging || e.pointerId !== activePointer) return;
@@ -475,9 +517,13 @@ git status --short
     }
     function onUp(e) {
       if (!dragging || e.pointerId !== activePointer) return;
+      // Capture the drag distance BEFORE resetting `dragging` — the click
+      // handler runs after pointerup in the same interaction, so checking
+      // `dragging` there would always read the just-reset false value.
+      lastDragDistance = Math.abs(total - startTotal);
       dragging = false;
       wrap.classList.remove('is-dragging');
-      try { track.releasePointerCapture(activePointer); } catch (err) {}
+      try { e.target.releasePointerCapture(activePointer); } catch (err) {}
       activePointer = null;
     }
     track.addEventListener('pointerdown', onDown);
@@ -485,19 +531,22 @@ git status --short
     track.addEventListener('pointerup', onUp);
     track.addEventListener('pointercancel', onUp);
     track.addEventListener('click', function (e) {
-      // A drag that ended as a click (tiny movement) shouldn't navigate;
-      // a genuine drag already exceeded this via pointer capture, so only
-      // suppress when we're mid-drag at click time (rare double-fire).
-      if (dragging) e.preventDefault();
+      // A genuine drag (moved more than a few px) shouldn't navigate; a tap/
+      // click that barely moved should behave like a normal link click.
+      if (lastDragDistance > 6) e.preventDefault();
     });
 
     function tick(time, deltaTime) {
       if (!dragging) { total -= deltaTime / 20; xTo(total); }
     }
     gsap.ticker.add(tick);
-    LF.teardown.push(function () { gsap.ticker.remove(tick); });
+    LF.teardown.push(function () { gsap.ticker.remove(tick); gsap.killTweensOf(track); });
   };
 ```
+
+> **As-run:** the original `setPointerCapture`/`releasePointerCapture` calls targeted `track` (an ancestor of the actual pointerdown target) — proven via an isolated A/B test to suppress the browser's native click-event synthesis on EVERY card click, drag or not (a zero-movement tap failed to navigate with capture active, and navigated correctly with `setPointerCapture` neutered). Compounding this, the click handler's `if (dragging) e.preventDefault();` was dead code — `onUp` resets `dragging = false` synchronously, and the browser's `click` event always fires after `pointerup` for the same interaction, so the check could never read true. Fixed both together (already reflected in the code above): pointer capture now targets `e.target` (the actual interacted element, not `track`), and a `lastDragDistance` flag captured before the `dragging` reset drives the click-suppression check instead. Live-verified the specific regression: a genuine drag no longer navigates, and a zero-movement click now correctly navigates to the product page (previously it silently failed to, for every card, every time).
+>
+> **As-run (round 2):** code review found two more Important gaps, both fixed and live-verified (already reflected in the code above). (1) `gsap.quickTo`'s tween on `track` was never killed in teardown — only the ticker callback was removed, so an in-flight `.5s power3` tween can keep GSAP's root timeline referencing the (soon-to-be-discarded) `track` for up to half a second after a Barba nav; added `gsap.killTweensOf(track)` alongside the ticker removal. (2) Keyboard Tab-focus on an off-screen card triggered the browser's native scroll-into-view on `.lf-marquee-section` (the `overflow:hidden` ancestor, which also wraps the unrelated statement text as a sibling) — completely uncoordinated with the GSAP transform driving the track's actual position, so the two could visibly fight and drift the statement text sideways while tabbing through cards. Fixed with a `focusin` handler that snaps `section.scrollLeft` back to 0 immediately, keeping the GSAP transform as the sole source of truth for position. Verified live: the teardown-drain no longer leaves the tween animating, and 5 real Tab presses through the card list all confirmed `scrollLeft` stayed at 0.
 
 - [ ] **Step 3: Commit**
 
@@ -537,11 +586,11 @@ git status --short
 </section>
 
 {% stylesheet %}
-.lf-lookbook { position: relative; height: 90svh; overflow: hidden; }
+.lf-lookbook { position: relative; height: 100svh; overflow: hidden; }
 .lf-lookbook__list, .lf-lookbook__slide { position: absolute; inset: 0; }
 .lf-lookbook__slide { opacity: 0; transition: opacity .6s var(--lf-ease); }
 .lf-lookbook__slide.is-active { opacity: 1; }
-.lf-lookbook__img { width: 100%; height: 100%; object-fit: cover; }
+.lf-lookbook__img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
 .lf-lookbook__ui {
   position: absolute; left: 1.5rem; right: 1.5rem; bottom: 1.5rem; z-index: 2;
   display: flex; align-items: center; gap: 1.4rem; color: var(--lf-body-text);
@@ -599,6 +648,10 @@ git add theme/sections/lf-lookbook.liquid theme/assets/lf-sections.js
 git commit -m "feat(b3.2): home lookbook slider"
 git status --short
 ```
+
+> **As-run (found in the user's third visual pass, fixed in `d3ec598`):** `height: 90svh` forced the section to 90% of viewport height at every tested size (810-1035px), and cover-cropping the square 2000×2000 filler images into that near-hero-scale landscape frame left only ~50-56% of the source image visible — same defect pattern as the CTA row's aspect-ratio bug (`9990561`), just via a different CSS property. Replaced `height: 90svh` with `aspect-ratio: 10/3` (a wide cinematic banner ratio, empirically tested against several candidates via live screenshots) and added `object-position: 50% 22%` to bias the crop upward so the headdress/sky context stays in frame rather than a symmetric center-crop cutting into the subject. Re-verified: 432-600px tall at tested viewports (48-53% of viewport, in the same "modest" range the CTA row fix landed in), `.lf-lookbook__ui`'s counter/arrows still clear the section's bottom edge by 24px, and prev/next crossfade nav confirmed still functional on both slides.
+> **As-run (found in the user's fourth visual pass, fixed in `839fee6`):** `aspect-ratio: 10/3` read as too compact once seen in context alongside the seeded community section below it (see Task 7's As-run notes). Bumped to `aspect-ratio: 8/3`, landing around 60-67% of viewport height instead of 48-53% — more gallery presence while staying well short of the original 90svh bug.
+> **As-run (site-wide directive, fixed in `c6faafc`):** the user then directed that all major editorial/visual sections fill exactly one viewport (see Task 2's As-run for the full directive). Reverted the sizing mechanism from `aspect-ratio: 8/3` back to viewport-native `height: 100svh` — the original crop-too-tight bug was never really about the height value itself, it was the missing `object-position` tuning, which is still in place (`object-position: 50% 22%` on `.lf-lookbook__img`, unchanged). Verified live at true 100vh with the existing tuning: both slides read well-composed (full headdress/subject visible), no further `object-position` adjustment needed. Measured 900/900px @ 1440×900, 1080/1080px @ 1920×1080 (exact fill); prev/next crossfade re-confirmed functional on both slides.
 
 ---
 
@@ -738,17 +791,45 @@ git status --short
       "settings": { "autoplay_seconds": 6 }
     },
     "statement": { "type": "lf-statement", "settings": {} },
-    "ctarow": { "type": "lf-cta-row", "settings": {} },
+    "ctarow": {
+      "type": "lf-cta-row",
+      "blocks": {
+        "card1": { "type": "card", "settings": { "eyebrow": "our products", "title": "Shop the Drop", "cta_label": "Shop", "link": "shopify://collections/all", "image": "shopify://shop_images/lf-hero-chief.jpg" } },
+        "card2": { "type": "card", "settings": { "eyebrow": "our story", "title": "Read More", "cta_label": "Read", "link": "shopify://pages/story", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "card3": { "type": "card", "settings": { "eyebrow": "our community", "title": "Get in Touch", "cta_label": "Connect", "link": "shopify://pages/contact", "image": "shopify://shop_images/lf-hero-chief.jpg" } }
+      },
+      "block_order": ["card1", "card2", "card3"],
+      "settings": {}
+    },
     "marquee": { "type": "lf-marquee", "settings": {} },
-    "lookbook": { "type": "lf-lookbook", "settings": {} },
-    "community": { "type": "lf-community", "settings": {} },
+    "lookbook": {
+      "type": "lf-lookbook",
+      "blocks": {
+        "slide1": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-hero-chief.jpg", "caption": "Won't Bow Down" } },
+        "slide2": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-hero-secondline.jpg", "caption": "Kill 'Em Dead, Needle & Thread" } }
+      },
+      "block_order": ["slide1", "slide2"],
+      "settings": {}
+    },
+    "community": {
+      "type": "lf-community",
+      "blocks": {
+        "partner1": { "type": "partner", "settings": { "name": "NOLA Second Line Society", "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "partner2": { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.", "image": "shopify://shop_images/lf-hero-chief.jpg" } },
+        "partner3": { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "partner4": { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.", "image": "shopify://shop_images/lf-hero-chief.jpg" } }
+      },
+      "block_order": ["partner1", "partner2", "partner3", "partner4"],
+      "settings": {}
+    },
     "email": { "type": "lf-email-block", "settings": {} }
   },
   "order": ["hero", "statement", "ctarow", "marquee", "lookbook", "community", "email"]
 }
 ```
 
-Note: `lf-hero-slider`, `lf-featured-story`, `lf-drop-grid`, `lf-culture-strip` drop out of the render order here but their `.liquid` files stay in the repo (retirement policy from B3.1's precedent). `lf-cta-row`'s block-level `default` settings (Task 3) supply its 3 cards since `index.json` doesn't list blocks explicitly for it.
+Note: `lf-hero-slider`, `lf-featured-story`, `lf-drop-grid`, `lf-culture-strip` drop out of the render order here but their `.liquid` files stay in the repo (retirement policy from B3.1's precedent). `lf-email-block` is retained from B1 unmodified in structure; its copy was later corrected from pre-launch "Notify Me" teaser language to live-site newsletter framing — see the As-run note after Task 12's script for details (fix landed during final verification, not as part of this task).
+> ~~`lf-cta-row`'s block-level `default` settings (Task 3) supply its 3 cards since `index.json` doesn't list blocks explicitly for it.~~ **Superseded** — see the As-run note below: `index.json` was later corrected to list explicit blocks after shipping with none.
 
 - [ ] **Step 2: Append `LF.init.scrollOverlap` to `theme/assets/lf-sections.js`:**
 
@@ -765,19 +846,9 @@ Note: `lf-hero-slider`, `lf-featured-story`, `lf-drop-grid`, `lf-culture-strip` 
   };
 ```
 
-- [ ] **Step 3: Add `data-lf-overlap` to the statement and CTA-row sections** so they participate in the stitching — modify `theme/sections/lf-statement.liquid`'s root element:
+> **As-run:** `data-lf-overlap` was already baked into `lf-statement.liquid` and `lf-cta-row.liquid` from Task 2/Task 3's own creation (an earlier revision of this plan added it there directly rather than deferring to this task) — there's nothing left to "add" here; both sections already carry the marker and CTA row's grid-column CSS variable. This step is a no-op, kept only as a record of the original intent.
 
-```liquid
-<section class="lf-statement" data-lf-overlap>
-```
-
-and `theme/sections/lf-cta-row.liquid`'s root element:
-
-```liquid
-<section class="lf-ctarow" data-lf-overlap>
-```
-
-- [ ] **Step 4: Append overlap-scroll utility to `theme/assets/lf-tokens.css`:**
+- [ ] **Step 3: Append overlap-scroll utility to `theme/assets/lf-tokens.css`:**
 
 ```css
 /* Overlap-scroll stitching (B3.2): pinned section slides down over 500px of
@@ -786,19 +857,27 @@ and `theme/sections/lf-cta-row.liquid`'s root element:
 [data-lf-overlap] { position: relative; z-index: 1; will-change: transform; }
 ```
 
-- [ ] **Step 5: Push to dev, verify** — home page loads with all 6 new sections in order, hero clip-wipes between slides, marquee drags, lookbook arrows work, community rows reveal on scroll.
+- [ ] **Step 4: Push to dev, verify** — home page loads with all 6 new sections in order, hero clip-wipes between slides, marquee drags, lookbook arrows work, community rows reveal on scroll.
 
 ```bash
 shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add theme/templates/index.json theme/assets/lf-sections.js theme/assets/lf-tokens.css theme/sections/lf-statement.liquid theme/sections/lf-cta-row.liquid
+git add theme/templates/index.json theme/assets/lf-sections.js theme/assets/lf-tokens.css
 git commit -m "feat(b3.2): wire home page to new sections, add overlap-scroll stitching"
 git status --short
 ```
+
+> **As-run (found in Task 12 verification, fixed in `de44c28`):** the original Step 1 code block wired `"lookbook": { "type": "lf-lookbook", "settings": {} }` with no `blocks`/`block_order`. `LF.init.lookbook` (Task 5) only binds its prev/next click handlers `if (n >= 2)` slides exist, so this rendered 0 slides and left the arrows silently dead — no console error, easy to miss in a quick visual check. The code block above is corrected to seed 2 `slide` blocks reusing the hero's already-uploaded shop images (`lf-hero-chief.jpg`/`lf-hero-secondline.jpg`), matching the field names in `lf-lookbook.liquid`'s schema (`image`, `caption`).
+> **Process lesson:** any section that loops `{% for block in section.blocks %}` (block-driven — lookbook, hero, cta-row) needs sample content seeded in the *same* task that wires it into a template, and verification needs to check actual block/slide count, not just section presence. Sections driven by top-level `settings.*` id fields instead of blocks (story-sticky, contact-split, community) render their real structure even with blank settings, so they don't have this failure mode — the distinction matters when writing or reviewing future wiring tasks (e.g. B3.3).
+> **As-run (found in the user's Task 12 visual pass, fixed in `3b678f3`):** the process lesson above correctly predicted `ctarow` was at risk, but the original Step 1 code block still shipped it with `"settings": {}` and no blocks anyway. With 0 blocks, `--lf-ctarow-cols` resolved to 1 and the for-loop rendered zero `.lf-ctarow__card` elements, collapsing the section to `height: 0` — confirmed live (`{top: 1530, height: 0}`, sitting directly on top of the marquee section beneath it). With no buffer section, the statement band's `data-lf-overlap` slide-down effect had nothing to slide over but the marquee's product cards immediately below, producing a visible glitchy overlap the user reported as "scroll is buggy" / images colliding with statement text. Seeded 3 card blocks reusing the two hero images, matching `lf-cta-row.liquid`'s schema field names (`eyebrow`, `title`, `cta_label`, `link`, `image`). The code block above is corrected. Re-verified by scrolling in 200px increments from y=900–2300: `ctarow` now measures ~640px real height and both overlap effects (statement→ctarow, ctarow→marquee) scrub cleanly with proper separation.
+> **As-run (found in the user's second visual pass, fixed in `96291f4`):** `lf-email-block.liquid` (retained unmodified from B1, not part of this plan's own task files) still carried its original pre-launch teaser copy — prompt "Be there when the lights come on.", button "Notify Me", `contact[tags]=teaser-list`. That copy made sense when the site was gated behind the password teaser; it reads as contradictory on the fully-built, fully-browsable home page this plan ships (the user is already shopping products, reading the story, viewing PDPs — "notify me when we launch" doesn't fit). Changed to newsletter-signup framing: prompt "First word on new drops, restocks, and second-line events.", button "Join", tag `newsletter` — consistent with the footer's existing "Join the list" button copy (`lf-footer.liquid`, unchanged). No layout/structure changes, copy only.
+> **As-run (found in the user's second visual pass, fixed in `9990561`):** `lf-cta-row.liquid`'s `.lf-ctarow__card` used `aspect-ratio: 3/4` (portrait), which combined with `object-fit: cover` on the seeded 2000×2000 square filler images produced cards measuring 71-79% of viewport height at common desktop sizes (confirmed live: 640px at 1440×900, 854px at 1920×1080) — the row visually dominated the screen rather than reading as a compact editorial grid. Changed to `aspect-ratio: 4/3` (landscape); reflected in Step 1's code block above. Re-verified: 360px at 1440×900 (0.40 of viewport), 480px at 1920×1080 (0.44), mobile stacked height dropped from ~1560px to ~877px. No `object-position` tuning was needed — the source photos are full-bleed subject shots that already frame well at default center-center.
+> **Checked, not a bug:** the user also reported the standard footer (nav links, product rack, legal/copyright) appeared to be missing entirely on the home page after the email signup block. Live DOM/CSS inspection found `.lf-footer` renders fully and correctly — real height (663px), all nav links, 6 populated product-rack items, legal nav, and copyright line all present and visible, no clipping/hiding ancestors. No code change made; most likely explanation is the visual break at the email block's bottom border reading as a natural stopping point before scrolling further.
+> **As-run (found in the user's fourth visual pass, fixed in `e8bf5c2`):** `community` was the fourth section to ship with `"settings": {}` and no blocks at all — same bug class as lookbook (`de44c28`), cta-row (`3b678f3`), and story editorial/sticky (`635282c`). Section instances in JSON templates don't inherit a schema's `"default.blocks"` preset (that preset is only applied when a merchant adds the section fresh via the theme editor), so all 4 partner rows rendered as zero. The intro ("Giving back...") was followed immediately by the section's own `padding: 5rem`/`margin-bottom: 3.5rem` and nothing else, then the email block's own top padding stacked on top — reading as an oversized empty gap between two text blocks, which is what the user reported (perceived as a spacing bug; actual cause was missing content, not excess padding). Seeded the same 4 partner names/blurbs already defined as `lf-community.liquid`'s own schema `default.blocks` preset, alternating the two already-uploaded hero images across the 4 rows. Code block above corrected; re-verified live (4 `.lf-community__row` elements render with real name/blurb/image content).
 
 ---
 
@@ -814,32 +893,35 @@ git status --short
 ```liquid
 <header class="lf-storyhero">
   <div class="lf-storyhero__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');" data-lf-fadeout></div>
-  <div class="lf-storyhero__head" data-lf-reading-wrap>
-    <div class="lf-storyhero__intro" data-lf-reading-trigger>
+  <div class="lf-storyhero__head">
+    <div class="lf-storyhero__intro">
       <p class="lf-storyhero__kicker" data-lf-fadeout>Est. New Orleans</p>
       <p class="lf-storyhero__name lf-script">{{ section.settings.intro }}</p>
     </div>
-    <h1 class="lf-storyhero__title lf-display lf-glow-text" data-lf-ignite data-lf-reading-target>{{ page.title }}</h1>
+    <h1 class="lf-storyhero__title lf-display lf-glow-text" data-lf-ignite>{{ page.title }}</h1>
   </div>
 </header>
 
 {% stylesheet %}
-.lf-storyhero { min-height: 80svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5rem; text-align: center; padding: 4rem 1.5rem; }
+.lf-storyhero { min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5rem; text-align: center; padding: 4rem 1.5rem; }
 .lf-storyhero__crest {
   width: 56px; aspect-ratio: 300/320; background-color: var(--lf-neon-core);
   -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat;
   filter: drop-shadow(0 0 8px var(--lf-neon-halo)); transition: opacity .3s ease;
 }
 .lf-storyhero__head { position: relative; max-width: 700px; }
-.lf-storyhero__intro { transition: opacity .3s ease; }
 .lf-storyhero__kicker { font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-muted); margin: 0 0 .6rem; transition: opacity .3s ease; }
 .lf-storyhero__name { font-size: 1.3rem; color: var(--lf-body-text); margin: 0; }
 .lf-storyhero__title { font-size: clamp(2rem, 6vw, 3.4rem); margin: .8rem 0 0; transition: opacity .3s ease; }
-/* Reading-mode hover: hovering the intro fades the headline + page-wide [data-lf-fadeout]
-   elements so the page "makes room" for reading — matches OR's about-head_wrap pattern. */
+/* Reading-mode hover: hovering the intro fades the headline + this section's
+   [data-lf-fadeout] elements so the page "makes room" for reading — matches
+   OR's about-head_wrap pattern. */
 @media (hover: hover) and (pointer: fine) {
   .lf-storyhero__head:has(.lf-storyhero__intro:hover) .lf-storyhero__title { opacity: .12; }
-  body:has(.lf-storyhero__intro:hover) [data-lf-fadeout] { opacity: .12; }
+  /* Scoped to the section, not body — [data-lf-fadeout] is a generic,
+     reusable attribute name other Story-page sections may adopt later;
+     a page-wide selector here would dim their unrelated elements too. */
+  .lf-storyhero:has(.lf-storyhero__intro:hover) [data-lf-fadeout] { opacity: .12; }
 }
 {% endstylesheet %}
 
@@ -864,6 +946,8 @@ git status --short
   };
 ```
 
+> **As-run:** code review found the `[data-lf-fadeout]` fade rule was scoped to `body`, matching ANY such element anywhere in the page's DOM — a real forward-looking risk given Tasks 9/10 land on this exact Story page next and are natural candidates to reuse the same generic attribute name. Rescoped to `.lf-storyhero:has(...)` (already reflected above). Also dropped three unused `data-lf-reading-*` attributes and one dead `transition` declaration that never had anything wired to them (already reflected above) — verified live: the hover effect still dims this section's own elements correctly, and a probe element with `[data-lf-fadeout]` placed outside `.lf-storyhero` is now correctly unaffected by the hover (previously it would have dimmed too).
+
 - [ ] **Step 3: Commit**
 
 ```bash
@@ -872,6 +956,8 @@ git commit -m "feat(b3.2): story hero with CSS reading-mode hover"
 git status --short
 ```
 
+> **As-run (site-wide directive, fixed in `327bada`):** same full-viewport-scene directive as Task 2's statement band. `min-height: 80svh` → `100svh`; reflected above. This was the section directly responsible for the user's original screenshot showing the next section's images peeking in at the bottom of the viewport. Verified: 900/900px @ 1440×900, 1080/1080px @ 1920×1080 (exact fill), no next-section content visible in the fitted viewport.
+
 ---
 
 ### Task 9: Story — editorial band (parallax images + flickthrough)
@@ -879,6 +965,7 @@ git status --short
 **Files:**
 - Create: `theme/sections/lf-story-editorial.liquid`
 - Modify: `theme/assets/lf-sections.js` (append `LF.init.imgScroll`, `LF.init.flickthrough`)
+- Modify: `theme/assets/lf-chrome.js` (export `LF.FINE` — see as-run note below)
 
 - [ ] **Step 1: Create `theme/sections/lf-story-editorial.liquid`:**
 
@@ -915,10 +1002,10 @@ git status --short
 {% stylesheet %}
 .lf-storyed { padding: 3rem 1.5rem 5rem; max-width: 1100px; margin: 0 auto; }
 .lf-storyed__band { text-align: center; margin-bottom: 3rem; }
-.lf-storyed__offset { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; }
+.lf-storyed__offset { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; min-height: 100svh; align-content: center; }
 .lf-storyed__imgwrap { overflow: clip; }
-.lf-storyed__imgwrap--left { aspect-ratio: 4.35/2.8; align-self: start; }
-.lf-storyed__imgwrap--right { aspect-ratio: 4.35/6; align-self: end; }
+.lf-storyed__imgwrap--left { aspect-ratio: 4.35/4.6; align-self: start; }
+.lf-storyed__imgwrap--right { aspect-ratio: 4.35/5.2; align-self: end; }
 .lf-storyed__img { width: 100%; height: 120%; object-fit: cover; display: block; }
 .lf-storyed__copy { max-width: 60ch; margin: 0 auto 4rem; font-size: 1rem; line-height: 1.75; color: var(--lf-body-text); text-align: center; }
 .lf-flickthrough { position: relative; aspect-ratio: 4/3; max-width: 420px; margin: 0 auto; overflow: hidden; }
@@ -975,9 +1062,10 @@ git status --short
       imgs[index].classList.add('is-shown');
     }
     if (ctx.reduced) return;
-    if (FINE.matches) {
+    if (LF.FINE.matches) {
       wrap.addEventListener('mouseenter', function () {
         nextImage();
+        clearInterval(interval);
         interval = setInterval(nextImage, 300);
       });
       wrap.addEventListener('mouseleave', function () { clearInterval(interval); });
@@ -988,13 +1076,24 @@ git status --short
   };
 ```
 
+> **As-run:** `LF.init.flickthrough` reads `FINE.matches`, but `FINE` is declared as a private `var` inside `lf-chrome.js`'s own top-level IIFE (`(function () { ... var FINE = ...; ... })();`), not attached to `window` or the shared `LF` namespace — it was never actually accessible from a different file/IIFE like `lf-sections.js`, despite both files sharing `LF.init`/`LF.teardown`/etc. This was a structural assumption error in the original plan (confirmed via live testing: referencing bare `FINE` from `lf-sections.js` throws `ReferenceError: FINE is not defined`, script `defer` order is irrelevant since this is lexical scoping, not a load-timing race). Fixed by exporting it onto the shared namespace — in `theme/assets/lf-chrome.js`, immediately after the existing `var FINE = window.matchMedia('(min-width: 992px) and (pointer: fine)');` line, add:
+> ```js
+>   LF.FINE = FINE; // shared across files via the LF namespace (lf-sections.js reads this)
+> ```
+> and reference it as `LF.FINE.matches` in `LF.init.flickthrough` above (already reflected in the code block). This is the more idiomatic fix versus the alternatives considered (a second independent `matchMedia` call in `lf-sections.js`, which would create a redundant `MediaQueryList`; or inlining the raw query string directly in the function) — `LF` is already the established shared-state namespace for cross-file values (`LF.scrollLock`, `LF.trapFocus`, `LF.money`, `LF.esc`), so `LF.FINE` fits that existing pattern rather than adding a new mechanism. Live-verified after the fix: no `ReferenceError`, hover-cycling on desktop-width/fine-pointer contexts and auto-cycling on coarse/narrow contexts both work correctly.
+>
+> **As-run (round 2):** code review found the `mouseenter` handler didn't guard against stacking intervals if it somehow fired twice without an intervening `mouseleave` — a trivial, zero-cost defensive `clearInterval(interval)` before re-arming (already reflected above) matches the identical pattern `LF.init.hero`'s `arm()` already uses elsewhere in this same file.
+
 - [ ] **Step 3: Commit**
 
 ```bash
-git add theme/sections/lf-story-editorial.liquid theme/assets/lf-sections.js
+git add theme/sections/lf-story-editorial.liquid theme/assets/lf-sections.js theme/assets/lf-chrome.js
 git commit -m "feat(b3.2): story editorial band — parallax images + flickthrough zoetrope"
 git status --short
 ```
+
+> **As-run (site-wide directive, fixed in `04e3598`):** unlike Task 2/8's simple full-height sections, this is a composite section (eyebrow + offset image pair + body copy + flickthrough zoetrope) — the directive was scoped to only the offset image pair being the "photo scene" (eyebrow/copy/flickthrough stay compact, matching the approved clarifying-question scope). Added `min-height: 100svh; align-content: center;` to `.lf-storyed__offset` (reflected above). Note: `align-content: center` was used instead of the more obvious `align-items: center`, because with `align-items: center` CSS Grid's default `align-content: stretch` forces the row to stretch to the full section height, and since the shorter landscape image is `align-self: start`, the void beneath it grows unboundedly with viewport height (measured 454px at 900px height → 683px at 1080px height). `align-content: center` keeps the row's natural content height (~709px, set by the taller portrait image) and centers that whole two-image cluster, making the void a constant ~453px regardless of viewport.
+> **As-run (user follow-up, fixed in `eb5200e`):** the flagged ~453px void beneath the landscape image (driven by the original `4.35/2.8`/`4.35/6` aspect-ratio disparity) was closed per direct user request. Two iterations, both measured live: first narrowed to `4.35/3.6`/`4.35/5.2` (void → ~227px at 1440×900) — still read as an accidental gap in a screenshot review, not an intentional stagger. Tightened further to `4.35/4.6`/`4.35/5.2` (void → ~85px at 1440×900); reflected above. At this ratio the offset reads as a deliberate vertical stagger between the two images rather than empty space, while each image keeps its wide-vs-tall character.
 
 ---
 
@@ -1123,8 +1222,26 @@ git status --short
 {
   "sections": {
     "hero": { "type": "lf-story-hero", "settings": {} },
-    "editorial": { "type": "lf-story-editorial", "settings": {} },
-    "sticky": { "type": "lf-story-sticky", "settings": {} },
+    "editorial": {
+      "type": "lf-story-editorial",
+      "settings": {
+        "image_left": "shopify://shop_images/lf-hero-chief.jpg",
+        "image_right": "shopify://shop_images/lf-hero-secondline.jpg",
+        "flick_image_1": "shopify://shop_images/lf-hero-chief.jpg",
+        "flick_image_2": "shopify://shop_images/lf-hero-secondline.jpg",
+        "flick_image_3": "shopify://shop_images/lf-hero-chief.jpg"
+      }
+    },
+    "sticky": {
+      "type": "lf-story-sticky",
+      "settings": {
+        "panel_image_1": "shopify://shop_images/lf-hero-chief.jpg",
+        "panel_image_2": "shopify://shop_images/lf-hero-secondline.jpg",
+        "panel_image_3": "shopify://shop_images/lf-hero-chief.jpg",
+        "panel_image_4": "shopify://shop_images/lf-hero-secondline.jpg",
+        "panel_image_5": "shopify://shop_images/lf-hero-chief.jpg"
+      }
+    },
     "footer": { "type": "lf-footer", "settings": { "full_height": true } }
   },
   "order": ["hero", "editorial", "sticky", "footer"]
@@ -1134,18 +1251,36 @@ git status --short
 - [ ] **Step 4: Suppress the global footer-group for `story`/`contact` templates** — modify `theme/layout/theme.liquid`, changing:
 
 ```liquid
+    <main id="lf-main" data-barba="wrapper">
+      <div data-barba="container" data-barba-namespace="{{ template.name }}">{{ content_for_layout }}</div>
+    </main>
     {% sections 'footer-group' %}
 ```
 
 to:
 
 ```liquid
-    {%- comment -%} Story renders its own full-height footer as a template section (above);
-       Contact's split layout has an inline mini-footer and no standard footer at all. {%- endcomment -%}
-    {% unless template.suffix == 'story' or template.suffix == 'contact' %}
-      {% sections 'footer-group' %}
-    {% endunless %}
+    <main id="lf-main" data-barba="wrapper">
+      <div data-barba="container" data-barba-namespace="{{ template.name }}">
+        {{ content_for_layout }}
+        {%- comment -%} Story renders its own full-height footer as a template section (above);
+           Contact's split layout has an inline mini-footer and no standard footer at all.
+           Scoped to template.name == 'page' too — template.suffix alone is resource-type-
+           agnostic in Shopify, so an unrelated future alternate template (e.g.
+           product.story.json) named "story"/"contact" for a different purpose would
+           otherwise silently lose its footer sitewide.
+           Lives INSIDE the Barba container (not after </main>) so it's re-evaluated
+           and swapped on every client-side navigation, not just on hard/fresh loads —
+           otherwise a stale footer-group from a previous page persists across Barba
+           transitions into pages that should suppress it (or vice versa). {%- endcomment -%}
+        {% unless template.name == 'page' and template.suffix == 'story' or template.name == 'page' and template.suffix == 'contact' %}
+          {% sections 'footer-group' %}
+        {% endunless %}
+      </div>
+    </main>
 ```
+
+> **As-run (found via direct user report "there are two footers on story page", fixed in `001db88`):** the `{% unless %}...{% sections 'footer-group' %}` block originally lived AFTER `</main>` (outside the Barba container), so it was only evaluated on a hard/fresh page load — never re-evaluated on a client-side Barba transition. Reproduced live: hard-load Home (1 footer, correct) → click the nav's in-app "Story" link (Barba client-side transition) → 2 footers (the stale Home footer-group, never removed because it lived outside the swapped container, plus Story's own full-height footer which correctly rendered as part of the swap). Fixed by moving the entire `{% unless %}` block to inside `<div data-barba="container">`, immediately after `{{ content_for_layout }}` — now it's part of what Barba swaps on every navigation, matching how Story's own template-level footer already behaved. Verified safe: `LF.init.footerFollow` and all footer-tied listeners already use the `data-lf-bound` idempotency guard + `LF.init.*` re-dispatch pattern that's designed to survive repeated re-run after every Barba swap, so nothing assumed the footer's DOM persisted untouched across navigations. Full verification matrix (6 cells, all pass): Home hard-load (1, standard), Home→Story via Barba (1, full-height — bug fixed), Story→Home via Barba (1, standard, correctly reappears), Home→Contact via Barba (0 `.lf-footer` + 1 `.lf-contact__mini-footer`, correct), Story hard-load (1, full-height, regression-safe), Contact hard-load (0 + mini-footer, regression-safe).
 
 - [ ] **Step 5: Push to dev, verify** — `/pages/story` shows hero (with working reading-hover on desktop), editorial band with parallax images and flickthrough, 5 sticky panels that pin and stack while scrolling, floating crests cycling, then the full-height footer — and only ONE footer renders (not the default plus the full-height one).
 
@@ -1153,10 +1288,15 @@ to:
 shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
 ```
 
+> **As-run:** code review found two Important issues, both fixed and already reflected above. (1) The footer-suppression conditional checked bare `template.suffix`, which is resource-type-agnostic in Shopify (pages, articles, products, collections can all have suffixed alternate templates) — zero live risk today (only `page.story.json` exists), but a latent footgun for any future unrelated template happening to share the "story"/"contact" suffix name. Scoped with `template.name == 'page'` too, matching this same file's existing `template.name` usage for the Barba namespace. (2) `theme/sections/lf-footer.liquid`'s `.lf-footer--full` used `min-height: 100dvh` while every other full-viewport element in the theme (`lf-hero-slider`, `lf-hero-slider-v2`, `lf-teaser`, and this task's own sticky panels) consistently uses `100svh` — since this task is the first to place a `100dvh` element directly after a `100svh` sticky stack, the mismatch could produce a visible height snap at that boundary as mobile browser chrome collapses/expands during scroll. Switched to `100svh` for consistency (a fix to an already-shipped B3.1 file, made here because it's directly caused by what this task introduces).
+> **As-run (found in the user's Task 12 visual pass, fixed in `635282c`):** Step 3's `page.story.json` originally wired both `editorial` and `sticky` with `"settings": {}` — same class of bug as lookbook/cta-row above, but with a twist: unlike text/textarea settings (which have schema `default` values and rendered fine), `image_picker` settings have no default, so `panel_image_1-5` (sticky) and `image_left`/`image_right`/`flick_image_1-3` (editorial) all resolved blank and no `<img>` ever rendered. Confirmed live: each `.lf-storysticky__img` container still reserved ~519px of height via its `aspect-ratio` CSS (an invisible box matching the page background color), and since `.lf-storysticky__panel` is a `100svh` flex column with `justify-content: center`, that invisible box pushed the real title/body copy down into the bottom third of the panel — reading as "small, dim, cornered text against a huge black void," which is exactly what the user reported. The editorial section's offset images and flickthrough zoetrope were equally blank for the same reason. Seeded both sections with the two hero images (code block above corrected). Re-verified by scrolling in 500px increments across the full page: all 5 panels and the editorial band now render full styled imagery, no black-void gaps remain.
+> **As-run (direct user request, fixed in `23988ef` then `ac2af96`, another already-shipped-B3.1-file touch-up made here since B3.2 is the phase actively working in this file):** `.lf-footer__club` (the "a neon-lit expression of New Orleans" tagline) sat only `2.4rem` above the Site Index/Club/Rack column grid, reading as cramped. First attempt (`23988ef`) bumped `margin` from `.6rem 0 2.4rem` to `.6rem 0 4.5rem` — but the user reported no visible change. Live specificity audit (`document.styleSheets` + `element.matches()`) found the real cause: `theme/assets/critical.css` has a global rule `:is(p, h1, h2, h3, h4, h5, h6):last-child { margin-block-end: 0 }` (meant to trim trailing paragraph margins in prose content), and since `.lf-footer__club` is both a `<p>` and the last child of `.lf-footer__brand`, that reset's specificity `(0,1,1)` beat the plain class selector `(0,1,0)` regardless of source order — computed `margin-bottom` was genuinely `0px` the whole time. Fixed in `ac2af96` by changing the selector to `.lf-footer__brand .lf-footer__club` `(0,2,0)`, an unambiguous win. Confirmed live: computed margin-bottom 0px → 72px, matching the intended `4.5rem`.
+> **Known, not swept:** this `critical.css` last-child reset is global and could similarly defeat any other section's trailing-paragraph margin elsewhere in the theme if that paragraph happens to be a last child — not audited beyond this one instance since it was the only one reported. Worth keeping in mind if a future "my margin isn't showing" report comes in on a `<p>` element.
+
 - [ ] **Step 6: Commit**
 
 ```bash
-git add theme/sections/lf-story-sticky.liquid theme/assets/lf-sections.js theme/templates/page.story.json theme/layout/theme.liquid
+git add theme/sections/lf-story-sticky.liquid theme/assets/lf-sections.js theme/templates/page.story.json theme/layout/theme.liquid theme/sections/lf-footer.liquid
 git commit -m "feat(b3.2): story sticky stack, floating crests, full-height footer wiring"
 git status --short
 ```
@@ -1186,9 +1326,9 @@ git status --short
   </div>
   <div class="lf-contact__info">
     <p class="lf-contact__label">{% render 'lf-eyebrow', text: 'contact us' %}</p>
-    {% if section.settings.email != blank %}<a class="lf-contact__link lf-display" href="mailto:{{ section.settings.email }}">{{ section.settings.email }}</a>{% endif %}
+    {% if section.settings.email != blank %}<a class="lf-contact__link lf-display" href="mailto:{{ section.settings.email | escape }}">{{ section.settings.email }}</a>{% endif %}
     <p class="lf-contact__sub">{{ section.settings.body }}</p>
-    {% if section.settings.instagram_url != blank %}<a class="lf-contact__ig" href="{{ section.settings.instagram_url }}" target="_blank" rel="noopener" data-cursor="Follow">Instagram</a>{% endif %}
+    {% if section.settings.instagram_url != blank %}<a class="lf-contact__ig" href="{{ section.settings.instagram_url }}" target="_blank" rel="me noopener" data-cursor="Follow">Instagram</a>{% endif %}
     <div class="lf-contact__mini-footer">
       <div class="lf-contact__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
            style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
@@ -1204,10 +1344,10 @@ git status --short
 .lf-contact__imgwrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .lf-contact__info {
   position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column;
-  justify-content: center; gap: 1rem; padding: 2rem 2.5rem;
+  justify-content: center; gap: 1rem; padding: 2rem 2.5rem; min-width: 0;
 }
 .lf-contact__label { margin: 0; }
-.lf-contact__link { font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); text-decoration: none; }
+.lf-contact__link { font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); text-decoration: none; overflow-wrap: break-word; display: inline-block; max-width: 100%; }
 .lf-contact__sub { color: var(--lf-body-text); font-size: .9rem; line-height: 1.6; max-width: 40ch; margin: 0; }
 .lf-contact__ig { color: var(--lf-muted); font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; }
 .lf-contact__ig:hover { color: var(--lf-neon-core); }
@@ -1277,6 +1417,12 @@ git add theme/sections/lf-contact-split.liquid theme/templates/page.contact.json
 git commit -m "feat(b3.2): contact page — split-screen sticky layout, new alternate template"
 git status --short
 ```
+
+**As-run notes:**
+- **Live verification of alternate page templates:** `shopify theme dev`'s local proxy (`http://127.0.0.1:<port>/pages/<handle>?view=<suffix>`) bypasses the storefront password gate entirely — it's tied to the CLI's authenticated session, not the storefront's password cookie. This is simpler than the live-domain `?preview_theme_id=` + session-cookie technique used in Phase B2, and works for previewing an alternate template on an *existing* page before it's admin-assigned. Used `/pages/contact?view=contact` to confirm `lf-contact-split.liquid` renders (not the generic `page.liquid` fallback), sticky behavior holds, and no standard footer renders beneath it (confirming Task 10's `template.suffix == 'contact'` branch, previously only tested for `'story'`).
+- **Fixed grid blowout:** the unbroken `mailto:` email text at up to `2.6rem` had no wrap constraint, and CSS grid items default to `min-width: auto` (content-based) rather than `0` — this let `.lf-contact__info`'s intrinsic content width push it past its fair `1fr` share, measured at ~419px/981px instead of ~700px/700px at a 1400px viewport, squeezing the image column. Fixed by adding `min-width: 0` to `.lf-contact__info` (lets the grid track actually shrink to its fair share) and `overflow-wrap: break-word; display: inline-block; max-width: 100%;` to `.lf-contact__link` (stops the email string itself from overflowing once the column shrinks). Both fixes are folded into Step 1's code block above.
+- **Known pre-existing pattern, not fixed here:** `<p class="lf-contact__label">{% render 'lf-eyebrow' %}</p>` nests a block-level `<p>` inside another `<p>` (`lf-eyebrow.liquid` already emits its own `<p class="lf-eyebrow">`), which browsers auto-repair, leaving `.lf-contact__label` as a dead empty node. The same pattern exists in `lf-story-editorial.liquid`, `lf-cta-row.liquid`, and `lf-story-sticky.liquid` from earlier tasks — this is systemic across the phase, not specific to Contact, and is out of scope for a single-task fix. Worth a dedicated cleanup pass (e.g. changing the wrapper to `<div>` or removing it in favor of `lf-eyebrow`'s own tag) before or during B3.3.
+- **Code-quality review fixes:** the `mailto:` href interpolated the free-text `email` setting unescaped into a double-quoted attribute — a `"`-containing value from the theme customizer could break out of the attribute (stored-injection risk). Fixed by adding `| escape`. Also aligned `rel="noopener"` on the Instagram link to `rel="me noopener"`, the established convention already used by the other two Instagram links in the codebase (`lf-footer.liquid`, `lf-teaser.liquid`). Both fixes are folded into Step 1's code block above. Note: `lf-footer.liquid`'s own `contact_email` mailto link has the identical unescaped-attribute gap already shipped from an earlier phase — out of scope to fix here since this task didn't touch that file, but worth including in the same future cleanup pass as the `<p>`-nesting issue above.
 
 ---
 
@@ -1371,6 +1517,8 @@ const BASE = 'http://127.0.0.1:9292';
 ```
 
 Expected: every line `true` / overflow `0`. Fix findings, re-run until clean; commit fixes as `fix(b3.2): <finding>` and amend the relevant plan code blocks.
+
+> **As-run:** theme check held at 3 warnings (all pre-existing `RemoteAsset` in `lf-fonts.liquid`) — the B3.1-baseline `OrphanedSnippet` warning for `lf-eyebrow` cleared as predicted, since Contact/Story now render it. First script run found `lookbook advanced: false` — root-caused to Task 7's `index.json` wiring the lookbook section with zero blocks (see Task 7's As-run note above), fixed in `de44c28`, re-verified clean. All other checks passed on the first run.
 
 - [ ] **Step 4: User visual pass** on the dev preview (hero feel, marquee drag feel, sticky stack pacing, contact layout, story reading-hover on a real desktop browser). Fix + re-verify anything raised.
 

@@ -20,9 +20,23 @@
     {% sections 'header-group' %}
     {% section 'lf-menu' %}
     <main id="lf-main" data-barba="wrapper">
-      <div data-barba="container" data-barba-namespace="{{ template.name }}">{{ content_for_layout }}</div>
+      <div data-barba="container" data-barba-namespace="{{ template.name }}">
+        {{ content_for_layout }}
+        {%- comment -%} Story renders its own full-height footer as a template section (above);
+           Contact's split layout has an inline mini-footer and no standard footer at all.
+           Scoped to template.name == 'page' too — template.suffix alone is resource-type-
+           agnostic in Shopify, so an unrelated future alternate template (e.g.
+           product.story.json) named "story"/"contact" for a different purpose would
+           otherwise silently lose its footer sitewide.
+           Lives INSIDE the Barba container (not after </main>) so it's re-evaluated
+           and swapped on every client-side navigation, not just on hard/fresh loads —
+           otherwise a stale footer-group from a previous page persists across Barba
+           transitions into pages that should suppress it (or vice versa). {%- endcomment -%}
+        {% unless template.name == 'page' and template.suffix == 'story' or template.name == 'page' and template.suffix == 'contact' %}
+          {% sections 'footer-group' %}
+        {% endunless %}
+      </div>
     </main>
-    {% sections 'footer-group' %}
     {% section 'lf-cart-drawer' %}
     {% section 'lf-easter-egg' %}
     {% section 'lf-signup-popup' %}
