@@ -129,7 +129,7 @@ Expected: 3-warning baseline.
 
 ### Task 3: `lf-motion.js` — core rewrite (complete file)
 
-> **Amendment (code-quality review after execution):** the original code block below had a Critical bug — `leave()` called `bumpNav()` before `trimFactor()`, so `trimFactor()` always read the just-incremented count and every navigation (including the first) got the 0.7× trim, contradicting the spec's "first nav full-length" requirement. Fixed by reading `trimFactor()` before `bumpNav()`. Also fixed on review: the `preventRule` regex was unanchored (`/account`/`/password` could false-match handles like `/products/password-protected-jacket`) — anchored to segment boundaries. Both fixes and minimal `console.error`/`console.warn` diagnostics on the previously-silent catch/guard paths are already folded into the code block below — it reflects the as-shipped, corrected file.
+> **Amendment (code-quality review after execution, two rounds):** the original code block below had a Critical bug — `leave()` called `bumpNav()` before `trimFactor()`, so `trimFactor()` always read the just-incremented count and every navigation (including the first) got the 0.7× trim, contradicting the spec's "first nav full-length" requirement. Round 1 fix (read `trimFactor()` before `bumpNav()` in `leave()`) was necessary but incomplete: `enter()` independently called `trimFactor()` again, and by then `leave()`'s `bumpNav()` had already run — so on nav #1, `leave()` got the correct full-length factor but `enter()` still saw the trimmed one (asymmetric transition). Round 2 fix: a single `pendingTrim` variable is set once in `leave()` (before `bumpNav()`) and reused by `enter()`, so both phases of one navigation always agree. Also fixed on review round 1: the `preventRule` regex was unanchored (`/account`/`/password` could false-match handles like `/products/password-protected-jacket`) — anchored to segment boundaries. All fixes plus minimal `console.error`/`console.warn` diagnostics on the previously-silent catch/guard paths are already folded into the code block below — it reflects the as-shipped, corrected file.
 
 **Files:**
 - Modify (rewrite): `theme/assets/lf-motion.js`
@@ -203,8 +203,13 @@ Expected: 3-warning baseline.
       prevent: preventRule,
       transitions: [{
         leave: function (data) {
-          var f = trimFactor(); // read before bumping — this nav's OWN count decides its trim, not itself
+          // Captured once per nav cycle so leave() and enter() always agree on
+          // the same trim factor — reading trimFactor() independently in each
+          // (even with bumpNav() ordered correctly here) let enter() see the
+          // just-bumped count and trim when leave() didn't, on nav #1.
+          pendingTrim = trimFactor();
           bumpNav();
+          var f = pendingTrim;
           return gsap.timeline()
             .to(data.current.container, {
               keyframes: [{ opacity: .1 }, { opacity: 1 }, { opacity: .15 }, { opacity: .9 }, { opacity: .05 }, { opacity: 0 }],
@@ -216,7 +221,7 @@ Expected: 3-warning baseline.
         enter: function (data) {
           window.scrollTo(0, 0);
           if (window.lfLenis) lfLenis.scrollTo(0, { immediate: true });
-          var f = trimFactor();
+          var f = pendingTrim;
           gsap.set(data.next.container, { opacity: 0 });
           return gsap.timeline()
             .to(blackout, { opacity: 0, duration: .15 * f, delay: .15 * f })
@@ -239,6 +244,7 @@ Expected: 3-warning baseline.
   }
 
   var navCount = 0;
+  var pendingTrim = 1; // shared between leave()/enter() of the same nav cycle
   try { navCount = parseInt(sessionStorage.getItem('lfNav') || '0', 10) || 0; } catch (e) {}
   function bumpNav() { navCount++; try { sessionStorage.setItem('lfNav', String(navCount)); } catch (e) {} }
   function trimFactor() { return navCount > 0 ? 0.7 : 1; }

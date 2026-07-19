@@ -64,8 +64,13 @@
       prevent: preventRule,
       transitions: [{
         leave: function (data) {
-          var f = trimFactor(); // read before bumping — this nav's OWN count decides its trim, not itself
+          // Captured once per nav cycle so leave() and enter() always agree on
+          // the same trim factor — reading trimFactor() independently in each
+          // (even with bumpNav() ordered correctly here) let enter() see the
+          // just-bumped count and trim when leave() didn't, on nav #1.
+          pendingTrim = trimFactor();
           bumpNav();
+          var f = pendingTrim;
           return gsap.timeline()
             .to(data.current.container, {
               keyframes: [{ opacity: .1 }, { opacity: 1 }, { opacity: .15 }, { opacity: .9 }, { opacity: .05 }, { opacity: 0 }],
@@ -77,7 +82,7 @@
         enter: function (data) {
           window.scrollTo(0, 0);
           if (window.lfLenis) lfLenis.scrollTo(0, { immediate: true });
-          var f = trimFactor();
+          var f = pendingTrim;
           gsap.set(data.next.container, { opacity: 0 });
           return gsap.timeline()
             .to(blackout, { opacity: 0, duration: .15 * f, delay: .15 * f })
@@ -100,6 +105,7 @@
   }
 
   var navCount = 0;
+  var pendingTrim = 1; // shared between leave()/enter() of the same nav cycle
   try { navCount = parseInt(sessionStorage.getItem('lfNav') || '0', 10) || 0; } catch (e) {}
   function bumpNav() { navCount++; try { sessionStorage.setItem('lfNav', String(navCount)); } catch (e) {} }
   function trimFactor() { return navCount > 0 ? 0.7 : 1; }
