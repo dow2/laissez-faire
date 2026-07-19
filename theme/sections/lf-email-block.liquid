@@ -3,14 +3,14 @@
   <p class="lf-email__prompt lf-script">{{ section.settings.prompt }}</p>
   {% form 'customer', class: 'lf-email__form' %}
     {%- comment -%} Note: contact[tags] only applies to NEW customer records; Shopify does not merge/apply this tag if the submitting email already exists as a customer. {%- endcomment -%}
-    <input type="hidden" name="contact[tags]" value="teaser-list">
+    <input type="hidden" name="contact[tags]" value="newsletter">
     {% if form.posted_successfully? %}
       <p class="lf-email__success">You're on the list.</p>
     {% else %}
       <div class="lf-email__row">
         <label class="visually-hidden" for="lf-email-home">Email</label>
         <input id="lf-email-home" type="email" name="contact[email]" required autocomplete="email" placeholder="you@example.com">
-        <button type="submit" class="lf-display">Notify&nbsp;Me</button>
+        <button type="submit" class="lf-display">Join</button>
       </div>
       {% if form.errors %}<p class="lf-email__error" role="alert">{{ form.errors | default_errors }}</p>{% endif %}
     {% endif %}
@@ -35,7 +35,7 @@
 {
   "name": "LF Email Block",
   "settings": [
-    { "type": "text", "id": "prompt", "label": "Prompt", "default": "Be there when the lights come on." }
+    { "type": "text", "id": "prompt", "label": "Prompt", "default": "First word on new drops, restocks, and second-line events." }
   ],
   "presets": [{ "name": "LF Email Block" }]
 }
