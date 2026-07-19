@@ -580,11 +580,11 @@ git status --short
 </section>
 
 {% stylesheet %}
-.lf-lookbook { position: relative; height: 90svh; overflow: hidden; }
+.lf-lookbook { position: relative; aspect-ratio: 10/3; overflow: hidden; }
 .lf-lookbook__list, .lf-lookbook__slide { position: absolute; inset: 0; }
 .lf-lookbook__slide { opacity: 0; transition: opacity .6s var(--lf-ease); }
 .lf-lookbook__slide.is-active { opacity: 1; }
-.lf-lookbook__img { width: 100%; height: 100%; object-fit: cover; }
+.lf-lookbook__img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
 .lf-lookbook__ui {
   position: absolute; left: 1.5rem; right: 1.5rem; bottom: 1.5rem; z-index: 2;
   display: flex; align-items: center; gap: 1.4rem; color: var(--lf-body-text);
@@ -642,6 +642,8 @@ git add theme/sections/lf-lookbook.liquid theme/assets/lf-sections.js
 git commit -m "feat(b3.2): home lookbook slider"
 git status --short
 ```
+
+> **As-run (found in the user's third visual pass, fixed in `d3ec598`):** `height: 90svh` forced the section to 90% of viewport height at every tested size (810-1035px), and cover-cropping the square 2000×2000 filler images into that near-hero-scale landscape frame left only ~50-56% of the source image visible — same defect pattern as the CTA row's aspect-ratio bug (`9990561`), just via a different CSS property. Replaced `height: 90svh` with `aspect-ratio: 10/3` (a wide cinematic banner ratio, empirically tested against several candidates via live screenshots) and added `object-position: 50% 22%` to bias the crop upward so the headdress/sky context stays in frame rather than a symmetric center-crop cutting into the subject. Re-verified: 432-600px tall at tested viewports (48-53% of viewport, in the same "modest" range the CTA row fix landed in), `.lf-lookbook__ui`'s counter/arrows still clear the section's bottom edge by 24px, and prev/next crossfade nav confirmed still functional on both slides.
 
 ---
 
