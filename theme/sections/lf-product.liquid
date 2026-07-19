@@ -8,9 +8,12 @@
           if forloop.first
             assign lf_img_loading = 'eager'
           endif
+          # Pre-computed: `alt: media.alt | default: ...` inline would bind the
+          # default filter to image_tag's (always non-blank) output, not the alt.
+          assign lf_img_alt = media.alt | default: product.title
         %}
         <div class="lf-pdp__frame">
-          {{ media | image_url: width: 1400 | image_tag: loading: lf_img_loading, alt: media.alt | default: product.title }}
+          {{ media | image_url: width: 1400 | image_tag: loading: lf_img_loading, alt: lf_img_alt }}
         </div>
       {% endfor %}
     </div>
@@ -37,7 +40,7 @@
             <label>
               <input type="radio" name="lf-opt-{{ forloop.parentloop.index0 }}" value="{{ value | escape }}"
                      {% if option.selected_value == value %}checked{% endif %}>
-              <span>{{ value }}</span>
+              <span>{{ value | escape }}</span>
             </label>
           {% endfor %}
         </fieldset>

@@ -22,14 +22,26 @@ function captureCookies(res) {
   }
 }
 
-async function req(path, options = {}) {
-  const res = await fetch(`${STORE_URL}${path}`, {
-    ...options,
-    headers: { ...(options.headers || {}), Cookie: cookieJar },
-    redirect: 'manual',
-  });
-  captureCookies(res);
-  return res;
+// Mirrors create-products.mjs's fetchWithTimeout - a hung endpoint must fail
+// the drop-day check loudly, not stall it silently forever.
+async function req(path, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const watchdog = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${STORE_URL}${path}`, {
+      ...options,
+      headers: { ...(options.headers || {}), Cookie: cookieJar },
+      redirect: 'manual',
+      signal: controller.signal,
+    });
+    captureCookies(res);
+    return res;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error(`Timeout after ${timeoutMs}ms: ${path}`);
+    throw err;
+  } finally {
+    clearTimeout(watchdog);
+  }
 }
 
 function assert(cond, message) {
@@ -39,6 +51,18 @@ function assert(cond, message) {
 
 async function unlockPasswordGateIfNeeded() {
   if (!STOREFRONT_PASSWORD) return;
+  // Failure-mode check first: a wrong password must NOT unlock the gate. If it
+  // does, password protection is effectively off and the real check below is
+  // meaningless. (Uses a throwaway cookie jar so the bad attempt can't taint
+  // the session.)
+  const savedJar = cookieJar;
+  const badRes = await req('/password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'form_type=storefront_password&password=definitely-not-the-password',
+  });
+  cookieJar = savedJar;
+  assert(badRes.status !== 302 && badRes.status !== 303, `wrong password correctly rejected (got ${badRes.status})`);
   const res = await req('/password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -87,9 +111,27 @@ async function run() {
   assert(line.quantity === 1, `cart line quantity is 1 (got ${line.quantity})`);
   assert(cart.item_count >= 1, `cart.item_count reflects the addition (got ${cart.item_count})`);
 
-  console.log('5. Cleanup: POST /cart/clear.js');
+  console.log('5. Sold-out variant: adding an unavailable variant must be rejected');
+  const fullCatalogRes = await req('/products.json?limit=50');
+  assert(fullCatalogRes.ok, `/products.json (full) responded ${fullCatalogRes.status}`);
+  const fullCatalog = await fullCatalogRes.json();
+  const soldOut = fullCatalog.products.flatMap(p => p.variants).find(v => !v.available);
+  if (soldOut) {
+    const soldOutRes = await req('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: soldOut.id, quantity: 1 }),
+    });
+    assert(soldOutRes.status === 422, `sold-out variant add rejected with 422 (got ${soldOutRes.status})`);
+  } else {
+    console.log('  skip: no sold-out variants in catalog right now (nothing to assert)');
+  }
+
+  console.log('6. Cleanup: POST /cart/clear.js');
   const clearRes = await req('/cart/clear.js', { method: 'POST' });
   assert(clearRes.ok, `/cart/clear.js responded ${clearRes.status}`);
+  const cartAfter = await (await req('/cart.js')).json();
+  assert(cartAfter.item_count === 0, `cart is empty after clear (got ${cartAfter.item_count})`);
 
   console.log('\nAll checks passed. Real checkout/payment still needs a manual pass (RUNBOOK.md drop-day step 5).');
 }

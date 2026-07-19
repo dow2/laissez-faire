@@ -89,7 +89,7 @@ body {
   34% { opacity: .6; } 46% { opacity: 1; } 100% { opacity: 1; }
 }
 .lf-pdp__add:hover, .lf-teaser__row button:hover, .lf-email__row button:hover,
-.lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover {
+.lf-drawer__checkout:hover {
   animation: lf-buzz-once .45s steps(1, end) 1;
 }
 
@@ -100,7 +100,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .lf-pdp__add:hover, .lf-teaser__row button:hover, .lf-email__row button:hover,
-  .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover { animation: none; }
+  .lf-drawer__checkout:hover { animation: none; }
   .lf-ignite-char { opacity: 1 !important; }
 }
 
