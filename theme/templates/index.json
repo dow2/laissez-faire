@@ -28,7 +28,43 @@
       "settings": { "autoplay_seconds": 6 }
     },
     "statement": { "type": "lf-statement", "settings": {} },
-    "ctarow": { "type": "lf-cta-row", "settings": {} },
+    "ctarow": {
+      "type": "lf-cta-row",
+      "blocks": {
+        "card1": {
+          "type": "card",
+          "settings": {
+            "eyebrow": "our products",
+            "title": "Shop the Drop",
+            "cta_label": "Shop",
+            "link": "shopify://collections/all",
+            "image": "shopify://shop_images/lf-hero-chief.jpg"
+          }
+        },
+        "card2": {
+          "type": "card",
+          "settings": {
+            "eyebrow": "our story",
+            "title": "Read More",
+            "cta_label": "Read",
+            "link": "shopify://pages/story",
+            "image": "shopify://shop_images/lf-hero-secondline.jpg"
+          }
+        },
+        "card3": {
+          "type": "card",
+          "settings": {
+            "eyebrow": "our community",
+            "title": "Get in Touch",
+            "cta_label": "Connect",
+            "link": "shopify://pages/contact",
+            "image": "shopify://shop_images/lf-hero-chief.jpg"
+          }
+        }
+      },
+      "block_order": ["card1", "card2", "card3"],
+      "settings": {}
+    },
     "marquee": { "type": "lf-marquee", "settings": {} },
     "lookbook": {
       "type": "lf-lookbook",
