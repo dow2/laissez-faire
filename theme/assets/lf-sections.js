@@ -143,7 +143,11 @@
         el.classList.add('lf-lit');
         return;
       }
-      var split = new SplitText(el, { type: 'chars', charsClass: 'lf-ignite-char' });
+      // type must include 'words' — 'chars' alone wraps every character in its
+      // own atomic inline-block with no word-level grouping, so the browser has
+      // no concept of "word" for line-wrapping and can (and does) break between
+      // any two adjacent character boxes instead of only at spaces.
+      var split = new SplitText(el, { type: 'words, chars', wordsClass: 'lf-ignite-word', charsClass: 'lf-ignite-char' });
       var per = Math.min(0.055, 0.9 / Math.max(split.chars.length, 1));
       function fire() {
         gsap.to(split.chars, {
