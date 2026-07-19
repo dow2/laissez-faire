@@ -92,9 +92,6 @@ body {
 .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover {
   animation: lf-buzz-once .45s steps(1, end) 1;
 }
-.lf-footer__cols a:hover {
-  animation: lf-buzz-once .45s steps(1, end) 1;
-}
 
 /* Letter ignite: chars are pre-colored lit; dim = low opacity on the night ground. */
 [data-lf-ignite] { visibility: visible; }
@@ -103,8 +100,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .lf-pdp__add:hover, .lf-teaser__row button:hover, .lf-email__row button:hover,
-  .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover,
-  .lf-footer__cols a:hover { animation: none; }
+  .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover { animation: none; }
   .lf-ignite-char { opacity: 1 !important; }
 }
 
