@@ -343,6 +343,10 @@
       var pre = new Image(); pre.src = a.getAttribute('data-lf-fimg');
     });
     var yTo = gsap.quickTo(panel, 'y', { duration: .35, ease: 'power3' });
+    LF.teardown.push(function () {
+      gsap.set(panel, { clipPath: 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)', y: 0 });
+      currentSrc = null;
+    });
     list.addEventListener('mouseenter', function () {
       gsap.fromTo(panel,
         { clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)' },
