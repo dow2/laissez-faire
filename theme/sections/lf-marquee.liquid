@@ -9,14 +9,14 @@
       {% assign products = collections.all.products %}
       {% for product in products limit: 12 %}
         <a class="lf-marquee__card" href="{{ product.url }}">
-          {{ product.featured_image | image_url: width: 500 | image_tag: loading: 'lazy', alt: product.title, class: 'lf-marquee__img' }}
+          {{ product.featured_image | image_url: width: 500 | image_tag: loading: 'eager', alt: product.title, class: 'lf-marquee__img' }}
           <span class="lf-marquee__name">{{ product.title }}</span>
           <span class="lf-marquee__price">{{ product.price_min | money }}</span>
         </a>
       {% endfor %}
       {% for product in products limit: 12 %}
         <a class="lf-marquee__card" href="{{ product.url }}" aria-hidden="true" tabindex="-1">
-          {{ product.featured_image | image_url: width: 500 | image_tag: loading: 'lazy', alt: '', class: 'lf-marquee__img' }}
+          {{ product.featured_image | image_url: width: 500 | image_tag: loading: 'eager', alt: '', class: 'lf-marquee__img' }}
           <span class="lf-marquee__name">{{ product.title }}</span>
           <span class="lf-marquee__price">{{ product.price_min | money }}</span>
         </a>
