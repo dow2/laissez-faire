@@ -4,6 +4,10 @@
 (function () {
   window.LF = window.LF || {};
   LF.init = LF.init || {};
+  // Cleanup fns for resources created per-swap (timers, Observer instances) that
+  // don't self-destruct when their DOM is discarded. lf-motion.js's beforeLeave
+  // hook runs and clears this list, mirroring its ScrollTrigger.getAll().kill().
+  LF.teardown = LF.teardown || [];
 
   var fmtCache = {};
   LF.money = function (cents) {
@@ -56,14 +60,21 @@
     if (next) next.addEventListener('click', function () { go(i + 1); arm(); });
     if (prev) prev.addEventListener('click', function () { go(i - 1); arm(); });
     arm();
+    var observer = null;
     // Horizontal-only gestures; vertical scroll stays native.
     if (!ctx.reduced && window.Observer && n > 1) {
-      Observer.create({
+      observer = Observer.create({
         target: hero, type: 'touch,wheel', lockAxis: true, tolerance: 60, preventDefault: false,
         onLeft: function () { go(i + 1); arm(); },
         onRight: function () { go(i - 1); arm(); }
       });
     }
+    // This closure's timer/Observer belong to THIS hero instance and won't
+    // self-clean when Barba discards its container on the next navigation.
+    LF.teardown.push(function () {
+      clearInterval(timer);
+      if (observer) observer.kill();
+    });
   };
 
   // ——— PDP: variant sync, gallery, AJAX add-to-cart ———
@@ -122,18 +133,28 @@
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       addBtn.disabled = true;
+      // A hung request (flaky network, dead connection) must not leave the
+      // buy button disabled forever with no feedback — abort after 12s.
+      var controller = ('AbortController' in window) ? new AbortController() : null;
+      var timedOut = false;
+      var watchdog = controller ? setTimeout(function () { timedOut = true; controller.abort(); }, 12000) : null;
       fetch('/cart/add.js', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: parseInt(idInput.value, 10), quantity: 1 })
+        body: JSON.stringify({ id: parseInt(idInput.value, 10), quantity: 1 }),
+        signal: controller ? controller.signal : undefined
       }).then(function (r) {
+        if (watchdog) clearTimeout(watchdog);
         if (!r.ok) throw new Error('add failed');
         return r.json();
       }).then(function () {
         addBtn.disabled = false;
         document.dispatchEvent(new CustomEvent('lf:cart:added'));
       }).catch(function () {
+        if (watchdog) clearTimeout(watchdog);
         addBtn.disabled = false;
-        window.location.href = '/cart';
+        if (!timedOut) window.location.href = '/cart';
+        // On timeout, stay on the PDP with the button re-enabled rather than
+        // navigating away from an add that may or may not have gone through.
       });
     });
     update();

@@ -112,6 +112,9 @@
 
   barba.hooks.beforeLeave(function () {
     if (window.ScrollTrigger) ScrollTrigger.getAll().forEach(function (t) { t.kill(); });
+    // Per-swap resources (hero autoplay timer, Observer instance) that lf-sections.js
+    // registers and that don't self-clean when their container is discarded.
+    if (LF.teardown) { LF.teardown.forEach(function (fn) { try { fn(); } catch (e) {} }); LF.teardown.length = 0; }
   });
   barba.hooks.afterEnter(function (data) {
     var m = data && data.next && data.next.html && data.next.html.match(/<title>([\s\S]*?)<\/title>/i);
