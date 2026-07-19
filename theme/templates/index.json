@@ -122,32 +122,32 @@
         "partner1": {
           "type": "partner",
           "settings": {
-            "name": "NOLA Second Line Society",
-            "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs.",
-            "image": "shopify://shop_images/lf-b3-community-secondline.jpg"
+            "name": "The Black Masking Indians",
+            "blurb": "A century of hand-beaded artistry — a year of nights behind every costume, masked once, then retired.",
+            "image": "shopify://shop_images/lf-b3r2-community-sewing.jpg"
           }
         },
         "partner2": {
           "type": "partner",
           "settings": {
-            "name": "Crescent City Youth Arts",
-            "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.",
-            "image": "shopify://shop_images/lf-b3r2-community-sewing.jpg"
+            "name": "The Second Line",
+            "blurb": "The parade anyone can join — a brass band, an umbrella, and the whole street moving as one.",
+            "image": "shopify://shop_images/lf-b3-community-secondline.jpg"
           }
         },
         "partner3": {
           "type": "partner",
           "settings": {
-            "name": "Magnolia Relief Fund",
-            "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.",
+            "name": "The Brass Bands",
+            "blurb": "The city's heartbeat — raised in church, played on corners, loudest at four in the morning.",
             "image": "shopify://shop_images/lf-b3r2-community-bar.jpg"
           }
         },
         "partner4": {
           "type": "partner",
           "settings": {
-            "name": "The Running Late Club",
-            "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.",
+            "name": "The Night Shift",
+            "blurb": "The cooks, bartenders, and musicians who keep the lights humming after everyone else goes home. Cut for them.",
             "image": "shopify://shop_images/lf-b3r2-community-nightshift.jpg"
           }
         }
@@ -158,7 +158,10 @@
         "partner3",
         "partner4"
       ],
-      "settings": {}
+      "settings": {
+        "title": "Rooted In",
+        "body": "We never set out to be just a clothing brand. Laissez-Faire is as much about culture as it is about craft — these are the traditions that raised us."
+      }
     },
     "email": {
       "type": "lf-email-block",
