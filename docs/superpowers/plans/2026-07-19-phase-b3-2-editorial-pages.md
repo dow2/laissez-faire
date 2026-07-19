@@ -489,12 +489,16 @@ git status --short
       duration: .5, ease: 'power3',
       modifiers: { x: gsap.utils.unitize(wrapFn) }
     });
-    var dragging = false, startX = 0, startTotal = 0, activePointer = null;
+    var dragging = false, startX = 0, startTotal = 0, activePointer = null, lastDragDistance = 0;
 
     function onDown(e) {
       dragging = true; startX = e.clientX; startTotal = total; activePointer = e.pointerId;
       wrap.classList.add('is-dragging');
-      try { track.setPointerCapture(activePointer); } catch (err) {}
+      // Capture on the actual event target, not `track` — capturing on an
+      // ancestor disrupts the browser's native click-event synthesis for
+      // the descendant that was really interacted with, suppressing
+      // navigation on every click (drag or not), not just genuine drags.
+      try { e.target.setPointerCapture(activePointer); } catch (err) {}
     }
     function onMove(e) {
       if (!dragging || e.pointerId !== activePointer) return;
@@ -503,9 +507,13 @@ git status --short
     }
     function onUp(e) {
       if (!dragging || e.pointerId !== activePointer) return;
+      // Capture the drag distance BEFORE resetting `dragging` — the click
+      // handler runs after pointerup in the same interaction, so checking
+      // `dragging` there would always read the just-reset false value.
+      lastDragDistance = Math.abs(total - startTotal);
       dragging = false;
       wrap.classList.remove('is-dragging');
-      try { track.releasePointerCapture(activePointer); } catch (err) {}
+      try { e.target.releasePointerCapture(activePointer); } catch (err) {}
       activePointer = null;
     }
     track.addEventListener('pointerdown', onDown);
@@ -513,10 +521,9 @@ git status --short
     track.addEventListener('pointerup', onUp);
     track.addEventListener('pointercancel', onUp);
     track.addEventListener('click', function (e) {
-      // A drag that ended as a click (tiny movement) shouldn't navigate;
-      // a genuine drag already exceeded this via pointer capture, so only
-      // suppress when we're mid-drag at click time (rare double-fire).
-      if (dragging) e.preventDefault();
+      // A genuine drag (moved more than a few px) shouldn't navigate; a tap/
+      // click that barely moved should behave like a normal link click.
+      if (lastDragDistance > 6) e.preventDefault();
     });
 
     function tick(time, deltaTime) {
@@ -526,6 +533,8 @@ git status --short
     LF.teardown.push(function () { gsap.ticker.remove(tick); });
   };
 ```
+
+> **As-run:** the original `setPointerCapture`/`releasePointerCapture` calls targeted `track` (an ancestor of the actual pointerdown target) — proven via an isolated A/B test to suppress the browser's native click-event synthesis on EVERY card click, drag or not (a zero-movement tap failed to navigate with capture active, and navigated correctly with `setPointerCapture` neutered). Compounding this, the click handler's `if (dragging) e.preventDefault();` was dead code — `onUp` resets `dragging = false` synchronously, and the browser's `click` event always fires after `pointerup` for the same interaction, so the check could never read true. Fixed both together (already reflected in the code above): pointer capture now targets `e.target` (the actual interacted element, not `track`), and a `lastDragDistance` flag captured before the `dragging` reset drives the click-suppression check instead. Live-verified the specific regression: a genuine drag no longer navigates, and a zero-movement click now correctly navigates to the product page (previously it silently failed to, for every card, every time).
 
 - [ ] **Step 3: Commit**
 
