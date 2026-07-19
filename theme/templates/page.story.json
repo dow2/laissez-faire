@@ -4,21 +4,21 @@
     "editorial": {
       "type": "lf-story-editorial",
       "settings": {
-        "image_left": "shopify://shop_images/lf-hero-chief.jpg",
-        "image_right": "shopify://shop_images/lf-hero-secondline.jpg",
-        "flick_image_1": "shopify://shop_images/lf-hero-chief.jpg",
-        "flick_image_2": "shopify://shop_images/lf-hero-secondline.jpg",
-        "flick_image_3": "shopify://shop_images/lf-hero-chief.jpg"
+        "image_left": "shopify://shop_images/lf-b3r2-story-wide.jpg",
+        "image_right": "shopify://shop_images/lf-b3-story-tall.jpg",
+        "flick_image_1": "shopify://shop_images/lf-b3r2-flickthrough-1.jpg",
+        "flick_image_2": "shopify://shop_images/lf-b3r2-flickthrough-2.jpg",
+        "flick_image_3": "shopify://shop_images/lf-b3-flickthrough-3.jpg"
       }
     },
     "sticky": {
       "type": "lf-story-sticky",
       "settings": {
-        "panel_image_1": "shopify://shop_images/lf-hero-chief.jpg",
-        "panel_image_2": "shopify://shop_images/lf-hero-secondline.jpg",
-        "panel_image_3": "shopify://shop_images/lf-hero-chief.jpg",
-        "panel_image_4": "shopify://shop_images/lf-hero-secondline.jpg",
-        "panel_image_5": "shopify://shop_images/lf-hero-chief.jpg"
+        "panel_image_1": "shopify://shop_images/lf-b3r2-sticky-1-stitch.jpg",
+        "panel_image_2": "shopify://shop_images/lf-b3-sticky-2-heat.jpg",
+        "panel_image_3": "shopify://shop_images/lf-b3r2-sticky-3-outlast.jpg",
+        "panel_image_4": "shopify://shop_images/lf-b3r2-sticky-4-night.jpg",
+        "panel_image_5": "shopify://shop_images/lf-b3-sticky-5-roulez.jpg"
       }
     },
     "footer": { "type": "lf-footer", "settings": { "full_height": true } }

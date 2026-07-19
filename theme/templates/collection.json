@@ -1,7 +1,15 @@
 {
   "sections": {
-    "grid": { "type": "lf-shop-grid-v2", "settings": {} },
-    "band1": { "type": "lf-image-band", "settings": { "stamp_line": "Designed and made locally" } },
+    "grid": {
+      "type": "lf-shop-grid-v2",
+      "settings": {}
+    },
+    "band1": {
+      "type": "lf-image-band",
+      "settings": {
+        "stamp_line": "Designed and made locally"
+      }
+    },
     "pillars": {
       "type": "lf-pillars",
       "settings": {
@@ -14,7 +22,18 @@
         "pillar_body_3": "The city runs on its night economy — the musicians, cooks, and bartenders who keep the lights humming. This is their uniform."
       }
     },
-    "band2": { "type": "lf-image-band", "settings": { "image": "shopify://shop_images/lf-hero-secondline.jpg" } }
+    "band2": {
+      "type": "lf-image-band",
+      "settings": {
+        "image": "shopify://shop_images/lf-b3r2-shop-band.jpg",
+        "focus": "100%"
+      }
+    }
   },
-  "order": ["grid", "band1", "pillars", "band2"]
+  "order": [
+    "grid",
+    "band1",
+    "pillars",
+    "band2"
+  ]
 }

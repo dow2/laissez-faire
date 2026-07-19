@@ -10,7 +10,7 @@
             "heading": "Won't Bow Down",
             "cta_label": "Shop the Drop",
             "link": "shopify://collections/all",
-            "image": "shopify://shop_images/lf-hero-chief.jpg"
+            "image": "shopify://shop_images/lf-b3r3-hero-01.jpg"
           }
         },
         "slide2": {
@@ -20,14 +20,33 @@
             "heading": "Kill 'Em Dead, Needle & Thread",
             "cta_label": "Our Story",
             "link": "shopify://pages/story",
-            "image": "shopify://shop_images/lf-hero-secondline.jpg"
+            "image": "shopify://shop_images/lf-b3r2-hero-02.jpg"
+          }
+        },
+        "slide3": {
+          "type": "slide",
+          "settings": {
+            "kicker": "The Culture",
+            "heading": "Laissez Les Bons Temps Rouler",
+            "cta_label": "Join the Club",
+            "link": "shopify://pages/contact",
+            "image": "shopify://shop_images/lf-b3-hero-03.jpg"
           }
         }
       },
-      "block_order": ["slide1", "slide2"],
-      "settings": { "autoplay_seconds": 6 }
+      "block_order": [
+        "slide1",
+        "slide2",
+        "slide3"
+      ],
+      "settings": {
+        "autoplay_seconds": 6
+      }
     },
-    "statement": { "type": "lf-statement", "settings": {} },
+    "statement": {
+      "type": "lf-statement",
+      "settings": {}
+    },
     "ctarow": {
       "type": "lf-cta-row",
       "blocks": {
@@ -38,7 +57,7 @@
             "title": "Shop the Drop",
             "cta_label": "Shop",
             "link": "shopify://collections/all",
-            "image": "shopify://shop_images/lf-hero-chief.jpg"
+            "image": "shopify://shop_images/lf-b3r2-cta-products.jpg"
           }
         },
         "card2": {
@@ -48,7 +67,7 @@
             "title": "Read More",
             "cta_label": "Read",
             "link": "shopify://pages/story",
-            "image": "shopify://shop_images/lf-hero-secondline.jpg"
+            "image": "shopify://shop_images/lf-b3-cta-story.jpg"
           }
         },
         "card3": {
@@ -58,47 +77,101 @@
             "title": "Get in Touch",
             "cta_label": "Connect",
             "link": "shopify://pages/contact",
-            "image": "shopify://shop_images/lf-hero-chief.jpg"
+            "image": "shopify://shop_images/lf-b3r2-cta-community.jpg"
           }
         }
       },
-      "block_order": ["card1", "card2", "card3"],
+      "block_order": [
+        "card1",
+        "card2",
+        "card3"
+      ],
       "settings": {}
     },
-    "marquee": { "type": "lf-marquee", "settings": {} },
+    "marquee": {
+      "type": "lf-marquee",
+      "settings": {}
+    },
     "lookbook": {
       "type": "lf-lookbook",
       "blocks": {
         "slide1": {
           "type": "slide",
           "settings": {
-            "image": "shopify://shop_images/lf-hero-chief.jpg",
+            "image": "shopify://shop_images/lf-b3-lookbook-01.jpg",
             "caption": "Won't Bow Down"
           }
         },
         "slide2": {
           "type": "slide",
           "settings": {
-            "image": "shopify://shop_images/lf-hero-secondline.jpg",
+            "image": "shopify://shop_images/lf-b3-lookbook-02.jpg",
             "caption": "Kill 'Em Dead, Needle & Thread"
           }
         }
       },
-      "block_order": ["slide1", "slide2"],
+      "block_order": [
+        "slide1",
+        "slide2"
+      ],
       "settings": {}
     },
     "community": {
       "type": "lf-community",
       "blocks": {
-        "partner1": { "type": "partner", "settings": { "name": "NOLA Second Line Society", "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
-        "partner2": { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.", "image": "shopify://shop_images/lf-hero-chief.jpg" } },
-        "partner3": { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
-        "partner4": { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.", "image": "shopify://shop_images/lf-hero-chief.jpg" } }
+        "partner1": {
+          "type": "partner",
+          "settings": {
+            "name": "NOLA Second Line Society",
+            "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs.",
+            "image": "shopify://shop_images/lf-b3-community-secondline.jpg"
+          }
+        },
+        "partner2": {
+          "type": "partner",
+          "settings": {
+            "name": "Crescent City Youth Arts",
+            "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.",
+            "image": "shopify://shop_images/lf-b3r2-community-sewing.jpg"
+          }
+        },
+        "partner3": {
+          "type": "partner",
+          "settings": {
+            "name": "Magnolia Relief Fund",
+            "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.",
+            "image": "shopify://shop_images/lf-b3r2-community-bar.jpg"
+          }
+        },
+        "partner4": {
+          "type": "partner",
+          "settings": {
+            "name": "The Running Late Club",
+            "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.",
+            "image": "shopify://shop_images/lf-b3r2-community-nightshift.jpg"
+          }
+        }
       },
-      "block_order": ["partner1", "partner2", "partner3", "partner4"],
+      "block_order": [
+        "partner1",
+        "partner2",
+        "partner3",
+        "partner4"
+      ],
       "settings": {}
     },
-    "email": { "type": "lf-email-block", "settings": {} }
+    "email": {
+      "type": "lf-email-block",
+      "settings": {}
+    }
   },
-  "order": ["hero", "statement", "ctarow", "marquee", "lookbook", "community", "email"]
+  "order": [
+    "hero",
+    "statement",
+    "ctarow",
+    "marquee",
+    "lookbook",
+    "community",
+    "email"
+  ]
 }

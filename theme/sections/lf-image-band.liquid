@@ -1,4 +1,4 @@
-<section class="lf-imgband {% if section.settings.image == blank %}lf-imgband--dark{% endif %}">
+<section class="lf-imgband {% if section.settings.image == blank %}lf-imgband--dark{% endif %}" style="--lf-imgband-focus: {{ section.settings.focus | default: '50%' }};">
   {% if section.settings.image != blank %}
     {{ section.settings.image | image_url: width: 2400 | image_tag: loading: 'lazy', alt: '', class: 'lf-imgband__img' }}
   {% endif %}
@@ -10,7 +10,7 @@
 {% stylesheet %}
 .lf-imgband { position: relative; height: 60svh; overflow: hidden; }
 .lf-imgband--dark { height: 34svh; background: #08080b; display: flex; align-items: center; justify-content: center; }
-.lf-imgband__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-imgband__img { width: 100%; height: 100%; object-fit: cover; object-position: 50% var(--lf-imgband-focus, 50%); display: block; }
 .lf-imgband__stamp {
   color: var(--lf-muted); font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; margin: 0;
 }
@@ -24,6 +24,14 @@
   "name": "LF Image Band",
   "settings": [
     { "type": "image_picker", "id": "image", "label": "Image (blank = dark band)" },
+    { "type": "select", "id": "focus", "label": "Vertical focus (which part of the image stays visible in the crop)", "default": "50%",
+      "options": [
+        { "value": "0%", "label": "Top" },
+        { "value": "25%", "label": "Upper" },
+        { "value": "50%", "label": "Center" },
+        { "value": "75%", "label": "Lower" },
+        { "value": "100%", "label": "Bottom" }
+      ] },
     { "type": "text", "id": "stamp_line", "label": "Stamp line (optional)" }
   ]
 }

@@ -4,8 +4,8 @@
     "lookbook": {
       "type": "lf-lookbook",
       "blocks": {
-        "slide1": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-hero-chief.jpg", "caption": "Won't Bow Down" } },
-        "slide2": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-hero-secondline.jpg", "caption": "Kill 'Em Dead, Needle & Thread" } }
+        "slide1": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-b3-pdp-lookbook-01.jpg", "caption": "Won't Bow Down" } },
+        "slide2": { "type": "slide", "settings": { "image": "shopify://shop_images/lf-b3r2-pdp-lookbook-02.jpg", "caption": "Kill 'Em Dead, Needle & Thread" } }
       },
       "block_order": ["slide1", "slide2"],
       "settings": {}
