@@ -21,7 +21,7 @@
         <div class="lf-heroV2__copy">
           {% if block.settings.kicker != blank %}<p class="lf-heroV2__kicker">{{ block.settings.kicker }}</p>{% endif %}
           {% if block.settings.heading != blank %}<h2 class="lf-heroV2__heading lf-display lf-glow-text" data-lf-ignite>{{ block.settings.heading }}</h2>{% endif %}
-          {% if block.settings.link != blank %}<a class="lf-heroV2__cta lf-display" href="{{ block.settings.link }}" data-cursor="{{ block.settings.cta_label | default: 'Shop' }}">{{ block.settings.cta_label | default: 'Shop' }}</a>{% endif %}
+          {% if block.settings.link != blank %}<a class="lf-heroV2__cta lf-display" href="{{ block.settings.link }}" data-cursor="{{ block.settings.cta_label | default: 'Shop' | escape }}">{{ block.settings.cta_label | default: 'Shop' }}</a>{% endif %}
         </div>
       </div>
     {% endfor %}
