@@ -223,4 +223,35 @@
       }
     } catch (e) {}
   };
+
+  // ——— Newsletter popup ———
+  LF.init.signup = function () {
+    var box = document.querySelector('[data-lf-signup]');
+    if (!box || box.hasAttribute('data-lf-bound')) return;
+    box.setAttribute('data-lf-bound', '1');
+    var release = null;
+    LF.openSignup = function () {
+      if (!box.hasAttribute('hidden')) return;
+      box.removeAttribute('hidden');
+      LF.scrollLock(true);
+      release = LF.trapFocus(box);
+    };
+    function close() {
+      if (box.hasAttribute('hidden')) return;
+      box.setAttribute('hidden', '');
+      LF.scrollLock(false);
+      if (release) { release(); release = null; }
+    }
+    box.addEventListener('click', function (e) {
+      if (e.target.closest('[data-lf-signup-close]')) close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !box.hasAttribute('hidden')) close();
+    });
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-lf-signup-open]')) LF.openSignup();
+    });
+    // Reopen after a successful post (Shopify reloads the page with params).
+    if (location.search.indexOf('customer_posted=true') > -1) LF.openSignup();
+  };
 })();
