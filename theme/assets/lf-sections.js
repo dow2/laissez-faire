@@ -448,4 +448,11 @@
       }, idx / (crests.length - 1));
     });
   };
+
+  // ——— Contact split layout: pure CSS sticky, nothing to bind beyond the idempotency guard ———
+  LF.init.contactSplit = function (root, ctx) {
+    var section = (root || document).querySelector('.lf-contact');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
+  };
 })();
