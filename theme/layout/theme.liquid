@@ -9,22 +9,33 @@
     {{ 'lf-tokens.css' | asset_url | stylesheet_tag }}
     <link rel="icon" href="{{ 'favicon-32.png' | asset_url }}" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="{{ 'favicon-180.png' | asset_url }}">
+    <script>
+      /* Pre-paint session flag so the preloader never flashes on repeat visits. */
+      try { if (!sessionStorage.getItem('lfVisited')) document.documentElement.classList.add('lf-first-visit'); } catch (e) {}
+    </script>
     {{ content_for_header }}
   </head>
   <body>
+    {% section 'lf-preloader' %}
     {% sections 'header-group' %}
+    {% section 'lf-menu' %}
     <main id="lf-main" data-barba="wrapper">
       <div data-barba="container" data-barba-namespace="{{ template.name }}">{{ content_for_layout }}</div>
     </main>
     {% sections 'footer-group' %}
     {% section 'lf-cart-drawer' %}
+    {% section 'lf-easter-egg' %}
+    {% section 'lf-signup-popup' %}
     <div id="lf-blackout" aria-hidden="true"></div>
+    <div class="lf-cursor" data-lf-cursor aria-hidden="true"><p></p></div>
     <script src="{{ 'gsap.min.js' | asset_url }}" defer></script>
     <script src="{{ 'ScrollTrigger.min.js' | asset_url }}" defer></script>
     <script src="{{ 'SplitText.min.js' | asset_url }}" defer></script>
+    <script src="{{ 'CustomEase.min.js' | asset_url }}" defer></script>
     <script src="{{ 'barba.min.js' | asset_url }}" defer></script>
     <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
     <script src="{{ 'lf-sections.js' | asset_url }}" defer></script>
+    <script src="{{ 'lf-chrome.js' | asset_url }}" defer></script>
     <script src="{{ 'lf-motion.js' | asset_url }}" defer></script>
   </body>
 </html>

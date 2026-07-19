@@ -8,6 +8,13 @@
   LF.init = LF.init || {};
   LF.ctx = { reduced: reduced };
 
+  // OR-derived ease vocabulary (spec §3). CustomEase is optional at runtime:
+  // if the vendor failed to load, gsap falls back to the string default.
+  if (window.CustomEase) {
+    CustomEase.create('lf-ease-1', 'M0,0 C0.15,0 0.15,1 1,1');
+    CustomEase.create('lf-ease-3', '0.65, 0.01, 0.05, 0.99');
+  }
+
   function runInits(root) {
     Object.keys(LF.init).forEach(function (k) {
       try { LF.init[k](root || document, LF.ctx); } catch (e) { if (window.console) console.error('[LF] init "' + k + '" failed', e); }
@@ -120,6 +127,7 @@
 
   barba.hooks.beforeLeave(function () {
     if (window.ScrollTrigger) ScrollTrigger.getAll().forEach(function (t) { t.kill(); });
+    if (LF.scrollLock && LF.scrollLock.reset) LF.scrollLock.reset();
     // Per-swap resources (hero autoplay timer, Observer instance) that lf-sections.js
     // registers and that don't self-clean when their container is discarded.
     if (LF.teardown) { LF.teardown.forEach(function (fn) { try { fn(); } catch (e) {} }); LF.teardown.length = 0; }
