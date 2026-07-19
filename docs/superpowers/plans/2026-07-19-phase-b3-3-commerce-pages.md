@@ -445,11 +445,11 @@ Changes (surgical — keep the form, variants JSON, and buy-column bones):
       %}
       <details name="lf-pdp-acc">
         <summary>Garment Details<span class="lf-pdp__plus" aria-hidden="true"></span></summary>
-        <div>{{ lf_details }}</div>
+        <div>{{ lf_details | newline_to_br }}</div>
       </details>
       <details name="lf-pdp-acc">
         <summary>Wash Care<span class="lf-pdp__plus" aria-hidden="true"></span></summary>
-        <div>{{ lf_care }}</div>
+        <div>{{ lf_care | newline_to_br }}</div>
       </details>
     </div>
 ```
@@ -558,6 +558,8 @@ git add theme/assets/lf-sections.js
 git commit -m "feat(b3.3): PDP js - remove gallery slider, per-size availability pills"
 git status --short
 ```
+
+> **As-run (T5+T6 combined review, fixed in `c4437a5`):** (1) `lfc.details`/`lfc.care` are multi-line metafields whose newlines collapse to spaces in plain HTML output — care copy written as separate lines would render as one run-on sentence once the operator fills real values. Added `| newline_to_br` to both accordion bodies (Task 5's code block above corrected; works on both the metafield drop and the textarea fallback). (2) Dropped the now-duplicate `.lf-pdp__buy h1` rule (exact copy of the new `.lf-pdp__titlerow h1`). Review also confirmed mechanically: the hardened add-to-cart submit handler is byte-identical to the pre-T6 version; `refreshSizeAvailability`'s index alignment between fieldset DOM order and `variants[].options` is guaranteed (both derive from Shopify's option ordering); the mobile snap gallery needs no `touch-action`/Lenis guard (vendored Lenis keeps touch native and passes pure-horizontal wheel through). Known accepted minors: the `alt: media.alt | default: product.title` fallback is a no-op (Liquid can't nest filters in args; `image_tag` falls back to the media's own alt anyway), and single-option products get no sold-out marks (this store's products are all two-option).
 
 ---
 
