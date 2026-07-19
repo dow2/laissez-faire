@@ -1,0 +1,30 @@
+<section class="lf-imgband {% if section.settings.image == blank %}lf-imgband--dark{% endif %}">
+  {% if section.settings.image != blank %}
+    {{ section.settings.image | image_url: width: 2400 | image_tag: loading: 'lazy', alt: '', class: 'lf-imgband__img' }}
+  {% endif %}
+  {% if section.settings.stamp_line != blank %}
+    <p class="lf-imgband__stamp">{% render 'lf-stamp' %} — {{ section.settings.stamp_line }}</p>
+  {% endif %}
+</section>
+
+{% stylesheet %}
+.lf-imgband { position: relative; height: 60svh; overflow: hidden; }
+.lf-imgband--dark { height: 34svh; background: #08080b; display: flex; align-items: center; justify-content: center; }
+.lf-imgband__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-imgband__stamp {
+  color: var(--lf-muted); font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; margin: 0;
+}
+.lf-imgband:not(.lf-imgband--dark) .lf-imgband__stamp {
+  position: absolute; left: 1.5rem; bottom: 1.5rem; color: var(--lf-body-text);
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Image Band",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Image (blank = dark band)" },
+    { "type": "text", "id": "stamp_line", "label": "Stamp line (optional)" }
+  ]
+}
+{% endschema %}
