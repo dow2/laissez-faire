@@ -19,6 +19,40 @@
    pages that actually use `data-lf-ignite`), or re-examine whether the full
    vendor set is warranted on every template.
 
+## Content sync (Theme Editor ↔ git)
+
+The merchant edits content (text, images, blocks like lookbook slides or
+community partners) in the live theme via **Online Store → Themes →
+Customize** — see `docs/CONTENT-GUIDE.md`. Those edits land directly in the
+live theme's `templates/*.json` and `config/settings_data.json` — the same
+files git owns. **A code push overwrites the live theme with whatever's in
+git, silently discarding any Theme Editor edits made since the last push**
+unless they're pulled into git first.
+
+**Before every code push to the live theme, pull first:**
+
+```bash
+shopify theme pull --path theme --theme "161862975716" --store 1xiwxi-yy.myshopify.com \
+  --only 'templates/*.json' --only 'config/settings_data.json'
+git status --short   # review what changed - this is merchant content, not your code
+```
+
+- If the diff is empty, nothing was edited since the last push — proceed as normal.
+- If there's a diff, commit it **on its own**, separate from any code change,
+  so the history stays honest about what's a content edit vs. a code change:
+
+```bash
+git add theme/templates theme/config/settings_data.json
+git commit -m "content: pull merchant edits from live theme"
+```
+
+Then do your code work and push as normal. Scoping the pull to
+`templates/*.json` + `config/settings_data.json` only (not `--only` the
+whole theme) is deliberate — it pulls exactly what the Theme Editor can
+touch and leaves `sections/*.liquid`/`assets/*` alone, so it can never
+silently overwrite in-progress code changes with the live theme's
+(older) copy of the code.
+
 ## Rollback (bad theme push)
 
 ```bash
