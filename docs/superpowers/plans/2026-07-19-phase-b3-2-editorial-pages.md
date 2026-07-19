@@ -1267,10 +1267,10 @@ git status --short
 .lf-contact__imgwrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .lf-contact__info {
   position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column;
-  justify-content: center; gap: 1rem; padding: 2rem 2.5rem;
+  justify-content: center; gap: 1rem; padding: 2rem 2.5rem; min-width: 0;
 }
 .lf-contact__label { margin: 0; }
-.lf-contact__link { font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); text-decoration: none; }
+.lf-contact__link { font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); text-decoration: none; overflow-wrap: break-word; display: inline-block; max-width: 100%; }
 .lf-contact__sub { color: var(--lf-body-text); font-size: .9rem; line-height: 1.6; max-width: 40ch; margin: 0; }
 .lf-contact__ig { color: var(--lf-muted); font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; }
 .lf-contact__ig:hover { color: var(--lf-neon-core); }
@@ -1340,6 +1340,11 @@ git add theme/sections/lf-contact-split.liquid theme/templates/page.contact.json
 git commit -m "feat(b3.2): contact page — split-screen sticky layout, new alternate template"
 git status --short
 ```
+
+**As-run notes:**
+- **Live verification of alternate page templates:** `shopify theme dev`'s local proxy (`http://127.0.0.1:<port>/pages/<handle>?view=<suffix>`) bypasses the storefront password gate entirely — it's tied to the CLI's authenticated session, not the storefront's password cookie. This is simpler than the live-domain `?preview_theme_id=` + session-cookie technique used in Phase B2, and works for previewing an alternate template on an *existing* page before it's admin-assigned. Used `/pages/contact?view=contact` to confirm `lf-contact-split.liquid` renders (not the generic `page.liquid` fallback), sticky behavior holds, and no standard footer renders beneath it (confirming Task 10's `template.suffix == 'contact'` branch, previously only tested for `'story'`).
+- **Fixed grid blowout:** the unbroken `mailto:` email text at up to `2.6rem` had no wrap constraint, and CSS grid items default to `min-width: auto` (content-based) rather than `0` — this let `.lf-contact__info`'s intrinsic content width push it past its fair `1fr` share, measured at ~419px/981px instead of ~700px/700px at a 1400px viewport, squeezing the image column. Fixed by adding `min-width: 0` to `.lf-contact__info` (lets the grid track actually shrink to its fair share) and `overflow-wrap: break-word; display: inline-block; max-width: 100%;` to `.lf-contact__link` (stops the email string itself from overflowing once the column shrinks). Both fixes are folded into Step 1's code block above.
+- **Known pre-existing pattern, not fixed here:** `<p class="lf-contact__label">{% render 'lf-eyebrow' %}</p>` nests a block-level `<p>` inside another `<p>` (`lf-eyebrow.liquid` already emits its own `<p class="lf-eyebrow">`), which browsers auto-repair, leaving `.lf-contact__label` as a dead empty node. The same pattern exists in `lf-story-editorial.liquid`, `lf-cta-row.liquid`, and `lf-story-sticky.liquid` from earlier tasks — this is systemic across the phase, not specific to Contact, and is out of scope for a single-task fix. Worth a dedicated cleanup pass (e.g. changing the wrapper to `<div>` or removing it in favor of `lf-eyebrow`'s own tag) before or during B3.3.
 
 ---
 
