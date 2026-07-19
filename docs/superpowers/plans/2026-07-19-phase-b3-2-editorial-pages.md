@@ -84,11 +84,6 @@
   </nav>
   <p class="lf-heroV2__scroll" aria-hidden="true">Scroll</p>
   <button type="button" class="lf-heroV2__next" data-lf-hero-next aria-label="Next slide">Next</button>
-
-  <div class="lf-heroV2__lockup">
-    <div class="lf-heroV2__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
-         style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
-  </div>
 </section>
 
 {% stylesheet %}
@@ -98,7 +93,7 @@
 .lf-heroV2__slide.is-active { visibility: visible; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); }
 .lf-heroV2__img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .lf-heroV2__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,13,17,.55) 0%, rgba(13,13,17,.2) 45%, rgba(13,13,17,.85) 100%); }
-.lf-heroV2__copy { position: absolute; left: 1.5rem; bottom: 6rem; max-width: 34ch; z-index: 2; }
+.lf-heroV2__copy { position: absolute; left: 1.5rem; bottom: 7.25rem; max-width: 34ch; z-index: 2; }
 .lf-heroV2__kicker { font-size: .7rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); margin: 0 0 .6rem; }
 .lf-heroV2__heading { font-size: clamp(1.8rem, 6vw, 3.6rem); line-height: 1.05; margin: 0 0 1.2rem; }
 .lf-heroV2__cta { color: var(--lf-body-text); text-decoration: none; letter-spacing: .18em; text-transform: uppercase; font-size: .8rem; border-bottom: 1px solid currentColor; padding-bottom: .2rem; }
@@ -120,12 +115,6 @@
   position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); z-index: 2;
   background: none; border: 0; cursor: pointer; color: var(--lf-body-text);
   font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
-}
-.lf-heroV2__lockup { position: absolute; left: 1.5rem; top: 1.5rem; z-index: 2; }
-.lf-heroV2__wordmark {
-  width: 160px; aspect-ratio: 2129/749; background-color: var(--lf-neon-core);
-  -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
-  filter: drop-shadow(0 0 6px var(--lf-neon-halo));
 }
 /* No CSS transition to disable here — slide motion is entirely GSAP-driven
    inline clip-path tweening (see LF.init.heroV2's `ctx.reduced` branch in
@@ -266,9 +255,10 @@ git commit -m "feat(b3.2): home hero slider v2 — numbered nav, clip-wipe trans
 git status --short
 ```
 
----
-
-### Task 2: Home — Statement band
+**As-run notes (found during Task 12 user visual pass, fixed in `4d43f27`/`8b37510`/`4f9dced`):**
+- **Duplicate logo overlap:** the original Step 1 markup included a `.lf-heroV2__lockup` wordmark at `left:1.5rem;top:1.5rem`, which visually overlapped the persistent site header's own crest icon (`lf-header.liquid`, `position:fixed`, always rendered top-left on every page) — nothing hides the header over the hero. Removed the lockup markup and its CSS entirely; the code above reflects this. The header's own logo is sufficient.
+- **CTA/scroll indicator collision:** `.lf-heroV2__copy`'s `bottom` was `6rem`, leaving only ~3px clearance (a true overlap at every tested viewport) against `.lf-heroV2__scroll`'s `bottom: 2.2rem`. Bumped to `7.25rem`, giving ~17px clearance. Reflected above.
+- **Mid-word heading breaks:** `LF.init.ignite` (defined once, shared across sections, not part of this task's own code block) used `new SplitText(el, { type: 'chars' })`, giving the browser no word-level grouping to wrap on — confirmed live that "Needle" fit its container width yet still split mid-word. Fixed by changing to `type: 'words, chars'`. This function lives outside Task 1's file scope; see wherever `LF.init.ignite` is defined in `theme/assets/lf-sections.js` for the corrected version.
 
 **Files:**
 - Create: `theme/sections/lf-statement.liquid`
@@ -790,7 +780,16 @@ git status --short
       "settings": { "autoplay_seconds": 6 }
     },
     "statement": { "type": "lf-statement", "settings": {} },
-    "ctarow": { "type": "lf-cta-row", "settings": {} },
+    "ctarow": {
+      "type": "lf-cta-row",
+      "blocks": {
+        "card1": { "type": "card", "settings": { "eyebrow": "our products", "title": "Shop the Drop", "cta_label": "Shop", "link": "shopify://collections/all", "image": "shopify://shop_images/lf-hero-chief.jpg" } },
+        "card2": { "type": "card", "settings": { "eyebrow": "our story", "title": "Read More", "cta_label": "Read", "link": "shopify://pages/story", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "card3": { "type": "card", "settings": { "eyebrow": "our community", "title": "Get in Touch", "cta_label": "Connect", "link": "shopify://pages/contact", "image": "shopify://shop_images/lf-hero-chief.jpg" } }
+      },
+      "block_order": ["card1", "card2", "card3"],
+      "settings": {}
+    },
     "marquee": { "type": "lf-marquee", "settings": {} },
     "lookbook": {
       "type": "lf-lookbook",
@@ -852,6 +851,7 @@ git status --short
 
 > **As-run (found in Task 12 verification, fixed in `de44c28`):** the original Step 1 code block wired `"lookbook": { "type": "lf-lookbook", "settings": {} }` with no `blocks`/`block_order`. `LF.init.lookbook` (Task 5) only binds its prev/next click handlers `if (n >= 2)` slides exist, so this rendered 0 slides and left the arrows silently dead — no console error, easy to miss in a quick visual check. The code block above is corrected to seed 2 `slide` blocks reusing the hero's already-uploaded shop images (`lf-hero-chief.jpg`/`lf-hero-secondline.jpg`), matching the field names in `lf-lookbook.liquid`'s schema (`image`, `caption`).
 > **Process lesson:** any section that loops `{% for block in section.blocks %}` (block-driven — lookbook, hero, cta-row) needs sample content seeded in the *same* task that wires it into a template, and verification needs to check actual block/slide count, not just section presence. Sections driven by top-level `settings.*` id fields instead of blocks (story-sticky, contact-split, community) render their real structure even with blank settings, so they don't have this failure mode — the distinction matters when writing or reviewing future wiring tasks (e.g. B3.3).
+> **As-run (found in the user's Task 12 visual pass, fixed in `3b678f3`):** the process lesson above correctly predicted `ctarow` was at risk, but the original Step 1 code block still shipped it with `"settings": {}` and no blocks anyway. With 0 blocks, `--lf-ctarow-cols` resolved to 1 and the for-loop rendered zero `.lf-ctarow__card` elements, collapsing the section to `height: 0` — confirmed live (`{top: 1530, height: 0}`, sitting directly on top of the marquee section beneath it). With no buffer section, the statement band's `data-lf-overlap` slide-down effect had nothing to slide over but the marquee's product cards immediately below, producing a visible glitchy overlap the user reported as "scroll is buggy" / images colliding with statement text. Seeded 3 card blocks reusing the two hero images, matching `lf-cta-row.liquid`'s schema field names (`eyebrow`, `title`, `cta_label`, `link`, `image`). The code block above is corrected. Re-verified by scrolling in 200px increments from y=900–2300: `ctarow` now measures ~640px real height and both overlap effects (statement→ctarow, ctarow→marquee) scrub cleanly with proper separation.
 
 ---
 
@@ -1191,8 +1191,26 @@ git status --short
 {
   "sections": {
     "hero": { "type": "lf-story-hero", "settings": {} },
-    "editorial": { "type": "lf-story-editorial", "settings": {} },
-    "sticky": { "type": "lf-story-sticky", "settings": {} },
+    "editorial": {
+      "type": "lf-story-editorial",
+      "settings": {
+        "image_left": "shopify://shop_images/lf-hero-chief.jpg",
+        "image_right": "shopify://shop_images/lf-hero-secondline.jpg",
+        "flick_image_1": "shopify://shop_images/lf-hero-chief.jpg",
+        "flick_image_2": "shopify://shop_images/lf-hero-secondline.jpg",
+        "flick_image_3": "shopify://shop_images/lf-hero-chief.jpg"
+      }
+    },
+    "sticky": {
+      "type": "lf-story-sticky",
+      "settings": {
+        "panel_image_1": "shopify://shop_images/lf-hero-chief.jpg",
+        "panel_image_2": "shopify://shop_images/lf-hero-secondline.jpg",
+        "panel_image_3": "shopify://shop_images/lf-hero-chief.jpg",
+        "panel_image_4": "shopify://shop_images/lf-hero-secondline.jpg",
+        "panel_image_5": "shopify://shop_images/lf-hero-chief.jpg"
+      }
+    },
     "footer": { "type": "lf-footer", "settings": { "full_height": true } }
   },
   "order": ["hero", "editorial", "sticky", "footer"]
@@ -1226,6 +1244,7 @@ shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
 ```
 
 > **As-run:** code review found two Important issues, both fixed and already reflected above. (1) The footer-suppression conditional checked bare `template.suffix`, which is resource-type-agnostic in Shopify (pages, articles, products, collections can all have suffixed alternate templates) — zero live risk today (only `page.story.json` exists), but a latent footgun for any future unrelated template happening to share the "story"/"contact" suffix name. Scoped with `template.name == 'page'` too, matching this same file's existing `template.name` usage for the Barba namespace. (2) `theme/sections/lf-footer.liquid`'s `.lf-footer--full` used `min-height: 100dvh` while every other full-viewport element in the theme (`lf-hero-slider`, `lf-hero-slider-v2`, `lf-teaser`, and this task's own sticky panels) consistently uses `100svh` — since this task is the first to place a `100dvh` element directly after a `100svh` sticky stack, the mismatch could produce a visible height snap at that boundary as mobile browser chrome collapses/expands during scroll. Switched to `100svh` for consistency (a fix to an already-shipped B3.1 file, made here because it's directly caused by what this task introduces).
+> **As-run (found in the user's Task 12 visual pass, fixed in `635282c`):** Step 3's `page.story.json` originally wired both `editorial` and `sticky` with `"settings": {}` — same class of bug as lookbook/cta-row above, but with a twist: unlike text/textarea settings (which have schema `default` values and rendered fine), `image_picker` settings have no default, so `panel_image_1-5` (sticky) and `image_left`/`image_right`/`flick_image_1-3` (editorial) all resolved blank and no `<img>` ever rendered. Confirmed live: each `.lf-storysticky__img` container still reserved ~519px of height via its `aspect-ratio` CSS (an invisible box matching the page background color), and since `.lf-storysticky__panel` is a `100svh` flex column with `justify-content: center`, that invisible box pushed the real title/body copy down into the bottom third of the panel — reading as "small, dim, cornered text against a huge black void," which is exactly what the user reported. The editorial section's offset images and flickthrough zoetrope were equally blank for the same reason. Seeded both sections with the two hero images (code block above corrected). Re-verified by scrolling in 500px increments across the full page: all 5 panels and the editorial band now render full styled imagery, no black-void gaps remain.
 
 - [ ] **Step 6: Commit**
 
