@@ -52,7 +52,15 @@
           {% if block.settings.video != blank %}
             <video class="lf-heroV2__img" src="{{ block.settings.video }}" autoplay muted loop playsinline></video>
           {% elsif block.settings.image != blank %}
-            {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-heroV2__img', loading: forloop.first ? 'eager' : 'lazy', fetchpriority: forloop.first ? 'high' : 'auto', alt: block.settings.heading }}
+            {% liquid
+              assign lf_hero_v2_loading = 'lazy'
+              assign lf_hero_v2_priority = 'auto'
+              if forloop.first
+                assign lf_hero_v2_loading = 'eager'
+                assign lf_hero_v2_priority = 'high'
+              endif
+            %}
+            {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-heroV2__img', loading: lf_hero_v2_loading, fetchpriority: lf_hero_v2_priority, alt: block.settings.heading }}
           {% endif %}
         </div>
         <div class="lf-heroV2__shade"></div>
@@ -229,6 +237,8 @@
     LF.teardown.push(function () { clearInterval(timer); });
   };
 ```
+
+> **As-run:** the original code used inline ternary syntax (`loading: forloop.first ? 'eager' : 'lazy'`) inside the `image_tag` filter's arguments — Shopify's Liquid dialect doesn't support `? :` expressions there at all. `shopify theme check` (static linter) didn't catch it; only the live dev-server Liquid parser did, with a hard 500 ("Failed to Upload Theme Files", `Expected end_of_string but found question`). Fixed (already applied above) by computing `lf_hero_v2_loading`/`lf_hero_v2_priority` via a `{% liquid %}` if/assign block ahead of the tag, then referencing the plain variables — same eager/high-priority-on-first-slide behavior, valid syntax. Verified live: forward/backward clip-wipe transitions, swipe, and the reduced-motion fallback all settle to their correct end states with no stuck/incomplete animations.
 
 - [ ] **Step 3: Theme check** — `shopify theme check --path theme 2>&1 | tail -5`. This section isn't referenced by any template yet (Task 7 wires `index.json`), so expect an `UnusedAssign`/no offense change beyond the existing baseline (no `OrphanedSnippet`-equivalent rule fires for sections).
 
