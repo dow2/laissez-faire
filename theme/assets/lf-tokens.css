@@ -134,3 +134,8 @@ body {
 body.lf-cursor-on .lf-cursor { opacity: 1; }
 @media (max-width: 991px), (pointer: coarse) { .lf-cursor { display: none; } }
 @media (prefers-reduced-motion: reduce) { .lf-cursor { display: none; } }
+
+/* Overlap-scroll stitching (B3.2): pinned section slides down over 500px of
+   scroll so the next section appears to scroll up over it. Positioning
+   context only — the yPercent tween itself is applied by ScrollTrigger. */
+[data-lf-overlap] { position: relative; z-index: 1; will-change: transform; }

@@ -363,4 +363,15 @@
     if (!section || section.hasAttribute('data-lf-bound')) return;
     section.setAttribute('data-lf-bound', '1');
   };
+
+  // ——— Overlap-scroll stitching: pinned section slides under the next as you scroll past ———
+  LF.init.scrollOverlap = function (root, ctx) {
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    (root || document).querySelectorAll('[data-lf-overlap]:not([data-lf-overlap-bound])').forEach(function (el) {
+      el.setAttribute('data-lf-overlap-bound', '1');
+      gsap.timeline({
+        scrollTrigger: { trigger: el, start: 'top top', end: '+=500', scrub: true }
+      }).to(el, { yPercent: 50, ease: 'power1.in' });
+    });
+  };
 })();
