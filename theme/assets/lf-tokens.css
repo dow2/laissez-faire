@@ -92,7 +92,7 @@ body {
 .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover {
   animation: lf-buzz-once .45s steps(1, end) 1;
 }
-.lf-header__nav a:hover, .lf-footer__cols a:hover {
+.lf-footer__cols a:hover {
   animation: lf-buzz-once .45s steps(1, end) 1;
 }
 
@@ -114,7 +114,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .lf-pdp__add:hover, .lf-teaser__row button:hover, .lf-email__row button:hover,
   .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover,
-  .lf-header__nav a:hover, .lf-footer__cols a:hover { animation: none; }
+  .lf-footer__cols a:hover { animation: none; }
   .lf-ignite-char { opacity: 1 !important; }
   .lf-follow-crest { display: none; }
 }
@@ -123,3 +123,15 @@ body {
 .lf-stamp { letter-spacing: .12em; }
 .lf-eyebrow { color: var(--lf-muted); font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; }
 .lf-code { color: #55555f; font-size: .9em; letter-spacing: .08em; }
+
+/* ——— B3.1 chrome ——— */
+/* z-scale: header 40 / drawer 60 / menu 70 / popup 75 / easter 78 / blackout 90 / preloader 95 / cursor 100 */
+
+/* Rolling text hover (OR h-flip): duplicate glyph via text-shadow, roll down on hover. */
+.lf-roll { overflow: hidden; display: inline-block; line-height: 1.1; }
+.lf-roll__inner {
+  display: inline-block; text-shadow: 0 -1.1em 0 currentColor;
+  transition: transform 0ms var(--lf-ease);
+}
+.lf-roll:hover .lf-roll__inner { transform: translateY(1.1em); transition-duration: 400ms; }
+@media (prefers-reduced-motion: reduce) { .lf-roll:hover .lf-roll__inner { transform: none; } }

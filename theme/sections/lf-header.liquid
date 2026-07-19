@@ -1,33 +1,26 @@
-<header class="lf-header">
+<header class="lf-header" data-lf-header>
   <a class="lf-header__home" href="{{ routes.root_url }}" aria-label="Laissez-Faire Leisure Club — home">
     <span class="lf-header__crest" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');" aria-hidden="true"></span>
   </a>
-  <nav class="lf-header__nav" aria-label="Main">
-    <a href="{{ section.settings.link_1_url | default: routes.all_products_collection_url }}">{{ section.settings.link_1_label | default: 'Shop' }}</a>
-    <a href="{{ section.settings.link_2_url | default: '/pages/story' }}">{{ section.settings.link_2_label | default: 'Story' }}</a>
-  </nav>
-  <button class="lf-header__cart" type="button" data-lf-cart-open aria-label="Open cart">
-    Cart <span class="lf-header__count" data-lf-cart-count>{{ cart.item_count }}</span>
-  </button>
-  <button class="lf-header__burger" type="button" data-lf-menu-toggle aria-label="Menu" aria-expanded="false">
-    <span></span><span></span>
-  </button>
-  <div class="lf-header__overlay" data-lf-menu hidden>
-    <a href="{{ section.settings.link_1_url | default: routes.all_products_collection_url }}" class="lf-display">{{ section.settings.link_1_label | default: 'Shop' }}</a>
-    <a href="{{ section.settings.link_2_url | default: '/pages/story' }}" class="lf-display">{{ section.settings.link_2_label | default: 'Story' }}</a>
-    <button type="button" class="lf-display" data-lf-cart-open>Cart</button>
+  <div class="lf-header__right">
+    <button class="lf-header__cart" type="button" data-lf-cart-open aria-label="Open cart">
+      Cart <span class="lf-header__count" data-lf-cart-count>{{ cart.item_count }}</span>
+    </button>
+    <button class="lf-header__menu lf-roll" type="button" data-lf-menu-open aria-expanded="false" aria-controls="lf-menu">
+      <span class="lf-roll__inner" data-text="Menu">Menu</span>
+    </button>
   </div>
 </header>
 
 {% stylesheet %}
 .lf-header {
-  position: sticky; top: 0; z-index: 40;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   padding: .9rem 1.25rem;
-  background: color-mix(in srgb, var(--lf-ground) 88%, transparent);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid #1a1a22;
+  transition: transform .3s ease-out, background .3s ease-out;
 }
+.lf-header.is-pulled { transform: translateY(-100%); }
+.lf-header.is-bright .lf-header__cart, .lf-header.is-bright .lf-header__menu { color: var(--lf-ground); }
 .lf-header__crest {
   display: block; width: 30px; aspect-ratio: 300/320;
   background-color: var(--lf-neon-core);
@@ -35,41 +28,18 @@
   mask: var(--lf-crest) center/contain no-repeat;
   filter: drop-shadow(0 0 4px var(--lf-neon-halo));
 }
-.lf-header__nav { display: flex; gap: 1.6rem; }
-.lf-header__nav a, .lf-header__cart {
+.lf-header__right { display: flex; align-items: center; gap: 1.6rem; }
+.lf-header__cart, .lf-header__menu {
   font-family: var(--lf-font-body); font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--lf-body-text); text-decoration: none; background: none; border: 0; cursor: pointer; padding: 0;
+  color: var(--lf-body-text); background: none; border: 0; cursor: pointer; padding: 0;
 }
-.lf-header__nav a:hover, .lf-header__cart:hover { color: var(--lf-neon-core); }
+.lf-header__cart:hover, .lf-header__menu:hover { color: var(--lf-neon-core); }
 .lf-header__count {
   display: inline-block; min-width: 1.3em; text-align: center; margin-left: .25em;
   color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo);
 }
-.lf-header__burger { display: none; background: none; border: 0; cursor: pointer; padding: .3rem; }
-.lf-header__burger span { display: block; width: 22px; height: 2px; background: var(--lf-body-text); margin: 5px 0; }
-.lf-header__overlay {
-  position: fixed; inset: 0; z-index: 50; background: var(--lf-ground);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem;
-}
-.lf-header__overlay[hidden] { display: none; }
-.lf-header__overlay a, .lf-header__overlay button {
-  font-size: 1.6rem; color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo);
-  text-decoration: none; background: none; border: 0; cursor: pointer; letter-spacing: .18em; text-transform: uppercase;
-}
-@media (max-width: 749px) {
-  .lf-header__nav, .lf-header__cart { display: none; }
-  .lf-header__burger { display: block; }
-}
 {% endstylesheet %}
 
 {% schema %}
-{
-  "name": "LF Header",
-  "settings": [
-    { "type": "text", "id": "link_1_label", "label": "Link 1 label", "default": "Shop" },
-    { "type": "url", "id": "link_1_url", "label": "Link 1 URL" },
-    { "type": "text", "id": "link_2_label", "label": "Link 2 label", "default": "Story" },
-    { "type": "url", "id": "link_2_url", "label": "Link 2 URL" }
-  ]
-}
+{ "name": "LF Header", "settings": [] }
 {% endschema %}

@@ -21,23 +21,6 @@
     });
   };
 
-  // ——— Header: mobile overlay menu (header persists outside Barba; bind once) ———
-  LF.init.header = function () {
-    var burger = document.querySelector('[data-lf-menu-toggle]');
-    var overlay = document.querySelector('[data-lf-menu]');
-    if (!burger || !overlay || burger.hasAttribute('data-lf-bound')) return;
-    burger.setAttribute('data-lf-bound', '1');
-    burger.addEventListener('click', function () {
-      var open = overlay.hasAttribute('hidden');
-      if (open) { overlay.removeAttribute('hidden'); } else { overlay.setAttribute('hidden', ''); }
-      burger.setAttribute('aria-expanded', String(open));
-      document.documentElement.style.overflow = open ? 'hidden' : '';
-    });
-    overlay.addEventListener('click', function (e) {
-      if (e.target.closest('a')) { overlay.setAttribute('hidden', ''); document.documentElement.style.overflow = ''; }
-    });
-  };
-
   // ——— Hero slider: buttons, autoplay, horizontal gestures ———
   LF.init.hero = function (root, ctx) {
     var hero = (root || document).querySelector('[data-lf-hero]');

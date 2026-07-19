@@ -60,4 +60,30 @@
     root._lfTrapRelease = release;
     return release;
   };
+
+  // ——— Nav behaviors: section-aware brighten + pull-up at footer ———
+  // Markers live INSIDE the swapped container, so triggers are re-created on
+  // every dispatch and die in lf-motion.js's beforeLeave ScrollTrigger sweep.
+  LF.init.navBehaviors = function (root) {
+    var header = document.querySelector('[data-lf-header]');
+    if (!header || !window.ScrollTrigger) return;
+    header.classList.remove('is-bright', 'is-pulled');
+    (root || document).querySelectorAll('[data-nav-light]').forEach(function (el) {
+      ScrollTrigger.create({
+        trigger: el, start: 'top top', end: 'bottom top',
+        onEnter: function () { header.classList.add('is-bright'); },
+        onEnterBack: function () { header.classList.add('is-bright'); },
+        onLeave: function () { header.classList.remove('is-bright'); },
+        onLeaveBack: function () { header.classList.remove('is-bright'); }
+      });
+    });
+    var footer = document.querySelector('.lf-footer');
+    if (footer) {
+      ScrollTrigger.create({
+        trigger: footer, start: 'clamp(top 20%)',
+        onEnter: function () { header.classList.add('is-pulled'); },
+        onLeaveBack: function () { header.classList.remove('is-pulled'); }
+      });
+    }
+  };
 })();
