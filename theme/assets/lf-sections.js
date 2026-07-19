@@ -21,36 +21,6 @@
     });
   };
 
-  // ——— Hero slider: buttons, autoplay, horizontal gestures ———
-  LF.init.hero = function (root, ctx) {
-    var hero = (root || document).querySelector('[data-lf-hero]');
-    if (!hero || hero.hasAttribute('data-lf-bound')) return;
-    hero.setAttribute('data-lf-bound', '1');
-    var slides = Array.prototype.slice.call(hero.querySelectorAll('[data-lf-slide]'));
-    var cur = hero.querySelector('[data-lf-current]');
-    var i = 0, n = slides.length, timer = null;
-    var secs = parseInt(hero.getAttribute('data-autoplay'), 10) || 0;
-    function go(next) {
-      slides[i].classList.remove('is-active');
-      i = (next + n) % n;
-      slides[i].classList.add('is-active');
-      if (cur) cur.textContent = String(i + 1).padStart(2, '0');
-    }
-    function arm() {
-      if (secs > 0 && !ctx.reduced && n > 1) { clearInterval(timer); timer = setInterval(function () { go(i + 1); }, secs * 1000); }
-    }
-    var next = hero.querySelector('[data-lf-next]'), prev = hero.querySelector('[data-lf-prev]');
-    if (next) next.addEventListener('click', function () { go(i + 1); arm(); });
-    if (prev) prev.addEventListener('click', function () { go(i - 1); arm(); });
-    arm();
-    // Observer-driven swipe/wheel gestures were dropped here (Task 10, Lighthouse
-    // fallback ladder rung 2) — the vendor + its setup cost pushed mobile TBT
-    // over budget. Arrow buttons + autoplay remain fully functional.
-    // This closure's timer belongs to THIS hero instance and won't self-clean
-    // when Barba discards its container on the next navigation.
-    LF.teardown.push(function () { clearInterval(timer); });
-  };
-
   // ——— PDP: variant sync, gallery, AJAX add-to-cart ———
   LF.init.pdp = function (root) {
     var pdp = (root || document).querySelector('[data-lf-pdp]');
