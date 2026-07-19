@@ -17,11 +17,11 @@
 </section>
 
 {% stylesheet %}
-.lf-lookbook { position: relative; height: 90svh; overflow: hidden; }
+.lf-lookbook { position: relative; aspect-ratio: 10/3; overflow: hidden; }
 .lf-lookbook__list, .lf-lookbook__slide { position: absolute; inset: 0; }
 .lf-lookbook__slide { opacity: 0; transition: opacity .6s var(--lf-ease); }
 .lf-lookbook__slide.is-active { opacity: 1; }
-.lf-lookbook__img { width: 100%; height: 100%; object-fit: cover; }
+.lf-lookbook__img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
 .lf-lookbook__ui {
   position: absolute; left: 1.5rem; right: 1.5rem; bottom: 1.5rem; z-index: 2;
   display: flex; align-items: center; gap: 1.4rem; color: var(--lf-body-text);
