@@ -149,9 +149,24 @@ html.lf-flood .lf-header button,
 html.lf-flood .lf-header { color: var(--lf-ground); }
 html.lf-flood .lf-header__crest { background-color: var(--lf-ground); filter: none; }
 html.lf-flood .lf-glow-text { color: var(--lf-ground); text-shadow: none; }
+/* .lf-header__count has its own neon color rule (lf-header.liquid) that blocks
+   inheritance from the flooded button; hover rules on the cart/menu buttons are
+   (0,2,0) and would beat the plain flood button rule — both need explicit
+   flood-scoped overrides or they render neon-on-neon (invisible) mid-flood. */
+html.lf-flood .lf-header__count { color: var(--lf-ground); text-shadow: none; }
+html.lf-flood .lf-header__cart:hover, html.lf-flood .lf-header__menu:hover { color: var(--lf-ground); }
 body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text {
   transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease);
 }
+/* The group above wins the `transition` property tie against [data-lf-reveal]
+   (same 0,1,0 specificity, later in file) — elements carrying BOTH .lf-glow-text
+   and data-lf-reveal (home statement heading) would lose their reveal fade/slide.
+   The merged rule below out-specifies both and carries the union. */
+.lf-glow-text[data-lf-reveal] {
+  transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease),
+              opacity .7s var(--lf-ease), transform .7s var(--lf-ease);
+}
 @media (prefers-reduced-motion: reduce) {
-  body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text { transition: none; }
+  body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text,
+  .lf-glow-text[data-lf-reveal] { transition: none; }
 }

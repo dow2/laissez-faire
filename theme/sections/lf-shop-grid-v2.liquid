@@ -15,9 +15,12 @@
     <div class="lf-shopv2__grid">
       {% for product in collection.products %}
         {% liquid
-          assign lf_num = forloop.index | append: ''
-          if forloop.index < 10
-            assign lf_num = forloop.index | prepend: '0'
+          # forloop.index restarts on every paginated page; offset it so page 2
+          # of a 25-product catalog reads "25 / 25", not "01 / 25".
+          assign lf_idx = paginate.current_offset | plus: forloop.index
+          assign lf_num = lf_idx | append: ''
+          if lf_idx < 10
+            assign lf_num = lf_idx | prepend: '0'
           endif
         %}
         <a class="lf-shopv2__card" href="{{ product.url }}" data-lf-reveal data-cursor="View Piece">
