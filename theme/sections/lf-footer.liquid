@@ -4,8 +4,8 @@
   <p class="lf-footer__club lf-display">Leisure Club</p>
   <div class="lf-footer__cols">
     <nav aria-label="Footer">
-      <a href="{{ routes.all_products_collection_url }}">Shop</a>
-      <a href="/pages/story">Story</a>
+      <a href="{{ section.settings.link_1_url | default: routes.all_products_collection_url }}">{{ section.settings.link_1_label | default: 'Shop' }}</a>
+      <a href="{{ section.settings.link_2_url | default: '/pages/story' }}">{{ section.settings.link_2_label | default: 'Story' }}</a>
       {% if section.settings.instagram_url != blank %}<a href="{{ section.settings.instagram_url }}" rel="me noopener" target="_blank">Instagram</a>{% endif %}
       {% if section.settings.contact_email != blank %}<a href="mailto:{{ section.settings.contact_email }}">{{ section.settings.contact_email }}</a>{% endif %}
     </nav>
@@ -42,6 +42,10 @@
 {
   "name": "LF Footer",
   "settings": [
+    { "type": "text", "id": "link_1_label", "label": "Link 1 label", "default": "Shop" },
+    { "type": "url", "id": "link_1_url", "label": "Link 1 URL" },
+    { "type": "text", "id": "link_2_label", "label": "Link 2 label", "default": "Story" },
+    { "type": "url", "id": "link_2_url", "label": "Link 2 URL" },
     { "type": "url", "id": "instagram_url", "label": "Instagram URL" },
     { "type": "text", "id": "contact_email", "label": "Contact email" }
   ]

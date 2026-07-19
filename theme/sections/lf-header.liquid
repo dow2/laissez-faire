@@ -3,8 +3,8 @@
     <span class="lf-header__crest" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');" aria-hidden="true"></span>
   </a>
   <nav class="lf-header__nav" aria-label="Main">
-    <a href="{{ routes.all_products_collection_url }}">Shop</a>
-    <a href="/pages/story">Story</a>
+    <a href="{{ section.settings.link_1_url | default: routes.all_products_collection_url }}">{{ section.settings.link_1_label | default: 'Shop' }}</a>
+    <a href="{{ section.settings.link_2_url | default: '/pages/story' }}">{{ section.settings.link_2_label | default: 'Story' }}</a>
   </nav>
   <button class="lf-header__cart" type="button" data-lf-cart-open aria-label="Open cart">
     Cart <span class="lf-header__count" data-lf-cart-count>{{ cart.item_count }}</span>
@@ -13,8 +13,8 @@
     <span></span><span></span>
   </button>
   <div class="lf-header__overlay" data-lf-menu hidden>
-    <a href="{{ routes.all_products_collection_url }}" class="lf-display">Shop</a>
-    <a href="/pages/story" class="lf-display">Story</a>
+    <a href="{{ section.settings.link_1_url | default: routes.all_products_collection_url }}" class="lf-display">{{ section.settings.link_1_label | default: 'Shop' }}</a>
+    <a href="{{ section.settings.link_2_url | default: '/pages/story' }}" class="lf-display">{{ section.settings.link_2_label | default: 'Story' }}</a>
     <button type="button" class="lf-display" data-lf-cart-open>Cart</button>
   </div>
 </header>
@@ -63,5 +63,13 @@
 {% endstylesheet %}
 
 {% schema %}
-{ "name": "LF Header", "settings": [] }
+{
+  "name": "LF Header",
+  "settings": [
+    { "type": "text", "id": "link_1_label", "label": "Link 1 label", "default": "Shop" },
+    { "type": "url", "id": "link_1_url", "label": "Link 1 URL" },
+    { "type": "text", "id": "link_2_label", "label": "Link 2 label", "default": "Story" },
+    { "type": "url", "id": "link_2_url", "label": "Link 2 URL" }
+  ]
+}
 {% endschema %}
