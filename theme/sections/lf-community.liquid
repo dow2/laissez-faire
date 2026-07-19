@@ -1,0 +1,64 @@
+<section class="lf-community">
+  <div class="lf-community__intro" data-lf-reveal>
+    <h2 class="lf-community__title lf-display lf-glow-text" data-lf-ignite>{{ section.settings.title }}</h2>
+    <p class="lf-community__body">{{ section.settings.body }}</p>
+  </div>
+  <div class="lf-community__list">
+    {% for block in section.blocks %}
+      <div class="lf-community__row" data-lf-reveal>
+        <div class="lf-community__imgwrap">
+          {% if block.settings.image != blank %}
+            {{ block.settings.image | image_url: width: 700 | image_tag: loading: 'lazy', class: 'lf-community__img', alt: block.settings.name }}
+          {% endif %}
+        </div>
+        <div class="lf-community__copy">
+          <h3 class="lf-community__name lf-display">{{ block.settings.name }}</h3>
+          <p class="lf-community__blurb">{{ block.settings.blurb }}</p>
+          {% if block.settings.link != blank %}<a class="lf-community__link" href="{{ block.settings.link }}" target="_blank" rel="noopener" data-cursor="Visit">Visit website</a>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-community { padding: 5rem 1.5rem; max-width: 1000px; margin: 0 auto; }
+.lf-community__intro { text-align: center; margin-bottom: 3.5rem; }
+.lf-community__title { font-size: clamp(1.5rem, 4vw, 2.2rem); margin: 0 0 1rem; }
+.lf-community__body { color: var(--lf-body-text); font-size: .95rem; line-height: 1.7; max-width: 60ch; margin: 0 auto; }
+.lf-community__row { display: grid; grid-template-columns: 160px 1fr; gap: 1.6rem; align-items: center; padding: 1.6rem 0; border-top: 1px solid #1e1e26; }
+.lf-community__imgwrap { aspect-ratio: 4/3; overflow: hidden; }
+.lf-community__img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--lf-ease); }
+.lf-community__row:hover .lf-community__img { transform: scale(1.05); }
+.lf-community__name { font-size: 1rem; margin: 0 0 .5rem; }
+.lf-community__blurb { color: var(--lf-muted); font-size: .84rem; line-height: 1.6; margin: 0 0 .6rem; }
+.lf-community__link { color: var(--lf-neon-core); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
+@media (max-width: 649px) { .lf-community__row { grid-template-columns: 1fr; } }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Community",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Title", "default": "Giving back" },
+    { "type": "textarea", "id": "body", "label": "Body", "default": "We never set out to be just a clothing brand. Laissez-Faire is as much about culture as it is about craft — our greater community." }
+  ],
+  "blocks": [
+    { "type": "partner", "name": "Partner", "settings": [
+      { "type": "image_picker", "id": "image", "label": "Image" },
+      { "type": "text", "id": "name", "label": "Name" },
+      { "type": "textarea", "id": "blurb", "label": "Blurb" },
+      { "type": "url", "id": "link", "label": "Link" }
+    ] }
+  ],
+  "max_blocks": 6,
+  "default": {
+    "blocks": [
+      { "type": "partner", "settings": { "name": "NOLA Second Line Society", "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs." } },
+      { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond." } },
+      { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage." } },
+      { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark." } }
+    ]
+  }
+}
+{% endschema %}

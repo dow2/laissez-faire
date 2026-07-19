@@ -356,4 +356,11 @@
     if (prevBtn) prevBtn.addEventListener('click', function () { go(i - 1); });
     if (nextBtn) nextBtn.addEventListener('click', function () { go(i + 1); });
   };
+
+  // ——— Community section: reveal-on-scroll only (data-lf-reveal handles it), no extra JS needed ———
+  LF.init.community = function (root, ctx) {
+    var section = (root || document).querySelector('.lf-community');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
+  };
 })();
