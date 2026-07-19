@@ -11,9 +11,9 @@
   </div>
   <div class="lf-contact__info">
     <p class="lf-contact__label">{% render 'lf-eyebrow', text: 'contact us' %}</p>
-    {% if section.settings.email != blank %}<a class="lf-contact__link lf-display" href="mailto:{{ section.settings.email }}">{{ section.settings.email }}</a>{% endif %}
+    {% if section.settings.email != blank %}<a class="lf-contact__link lf-display" href="mailto:{{ section.settings.email | escape }}">{{ section.settings.email }}</a>{% endif %}
     <p class="lf-contact__sub">{{ section.settings.body }}</p>
-    {% if section.settings.instagram_url != blank %}<a class="lf-contact__ig" href="{{ section.settings.instagram_url }}" target="_blank" rel="noopener" data-cursor="Follow">Instagram</a>{% endif %}
+    {% if section.settings.instagram_url != blank %}<a class="lf-contact__ig" href="{{ section.settings.instagram_url }}" target="_blank" rel="me noopener" data-cursor="Follow">Instagram</a>{% endif %}
     <div class="lf-contact__mini-footer">
       <div class="lf-contact__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
            style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
