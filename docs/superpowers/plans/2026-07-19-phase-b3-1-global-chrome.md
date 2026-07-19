@@ -871,7 +871,7 @@ git status --short
             </li>
           {% endfor %}
         </ul>
-        <div class="lf-footer__follow" data-lf-follow aria-hidden="true"><img alt=""></div>
+        <div class="lf-footer__follow" data-lf-follow aria-hidden="true"><img alt="" width="480" height="600"></div>
       </div>
     </div>
   </div>
@@ -1084,6 +1084,8 @@ git status --short
 **Files:** none (verification + deploy)
 
 - [ ] **Step 1: theme check** — `shopify theme check --path theme` clean (no new offenses vs. master baseline).
+
+> **As-run:** the footer's JS-populated `<img>` (Task 8) had no static `width`/`height`, tripping theme-check's `ImgWidthAndHeight` error. The CSS already forces `width:100%; height:100%; object-fit:cover` inside a fixed-`aspect-ratio` container, so the actual attribute values are inert for layout — added `width="480" height="600"` (matching the 4:5 ratio used for the real product images elsewhere in the same file) purely to satisfy the linter. Back-ported into Task 8's markup above.
 
 - [ ] **Step 2: Push to dev theme** — `shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com` (dev server must be restarted if schema names changed).
 
