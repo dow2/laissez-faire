@@ -139,3 +139,19 @@ body.lf-cursor-on .lf-cursor { opacity: 1; }
    scroll so the next section appears to scroll up over it. Positioning
    context only — the yPercent tween itself is applied by ScrollTrigger. */
 [data-lf-overlap] { position: relative; z-index: 1; will-change: transform; }
+
+/* Neon flood (B3.3): [data-lf-flood] section entry floods the page to neon.
+   Class is toggled on <html> by LF.init.flood (ScrollTrigger); a LF.teardown
+   entry removes it on every Barba leave so it can never leak across pages. */
+html.lf-flood body { background: var(--lf-neon-core); color: var(--lf-ground); }
+html.lf-flood .lf-header a,
+html.lf-flood .lf-header button,
+html.lf-flood .lf-header { color: var(--lf-ground); }
+html.lf-flood .lf-header__crest { background-color: var(--lf-ground); filter: none; }
+html.lf-flood .lf-glow-text { color: var(--lf-ground); text-shadow: none; }
+body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text {
+  transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text { transition: none; }
+}

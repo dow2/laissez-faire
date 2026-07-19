@@ -438,4 +438,24 @@
     if (!section || section.hasAttribute('data-lf-bound')) return;
     section.setAttribute('data-lf-bound', '1');
   };
+
+  // ——— Neon flood: page floods to neon while a [data-lf-flood] section is in view ———
+  // Class sits on <html> (reaches the persistent header outside the Barba
+  // container), so it MUST be torn down on leave — ScrollTrigger's kill alone
+  // does not remove an already-applied class.
+  LF.init.flood = function (root, ctx) {
+    if (ctx.reduced || !window.ScrollTrigger) return;
+    var docEl = document.documentElement;
+    (root || document).querySelectorAll('[data-lf-flood]:not([data-lf-flood-bound])').forEach(function (el) {
+      el.setAttribute('data-lf-flood-bound', '1');
+      ScrollTrigger.create({
+        trigger: el, start: 'top 60%', end: 'bottom 40%',
+        onEnter: function () { docEl.classList.add('lf-flood'); },
+        onEnterBack: function () { docEl.classList.add('lf-flood'); },
+        onLeave: function () { docEl.classList.remove('lf-flood'); },
+        onLeaveBack: function () { docEl.classList.remove('lf-flood'); }
+      });
+      LF.teardown.push(function () { docEl.classList.remove('lf-flood'); });
+    });
+  };
 })();
