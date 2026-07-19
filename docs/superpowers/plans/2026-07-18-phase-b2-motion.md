@@ -129,6 +129,8 @@ Expected: 3-warning baseline.
 
 ### Task 3: `lf-motion.js` — core rewrite (complete file)
 
+> **Amendment (code-quality review after execution):** the original code block below had a Critical bug — `leave()` called `bumpNav()` before `trimFactor()`, so `trimFactor()` always read the just-incremented count and every navigation (including the first) got the 0.7× trim, contradicting the spec's "first nav full-length" requirement. Fixed by reading `trimFactor()` before `bumpNav()`. Also fixed on review: the `preventRule` regex was unanchored (`/account`/`/password` could false-match handles like `/products/password-protected-jacket`) — anchored to segment boundaries. Both fixes and minimal `console.error`/`console.warn` diagnostics on the previously-silent catch/guard paths are already folded into the code block below — it reflects the as-shipped, corrected file.
+
 **Files:**
 - Modify (rewrite): `theme/assets/lf-motion.js`
 
@@ -147,7 +149,7 @@ Expected: 3-warning baseline.
 
   function runInits(root) {
     Object.keys(LF.init).forEach(function (k) {
-      try { LF.init[k](root || document, LF.ctx); } catch (e) { /* one broken section must not kill the rest */ }
+      try { LF.init[k](root || document, LF.ctx); } catch (e) { if (window.console) console.error('[LF] init "' + k + '" failed', e); }
     });
   }
   LF.runInits = runInits;
@@ -181,9 +183,9 @@ Expected: 3-warning baseline.
   runInits(document);
 
   // ——— Barba surge transitions ———
-  if (!window.barba || !window.gsap) return;
+  if (!window.barba || !window.gsap) { if (window.console) console.warn('[LF] barba/gsap missing — falling back to native navigation'); return; }
   var blackout = document.getElementById('lf-blackout');
-  if (!blackout) return;
+  if (!blackout) { if (window.console) console.warn('[LF] #lf-blackout missing — falling back to native navigation'); return; }
 
   if (reduced) {
     // Instant swap, no surge — still Barba so nav stays consistent, but zero animation.
@@ -201,8 +203,8 @@ Expected: 3-warning baseline.
       prevent: preventRule,
       transitions: [{
         leave: function (data) {
+          var f = trimFactor(); // read before bumping — this nav's OWN count decides its trim, not itself
           bumpNav();
-          var f = trimFactor();
           return gsap.timeline()
             .to(data.current.container, {
               keyframes: [{ opacity: .1 }, { opacity: 1 }, { opacity: .15 }, { opacity: .9 }, { opacity: .05 }, { opacity: 0 }],
@@ -232,7 +234,7 @@ Expected: 3-warning baseline.
     var el = data.el;
     var href = (data.href || '');
     if (el && el.closest('[data-no-barba]')) return true;
-    if (/\/checkouts?|\/cart\/c\/|\/account|\/password/.test(href)) return true;
+    if (/\/(checkouts?|account|password)(\/|\?|$)|\/cart\/c\//.test(href)) return true;
     return false;
   }
 

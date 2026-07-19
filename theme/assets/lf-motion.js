@@ -10,7 +10,7 @@
 
   function runInits(root) {
     Object.keys(LF.init).forEach(function (k) {
-      try { LF.init[k](root || document, LF.ctx); } catch (e) { /* one broken section must not kill the rest */ }
+      try { LF.init[k](root || document, LF.ctx); } catch (e) { if (window.console) console.error('[LF] init "' + k + '" failed', e); }
     });
   }
   LF.runInits = runInits;
@@ -44,9 +44,9 @@
   runInits(document);
 
   // ——— Barba surge transitions ———
-  if (!window.barba || !window.gsap) return;
+  if (!window.barba || !window.gsap) { if (window.console) console.warn('[LF] barba/gsap missing — falling back to native navigation'); return; }
   var blackout = document.getElementById('lf-blackout');
-  if (!blackout) return;
+  if (!blackout) { if (window.console) console.warn('[LF] #lf-blackout missing — falling back to native navigation'); return; }
 
   if (reduced) {
     // Instant swap, no surge — still Barba so nav stays consistent, but zero animation.
@@ -64,8 +64,8 @@
       prevent: preventRule,
       transitions: [{
         leave: function (data) {
+          var f = trimFactor(); // read before bumping — this nav's OWN count decides its trim, not itself
           bumpNav();
-          var f = trimFactor();
           return gsap.timeline()
             .to(data.current.container, {
               keyframes: [{ opacity: .1 }, { opacity: 1 }, { opacity: .15 }, { opacity: .9 }, { opacity: .05 }, { opacity: 0 }],
@@ -95,7 +95,7 @@
     var el = data.el;
     var href = (data.href || '');
     if (el && el.closest('[data-no-barba]')) return true;
-    if (/\/checkouts?|\/cart\/c\/|\/account|\/password/.test(href)) return true;
+    if (/\/(checkouts?|account|password)(\/|\?|$)|\/cart\/c\//.test(href)) return true;
     return false;
   }
 
