@@ -1,0 +1,46 @@
+<section class="lf-lookbook" data-lf-lookbook>
+  <div class="lf-lookbook__list" data-lf-lookbook-list>
+    {% for block in section.blocks %}
+      <div class="lf-lookbook__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }}>
+        {% if block.settings.image != blank %}
+          {{ block.settings.image | image_url: width: 2400 | image_tag: loading: 'lazy', class: 'lf-lookbook__img', alt: block.settings.caption }}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="lf-lookbook__ui">
+    <span class="lf-lookbook__stamp">{% render 'lf-stamp' %}</span>
+    <span class="lf-lookbook__count"><span data-lf-lookbook-current>01</span> / <span>{{ section.blocks.size | prepend: '0' | slice: -2, 2 }}</span></span>
+    <button type="button" data-lf-lookbook-prev aria-label="Previous">&larr;</button>
+    <button type="button" data-lf-lookbook-next aria-label="Next">&rarr;</button>
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-lookbook { position: relative; height: 90svh; overflow: hidden; }
+.lf-lookbook__list, .lf-lookbook__slide { position: absolute; inset: 0; }
+.lf-lookbook__slide { opacity: 0; transition: opacity .6s var(--lf-ease); }
+.lf-lookbook__slide.is-active { opacity: 1; }
+.lf-lookbook__img { width: 100%; height: 100%; object-fit: cover; }
+.lf-lookbook__ui {
+  position: absolute; left: 1.5rem; right: 1.5rem; bottom: 1.5rem; z-index: 2;
+  display: flex; align-items: center; gap: 1.4rem; color: var(--lf-body-text);
+  font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+}
+.lf-lookbook__count { flex: 1; }
+.lf-lookbook__ui button { background: none; border: 1px solid rgba(255,255,255,.35); color: inherit; padding: .4rem .7rem; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .lf-lookbook__slide { transition: none; } }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Lookbook",
+  "blocks": [
+    { "type": "slide", "name": "Slide", "settings": [
+      { "type": "image_picker", "id": "image", "label": "Image" },
+      { "type": "text", "id": "caption", "label": "Caption (alt text)" }
+    ] }
+  ],
+  "max_blocks": 6
+}
+{% endschema %}

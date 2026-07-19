@@ -334,4 +334,26 @@
     gsap.ticker.add(tick);
     LF.teardown.push(function () { gsap.ticker.remove(tick); gsap.killTweensOf(track); });
   };
+
+  // ——— Lookbook slider: simple crossfade + counter ———
+  LF.init.lookbook = function (root, ctx) {
+    var section = (root || document).querySelector('[data-lf-lookbook]');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
+    var slides = Array.prototype.slice.call(section.querySelectorAll('.lf-lookbook__slide'));
+    var n = slides.length;
+    if (n < 2) return;
+    var i = 0;
+    var counter = section.querySelector('[data-lf-lookbook-current]');
+    function go(next) {
+      slides[i].classList.remove('is-active');
+      i = (next + n) % n;
+      slides[i].classList.add('is-active');
+      if (counter) counter.textContent = String(i + 1).padStart(2, '0');
+    }
+    var prevBtn = section.querySelector('[data-lf-lookbook-prev]');
+    var nextBtn = section.querySelector('[data-lf-lookbook-next]');
+    if (prevBtn) prevBtn.addEventListener('click', function () { go(i - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(i + 1); });
+  };
 })();
