@@ -118,3 +118,8 @@ body {
   .lf-ignite-char { opacity: 1 !important; }
   .lf-follow-crest { display: none; }
 }
+
+/* Voice components */
+.lf-stamp { letter-spacing: .12em; }
+.lf-eyebrow { color: var(--lf-muted); font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; }
+.lf-code { color: #55555f; font-size: .9em; letter-spacing: .08em; }
