@@ -38,7 +38,7 @@ Full-bleed opener. OR leads with a moody collection film still; ours is the
 Big Chief as monument. Install: Theme Editor → Home → Hero slider → Slide 1.
 
 ```
-cinematic editorial night photography, an African American Mardi Gras Indian Big Chief in a fully hand-beaded and sequined suit with a towering crown of ostrich plumes, standing monumental and still in the middle of a wet New Orleans street at night, ice-blue neon signs glowing on both sides of the street, each sign correctly spelling a real word — "JAZZ", "OPEN", "OYSTERS", neon reflections in the wet asphalt at his feet, deep black shadows, blue neon rim light tracing every feather, CineStill 800T tungsten film look with neon halation, low camera angle, regal and dignified, shot from 20 feet away, space above the crown for a headline --ar 16:9 --style raw
+cinematic editorial night photography, an African American Mardi Gras Indian Big Chief in a fully hand-beaded and sequined suit with a towering crown of plumes, standing monumental and still in the middle of a wet New Orleans street at night, ice-blue neon signs glowing on both sides of the street, each sign correctly spelling a real word — "JAZZ", "OPEN", "OYSTERS", neon reflections in the wet asphalt at his feet, deep black shadows, blue neon rim light tracing every feather, CineStill 800T tungsten film look with neon halation, low camera angle, regal and dignified, shot from 20 feet away, space above the crown for a headline --ar 16:9 --style raw
 ```
 
 ### 2. Hero slide 02 — "the statement" (OR: "A modern expression of heritage")
@@ -60,7 +60,7 @@ The commerce card: suit-as-craft, close on the artistry. Install: Theme
 Editor → Home → CTA row → Card 1.
 
 ```
-cinematic editorial night photography, extreme detail shot of an African American Mardi Gras Indian suit chest panel — dense hand-sewn beadwork, rhinestones, and sequins depicting a beaded scene, ostrich feather trim entering frame from the edges, lit by a single ice-blue neon glow from the left, every bead a point of blue light against deep black shadow, CineStill 800T tungsten film look, macro texture, no face visible, craftsmanship as the entire subject --ar 4:3 --style raw
+cinematic editorial night photography, extreme detail shot of an African American Mardi Gras Indian suit chest panel — dense hand-sewn beadwork, rhinestones, and sequins depicting a beaded scene, feather trim entering frame from the edges, lit by a single ice-blue neon glow from the left, every bead a point of blue light against deep black shadow, CineStill 800T tungsten film look, macro texture, no face visible, craftsmanship as the entire subject --ar 4:3 --style raw
 ```
 
 ### 5. CTA card — "Our Story / Read More" (OR: heritage-street card)
@@ -250,7 +250,7 @@ iconic night photograph, an African American Mardi Gras Indian in full violet fe
 
 **Culture 3 (newsletter popup + footer):**
 ```
-iconic night photograph, extreme close-up of ice-blue neon light refracting through a cluster of white ostrich plumes filling the whole frame, abstract texture of glowing feathers against blackness, dreamlike, CineStill 800T halation bloom, almost no other detail --ar 4:5 --style raw
+iconic night photograph, extreme close-up of ice-blue neon light refracting through a cluster of white plumes filling the whole frame, abstract texture of glowing feathers against blackness, dreamlike, CineStill 800T halation bloom, almost no other detail --ar 4:5 --style raw
 ```
 
 ---
