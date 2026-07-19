@@ -1004,8 +1004,8 @@ git status --short
 .lf-storyed__band { text-align: center; margin-bottom: 3rem; }
 .lf-storyed__offset { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; min-height: 100svh; align-content: center; }
 .lf-storyed__imgwrap { overflow: clip; }
-.lf-storyed__imgwrap--left { aspect-ratio: 4.35/2.8; align-self: start; }
-.lf-storyed__imgwrap--right { aspect-ratio: 4.35/6; align-self: end; }
+.lf-storyed__imgwrap--left { aspect-ratio: 4.35/4.6; align-self: start; }
+.lf-storyed__imgwrap--right { aspect-ratio: 4.35/5.2; align-self: end; }
 .lf-storyed__img { width: 100%; height: 120%; object-fit: cover; display: block; }
 .lf-storyed__copy { max-width: 60ch; margin: 0 auto 4rem; font-size: 1rem; line-height: 1.75; color: var(--lf-body-text); text-align: center; }
 .lf-flickthrough { position: relative; aspect-ratio: 4/3; max-width: 420px; margin: 0 auto; overflow: hidden; }
@@ -1093,7 +1093,7 @@ git status --short
 ```
 
 > **As-run (site-wide directive, fixed in `04e3598`):** unlike Task 2/8's simple full-height sections, this is a composite section (eyebrow + offset image pair + body copy + flickthrough zoetrope) — the directive was scoped to only the offset image pair being the "photo scene" (eyebrow/copy/flickthrough stay compact, matching the approved clarifying-question scope). Added `min-height: 100svh; align-content: center;` to `.lf-storyed__offset` (reflected above). Note: `align-content: center` was used instead of the more obvious `align-items: center`, because with `align-items: center` CSS Grid's default `align-content: stretch` forces the row to stretch to the full section height, and since the shorter landscape image is `align-self: start`, the void beneath it grows unboundedly with viewport height (measured 454px at 900px height → 683px at 1080px height). `align-content: center` keeps the row's natural content height (~709px, set by the taller portrait image) and centers that whole two-image cluster, making the void a constant ~453px regardless of viewport.
-> **Known, pre-existing, not fixed here:** that ~453px void beneath the landscape image is NOT new — it existed before this task's height changes too, driven by the two images' very different aspect ratios (`4.35/2.8` landscape vs. `4.35/6` portrait) combined with `align-self: start`/`end` staggering. It was easy to miss when this content scrolled past compactly; now that it's an isolated full-viewport scene, the void reads as a much more prominent black gap next to the left image. Not fixed in this pass since it's a pre-existing design characteristic, not a regression, and closing it (e.g. narrowing the aspect-ratio gap between the two images, or changing the stagger mechanism) is a real design decision outside the literal scope of "make sections fill the viewport." Flagged for the user to decide on a follow-up.
+> **As-run (user follow-up, fixed in `eb5200e`):** the flagged ~453px void beneath the landscape image (driven by the original `4.35/2.8`/`4.35/6` aspect-ratio disparity) was closed per direct user request. Two iterations, both measured live: first narrowed to `4.35/3.6`/`4.35/5.2` (void → ~227px at 1440×900) — still read as an accidental gap in a screenshot review, not an intentional stagger. Tightened further to `4.35/4.6`/`4.35/5.2` (void → ~85px at 1440×900); reflected above. At this ratio the offset reads as a deliberate vertical stagger between the two images rather than empty space, while each image keeps its wide-vs-tall character.
 
 ---
 
