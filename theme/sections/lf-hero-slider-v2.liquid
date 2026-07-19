@@ -1,0 +1,115 @@
+<section class="lf-heroV2" data-lf-hero-v2 data-state="idle" data-autoplay="{{ section.settings.autoplay_seconds }}">
+  <div class="lf-heroV2__list" data-lf-hero-list>
+    {% for block in section.blocks %}
+      <div class="lf-heroV2__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }} data-lf-hero-slide data-index="{{ forloop.index0 }}">
+        <div class="lf-heroV2__visual" data-lf-hero-visual>
+          {% if block.settings.video != blank %}
+            <video class="lf-heroV2__img" src="{{ block.settings.video }}" autoplay muted loop playsinline></video>
+          {% elsif block.settings.image != blank %}
+            {% liquid
+              assign lf_hero_v2_loading = 'lazy'
+              assign lf_hero_v2_priority = 'auto'
+              if forloop.first
+                assign lf_hero_v2_loading = 'eager'
+                assign lf_hero_v2_priority = 'high'
+              endif
+            %}
+            {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-heroV2__img', loading: lf_hero_v2_loading, fetchpriority: lf_hero_v2_priority, alt: block.settings.heading }}
+          {% endif %}
+        </div>
+        <div class="lf-heroV2__shade"></div>
+        <div class="lf-heroV2__copy">
+          {% if block.settings.kicker != blank %}<p class="lf-heroV2__kicker">{{ block.settings.kicker }}</p>{% endif %}
+          {% if block.settings.heading != blank %}<h2 class="lf-heroV2__heading lf-display lf-glow-text" data-lf-ignite>{{ block.settings.heading }}</h2>{% endif %}
+          {% if block.settings.link != blank %}<a class="lf-heroV2__cta lf-display" href="{{ block.settings.link }}" data-cursor="{{ block.settings.cta_label | default: 'Shop' }}">{{ block.settings.cta_label | default: 'Shop' }}</a>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <nav class="lf-heroV2__nav" aria-label="Hero slides">
+    <ol class="lf-heroV2__navlist" data-lf-hero-navlist>
+      {% for block in section.blocks %}
+        <li class="lf-heroV2__navitem {% if forloop.first %}is-active{% endif %}" data-lf-hero-dot data-index="{{ forloop.index0 }}">
+          <button type="button" aria-label="Go to slide {{ forloop.index }}">{{ forloop.index | prepend: '0' | slice: -2, 2 }}</button>
+        </li>
+      {% endfor %}
+    </ol>
+  </nav>
+  <p class="lf-heroV2__scroll" aria-hidden="true">Scroll</p>
+  <button type="button" class="lf-heroV2__next" data-lf-hero-next aria-label="Next slide">Next</button>
+
+  <div class="lf-heroV2__lockup">
+    <div class="lf-heroV2__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
+         style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-heroV2 { position: relative; height: 100svh; overflow: hidden; color: var(--lf-body-text); }
+.lf-heroV2__list, .lf-heroV2__slide, .lf-heroV2__visual { position: absolute; inset: 0; }
+.lf-heroV2__slide { visibility: hidden; clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%); }
+.lf-heroV2__slide.is-active { visibility: visible; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); }
+.lf-heroV2__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-heroV2__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,13,17,.55) 0%, rgba(13,13,17,.2) 45%, rgba(13,13,17,.85) 100%); }
+.lf-heroV2__copy { position: absolute; left: 1.5rem; bottom: 6rem; max-width: 34ch; z-index: 2; }
+.lf-heroV2__kicker { font-size: .7rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); margin: 0 0 .6rem; }
+.lf-heroV2__heading { font-size: clamp(1.8rem, 6vw, 3.6rem); line-height: 1.05; margin: 0 0 1.2rem; }
+.lf-heroV2__cta { color: var(--lf-body-text); text-decoration: none; letter-spacing: .18em; text-transform: uppercase; font-size: .8rem; border-bottom: 1px solid currentColor; padding-bottom: .2rem; }
+.lf-heroV2__nav { position: absolute; right: 1.5rem; bottom: 2.2rem; z-index: 2; }
+.lf-heroV2__navlist { list-style: none; display: flex; gap: .6rem; margin: 0; padding: 0; }
+.lf-heroV2__navitem button {
+  background: none; border: 1px solid rgba(255,255,255,.3); color: var(--lf-muted);
+  font-size: .68rem; letter-spacing: .1em; padding: .35rem .6rem; cursor: pointer;
+  transition: all .3s var(--lf-ease);
+}
+.lf-heroV2__navitem.is-active button { color: var(--lf-neon-core); border-color: var(--lf-neon-halo); text-shadow: 0 0 6px var(--lf-neon-halo); }
+.lf-heroV2__navlist:hover .lf-heroV2__navitem:not(.is-active) button { opacity: .5; }
+.lf-heroV2__scroll {
+  position: absolute; left: 1.5rem; bottom: 2.2rem; z-index: 2; margin: 0;
+  font-size: .66rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-muted);
+  writing-mode: vertical-lr;
+}
+.lf-heroV2__next {
+  position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); z-index: 2;
+  background: none; border: 0; cursor: pointer; color: var(--lf-body-text);
+  font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
+}
+.lf-heroV2__lockup { position: absolute; left: 1.5rem; top: 1.5rem; z-index: 2; }
+.lf-heroV2__wordmark {
+  width: 160px; aspect-ratio: 2129/749; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
+  filter: drop-shadow(0 0 6px var(--lf-neon-halo));
+}
+/* No CSS transition to disable here — slide motion is entirely GSAP-driven
+   inline clip-path tweening (see LF.init.heroV2's `ctx.reduced` branch in
+   lf-sections.js, which is the actual reduced-motion guard). */
+@media (max-width: 749px) {
+  .lf-heroV2__nav, .lf-heroV2__scroll { display: none; }
+  .lf-heroV2__copy { bottom: 3.5rem; left: 1.1rem; right: 1.1rem; max-width: none; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Hero v2",
+  "settings": [
+    { "type": "range", "id": "autoplay_seconds", "label": "Autoplay seconds (0 = off)", "min": 0, "max": 15, "default": 6 }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        { "type": "text", "id": "kicker", "label": "Kicker" },
+        { "type": "text", "id": "heading", "label": "Heading" },
+        { "type": "text", "id": "cta_label", "label": "CTA label" },
+        { "type": "url", "id": "link", "label": "Link" },
+        { "type": "image_picker", "id": "image", "label": "Image" },
+        { "type": "video_url", "id": "video", "label": "Video (optional, overrides image)", "accept": ["youtube", "vimeo"] }
+      ]
+    }
+  ],
+  "max_blocks": 4
+}
+{% endschema %}

@@ -167,4 +167,89 @@
       }
     });
   };
+
+  // ——— Home hero v2: numbered nav, directional clip wipes, swipe ———
+  LF.init.heroV2 = function (root, ctx) {
+    var hero = (root || document).querySelector('[data-lf-hero-v2]');
+    if (!hero || hero.hasAttribute('data-lf-bound')) return;
+    hero.setAttribute('data-lf-bound', '1');
+    var slides = Array.prototype.slice.call(hero.querySelectorAll('[data-lf-hero-slide]'));
+    var dots = Array.prototype.slice.call(hero.querySelectorAll('[data-lf-hero-dot]'));
+    var n = slides.length;
+    if (n < 2) return;
+    var i = 0, timer = null;
+    var secs = parseInt(hero.getAttribute('data-autoplay'), 10) || 0;
+
+    function go(nextIndex, forwards) {
+      if (hero.getAttribute('data-state') === 'animating') return;
+      var nextI = (nextIndex + n) % n;
+      if (nextI === i) return;
+      var prevSlide = slides[i], nextSlide = slides[nextI];
+      var prevVisual = prevSlide.querySelector('[data-lf-hero-visual]');
+      var nextVisual = nextSlide.querySelector('[data-lf-hero-visual]');
+      dots[i].classList.remove('is-active');
+      dots[nextI].classList.add('is-active');
+      i = nextI;
+      if (ctx.reduced || !window.gsap) {
+        prevSlide.classList.remove('is-active');
+        nextSlide.classList.add('is-active');
+        return;
+      }
+      var openPoly = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+      var closedTop = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)';
+      var closedBottom = 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)';
+      nextSlide.classList.add('is-active');
+      hero.setAttribute('data-state', 'animating');
+      var tl = gsap.timeline({
+        defaults: { duration: 1, ease: 'lf-ease-3' },
+        onComplete: function () { prevSlide.classList.remove('is-active'); hero.setAttribute('data-state', 'idle'); }
+      });
+      if (forwards) {
+        gsap.set(nextSlide, { clipPath: closedTop });
+        tl.to(nextSlide, { clipPath: openPoly })
+          .to(prevSlide, { clipPath: closedBottom }, '<')
+          .fromTo(prevVisual, { yPercent: 0 }, { yPercent: 10 }, '<')
+          .fromTo(nextVisual, { yPercent: -10 }, { yPercent: 0 }, '<');
+      } else {
+        gsap.set(nextSlide, { clipPath: closedBottom });
+        tl.to(nextSlide, { clipPath: openPoly })
+          .to(prevSlide, { clipPath: closedTop }, '<')
+          .fromTo(prevVisual, { yPercent: 0 }, { yPercent: -10 }, '<')
+          .fromTo(nextVisual, { yPercent: 10 }, { yPercent: 0 }, '<');
+      }
+    }
+    function arm() {
+      if (secs > 0 && !ctx.reduced && n > 1) { clearInterval(timer); timer = setInterval(function () { go(i + 1, true); }, secs * 1000); }
+    }
+    var nextBtn = hero.querySelector('[data-lf-hero-next]');
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(i + 1, true); arm(); });
+    dots.forEach(function (dot) {
+      dot.querySelector('button').addEventListener('click', function () {
+        var target = parseInt(dot.getAttribute('data-index'), 10);
+        go(target, target > i);
+        arm();
+      });
+    });
+    // Mobile swipe via native Pointer Events (no Observer plugin per spec constraint).
+    var list = hero.querySelector('[data-lf-hero-list]');
+    var downX = null, activePointerId = null;
+    list.addEventListener('pointerdown', function (e) {
+      if (activePointerId != null) return; // ignore a second concurrent pointer
+      activePointerId = e.pointerId;
+      downX = e.clientX;
+    });
+    function endSwipe(e, shouldNavigate) {
+      if (e.pointerId !== activePointerId) return;
+      var dx = shouldNavigate ? e.clientX - downX : 0;
+      activePointerId = null;
+      downX = null;
+      if (!shouldNavigate || Math.abs(dx) < 40) return;
+      go(i + (dx < 0 ? 1 : -1), dx < 0);
+      arm();
+    }
+    list.addEventListener('pointerup', function (e) { endSwipe(e, true); });
+    list.addEventListener('pointercancel', function (e) { endSwipe(e, false); });
+    arm();
+    LF.teardown.push(function () { clearInterval(timer); });
+  };
 })();
