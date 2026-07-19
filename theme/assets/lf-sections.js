@@ -171,16 +171,24 @@
       }
       var split = new SplitText(el, { type: 'chars', charsClass: 'lf-ignite-char' });
       var per = Math.min(0.055, 0.9 / Math.max(split.chars.length, 1));
-      ScrollTrigger.create({
-        trigger: el, start: 'top 55%', once: true,
-        onEnter: function () {
-          gsap.to(split.chars, {
-            keyframes: [{ opacity: .5 }, { opacity: .12 }, { opacity: 1 }, { opacity: .3 }, { opacity: 1 }],
-            duration: .5, ease: 'steps(4)', stagger: per,
-            onComplete: function () { el.classList.add('lf-ignite-done'); }
-          });
-        }
-      });
+      function fire() {
+        gsap.to(split.chars, {
+          keyframes: [{ opacity: .5 }, { opacity: .12 }, { opacity: 1 }, { opacity: .3 }, { opacity: 1 }],
+          duration: .5, ease: 'steps(4)', stagger: per,
+          onComplete: function () { el.classList.add('lf-ignite-done'); }
+        });
+      }
+      // ScrollTrigger's onEnter only fires on a scroll crossing INTO the trigger
+      // zone — an element already above-the-fold at bind time (a page's own H1,
+      // e.g. collection/story/PDP titles) is already "inside" the zone and would
+      // never receive that event, staying permanently dim. Fire immediately for
+      // anything already past the trigger line; ScrollTrigger only for the rest.
+      var rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.55) {
+        fire();
+      } else {
+        ScrollTrigger.create({ trigger: el, start: 'top 55%', once: true, onEnter: fire });
+      }
     });
   };
 

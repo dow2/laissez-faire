@@ -114,6 +114,8 @@ git add theme/assets && git commit -m "Vendor SplitText, Observer, Barba for the
 </html>
 ```
 
+> **Amendment (Task 10, Lighthouse fallback ladder rung 1):** the 8 `defer` script tags above were replaced with a sequential post-load loader — `defer` still competes for main-thread time during the initial parse, and ~170KB of GSAP-family JS dropped mobile perf from 87 to 51. The as-shipped block (see Task 10) loads all 8 vendors after `window.onload` via chained `<script>` injection, preserving execution order.
+
 (Order matters: `lf-sections.js` registers inits; `lf-motion.js` dispatches them. Both deferred, so DOM is parsed first. `lf-sections.js` doesn't exist until Task 5 — the resulting `MissingTemplate`-style asset 404 is inert at runtime and `theme check` does not flag asset_url references; note any new offense honestly.)
 
 **Note:** footer group is OUTSIDE the Barba container, so the footer (and its cursor-follow) persists across swaps — matching header/drawer. Barba fetches full pages and swaps only the container.
@@ -520,16 +522,24 @@ git add theme/assets/lf-tokens.css && git commit -m "Motion CSS: hover buzz, ign
       }
       var split = new SplitText(el, { type: 'chars', charsClass: 'lf-ignite-char' });
       var per = Math.min(0.055, 0.9 / Math.max(split.chars.length, 1));
-      ScrollTrigger.create({
-        trigger: el, start: 'top 55%', once: true,
-        onEnter: function () {
-          gsap.to(split.chars, {
-            keyframes: [{ opacity: .5 }, { opacity: .12 }, { opacity: 1 }, { opacity: .3 }, { opacity: 1 }],
-            duration: .5, ease: 'steps(4)', stagger: per,
-            onComplete: function () { el.classList.add('lf-ignite-done'); }
-          });
-        }
-      });
+      function fire() {
+        gsap.to(split.chars, {
+          keyframes: [{ opacity: .5 }, { opacity: .12 }, { opacity: 1 }, { opacity: .3 }, { opacity: 1 }],
+          duration: .5, ease: 'steps(4)', stagger: per,
+          onComplete: function () { el.classList.add('lf-ignite-done'); }
+        });
+      }
+      // ScrollTrigger's onEnter only fires on a scroll crossing INTO the trigger
+      // zone — an element already above-the-fold at bind time (a page's own H1,
+      // e.g. collection/story/PDP titles) is already "inside" the zone and would
+      // never receive that event, staying permanently dim. Fire immediately for
+      // anything already past the trigger line; ScrollTrigger only for the rest.
+      var rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.55) {
+        fire();
+      } else {
+        ScrollTrigger.create({ trigger: el, start: 'top 55%', once: true, onEnter: fire });
+      }
     });
   };
 
@@ -852,6 +862,8 @@ for n,p in [('home','/tmp/lh-b2-home.json'),('pdp','/tmp/lh-b2-pdp.json')]:
 ```
 
 Expected: ≥85 / ≥90 both pages. If perf fails: apply the spec §4 fallback ladder in order — (1) swap the five vendor `<script defer>` tags for a post-`load` injector snippet, re-measure; (2) drop Observer.min.js + the gesture block, re-measure. Document whichever rung shipped.
+
+> **As-run:** initial Lighthouse mobile came in at home 51 / pdp 77 (both below the ≥85 gate) — ~170KB of new GSAP-family JS on `defer` was competing for main-thread time during initial parse (TBT 1,530ms on home). Applied fallback rung 1: `theme/layout/theme.liquid`'s 8 vendor `<script defer>` tags were replaced with a small inline loader that injects them sequentially after `window.onload` (see Task 2's amendment for the exact code). Also fixed in this pass, found by manual behind-the-gate testing (not Lighthouse): `LF.init.ignite`'s `ScrollTrigger.create({ start: 'top 55%', once: true })` never fires `onEnter` for elements already above-the-fold at bind time (collection/story/PDP page H1 titles) — `onEnter` only fires on a scroll crossing INTO the zone, and an already-visible element is already inside it. Fixed by checking `getBoundingClientRect()` at bind time and firing immediately for anything already past the trigger line (see Task 5's ignite code, now amended).
 
 - [ ] **Step 4: Fix findings, commit** (`git add -A && git commit -m "Phase B2 review fixes"` — skip if clean).
 

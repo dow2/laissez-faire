@@ -19,13 +19,35 @@
     {% sections 'footer-group' %}
     {% section 'lf-cart-drawer' %}
     <div id="lf-blackout" aria-hidden="true"></div>
-    <script src="{{ 'gsap.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'ScrollTrigger.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'SplitText.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'Observer.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'barba.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
-    <script src="{{ 'lf-sections.js' | asset_url }}" defer></script>
-    <script src="{{ 'lf-motion.js' | asset_url }}" defer></script>
+    <script>
+      // Motion vendors load after first paint (not `defer`, which still competes
+      // for main-thread time during initial parse) — this was Lighthouse mobile
+      // perf's #1 cost on the motion layer (~170KB of GSAP-family JS). Sequential
+      // load preserves execution order: each script depends on globals the
+      // previous one sets (gsap before its plugins, lf-sections before lf-motion).
+      (function () {
+        var urls = [
+          {{ 'gsap.min.js' | asset_url | json }},
+          {{ 'ScrollTrigger.min.js' | asset_url | json }},
+          {{ 'SplitText.min.js' | asset_url | json }},
+          {{ 'Observer.min.js' | asset_url | json }},
+          {{ 'barba.min.js' | asset_url | json }},
+          {{ 'lenis.min.js' | asset_url | json }},
+          {{ 'lf-sections.js' | asset_url | json }},
+          {{ 'lf-motion.js' | asset_url | json }}
+        ];
+        function loadNext(i) {
+          if (i >= urls.length) return;
+          var s = document.createElement('script');
+          s.src = urls[i];
+          s.onload = function () { loadNext(i + 1); };
+          s.onerror = function () { loadNext(i + 1); };
+          document.body.appendChild(s);
+        }
+        function start() { loadNext(0); }
+        if (document.readyState === 'complete') { start(); }
+        else { window.addEventListener('load', start); }
+      })();
+    </script>
   </body>
 </html>
