@@ -128,7 +128,7 @@ cinematic editorial night photography, wide scene of a masculine African America
 The "figure" half — full-length, portrait orientation. Install: Tall image.
 
 ```
-cinematic editorial night photography, full-length portrait of a masculine African American Mardi Gras Indian man wearing a white and ice-blue beaded Mardi Gras Indian costume with feathers, standing beneath a wrought-iron balcony at night, costume falling to the ground in layers of beadwork and plumes, single ice-blue neon sign reading "HOTEL" in correct lettering lighting him from above, vertical composition, regal stillness, CineStill 800T tungsten film look, deep black night framing the glowing suit --ar 5:6 --style raw
+cinematic editorial night photography, full-length portrait of a masculine African American Mardi Gras Indian man wearing a white and ice-blue beaded Mardi Gras Indian costume with feathers, standing beneath a wrought-iron balcony at night, costume falling to the ground in layers of beadwork and plumes, single ice-blue neon sign reading "HOTEL" in correct lettering lighting him from above, vertical composition, regal stillness, CineStill 800T tungsten film look, deep black night framing the glowing costume --ar 5:6 --style raw
 ```
 
 ### 15. Flickthrough ×3 (OR: hover zoetrope, 300ms frame cycle)
