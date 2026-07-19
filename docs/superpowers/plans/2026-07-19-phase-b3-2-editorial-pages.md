@@ -67,7 +67,7 @@
         <div class="lf-heroV2__copy">
           {% if block.settings.kicker != blank %}<p class="lf-heroV2__kicker">{{ block.settings.kicker }}</p>{% endif %}
           {% if block.settings.heading != blank %}<h2 class="lf-heroV2__heading lf-display lf-glow-text" data-lf-ignite>{{ block.settings.heading }}</h2>{% endif %}
-          {% if block.settings.link != blank %}<a class="lf-heroV2__cta lf-display" href="{{ block.settings.link }}" data-cursor="{{ block.settings.cta_label | default: 'Shop' }}">{{ block.settings.cta_label | default: 'Shop' }}</a>{% endif %}
+          {% if block.settings.link != blank %}<a class="lf-heroV2__cta lf-display" href="{{ block.settings.link }}" data-cursor="{{ block.settings.cta_label | default: 'Shop' | escape }}">{{ block.settings.cta_label | default: 'Shop' }}</a>{% endif %}
         </div>
       </div>
     {% endfor %}
@@ -254,6 +254,8 @@
 
 > **As-run (round 2):** code review found a real Critical bug — `go()` had no re-entrancy guard, so a rapid second nav-dot click during an in-flight ~1s transition reassigned `i` before the first GSAP timeline resolved, letting two overlapping timelines both end up controlling the same slide's `clip-path` (timeline-nested `tl.to()` calls don't auto-overwrite each other the way top-level `gsap.to()` does) and risking a slide left permanently hidden. Fixed with the same `data-state` gate pattern already proven in `LF.init.menu` (`idle`/`animating`, checked at the top of `go()`, cleared in the timeline's `onComplete`) — live-verified with an actual rapid-double-click sequence settling cleanly. Two Important fixes rode along in the same pass: the swipe handler now tracks `activePointerId` (ignoring a second concurrent pointer) and handles `pointercancel`, and the dead `@media (prefers-reduced-motion: reduce) { .lf-heroV2__slide { transition: none; } }` CSS rule (there's no CSS `transition` on that class to disable — motion is entirely GSAP-driven) was replaced with a comment pointing at the real guard in JS. All three fixes are already reflected in the code above.
 
+> **As-run (round 3):** Task 3's code review caught the same unescaped-`data-cursor`-attribute pattern in `lf-cta-row.liquid`; the identical fix was backported here (`| escape` added to the CTA link's `data-cursor` value) since this section has the exact same construct — already reflected in the code above.
+
 - [ ] **Step 3: Theme check** — `shopify theme check --path theme 2>&1 | tail -5`. This section isn't referenced by any template yet (Task 7 wires `index.json`), so expect an `UnusedAssign`/no offense change beyond the existing baseline (no `OrphanedSnippet`-equivalent rule fires for sections).
 
 - [ ] **Step 4: Commit**
@@ -274,7 +276,7 @@ git status --short
 - [ ] **Step 1: Create `theme/sections/lf-statement.liquid`:**
 
 ```liquid
-<section class="lf-statement">
+<section class="lf-statement" data-lf-overlap>
   <div class="lf-statement__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
   <h2 class="lf-statement__text lf-display lf-glow-text" data-lf-ignite data-lf-reveal>{{ section.settings.statement }}</h2>
 </section>
@@ -322,11 +324,11 @@ git status --short
 - [ ] **Step 1: Create `theme/sections/lf-cta-row.liquid`:**
 
 ```liquid
-<section class="lf-ctarow">
+<section class="lf-ctarow" data-lf-overlap style="--lf-ctarow-cols: {{ section.blocks.size | at_least: 1 }};">
   {% for block in section.blocks %}
-    <a class="lf-ctarow__card" href="{{ block.settings.link }}" {{ block.shopify_attributes }} data-cursor="{{ block.settings.cta_label | default: 'View' }}">
+    <a class="lf-ctarow__card" href="{{ block.settings.link }}" {{ block.shopify_attributes }} data-cursor="{{ block.settings.cta_label | default: 'View' | escape }}">
       {% if block.settings.image != blank %}
-        {{ block.settings.image | image_url: width: 900 | image_tag: loading: 'lazy', class: 'lf-ctarow__img', alt: block.settings.title }}
+        {{ block.settings.image | image_url: width: 900 | image_tag: loading: 'lazy', class: 'lf-ctarow__img', alt: '' }}
       {% endif %}
       <div class="lf-ctarow__overlay"></div>
       <div class="lf-ctarow__copy">
@@ -338,7 +340,7 @@ git status --short
 </section>
 
 {% stylesheet %}
-.lf-ctarow { display: grid; grid-template-columns: repeat(3, 1fr); }
+.lf-ctarow { display: grid; grid-template-columns: repeat(var(--lf-ctarow-cols, 3), 1fr); }
 .lf-ctarow__card { position: relative; display: block; aspect-ratio: 3/4; text-decoration: none; overflow: hidden; }
 .lf-ctarow__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--lf-ease); }
 .lf-ctarow__card:hover .lf-ctarow__img { transform: scale(1.04); }
@@ -390,6 +392,8 @@ git status --short
     // this init is idempotent; kept as its own function for clarity/future growth.
   };
 ```
+
+> **As-run:** code review found three Important issues, all already reflected in the code above: (1) `data-cursor="{{ block.settings.cta_label | default: 'View' }}"` was unescaped in an HTML attribute — a merchant label containing `"` would break the tag; added `| escape`, matching the codebase's established convention (`lf-product.liquid`'s `data-alt`, `meta-tags.liquid`'s `content` attributes). (2) The grid was a fixed `repeat(3, 1fr)` with no degrade path for the 1-2 block case `max_blocks: 3` explicitly permits — fixed via a `--lf-ctarow-cols` custom property driven by `section.blocks.size`. (3) Each card's accessible name was duplicated (image `alt` repeated the same text as the adjacent visible `<h3>`) — changed the image to `alt: ''` since it's purely decorative next to a real heading.
 
 - [ ] **Step 3: Commit**
 
@@ -789,19 +793,9 @@ Note: `lf-hero-slider`, `lf-featured-story`, `lf-drop-grid`, `lf-culture-strip` 
   };
 ```
 
-- [ ] **Step 3: Add `data-lf-overlap` to the statement and CTA-row sections** so they participate in the stitching — modify `theme/sections/lf-statement.liquid`'s root element:
+> **As-run:** `data-lf-overlap` was already baked into `lf-statement.liquid` and `lf-cta-row.liquid` from Task 2/Task 3's own creation (an earlier revision of this plan added it there directly rather than deferring to this task) — there's nothing left to "add" here; both sections already carry the marker and CTA row's grid-column CSS variable. This step is a no-op, kept only as a record of the original intent.
 
-```liquid
-<section class="lf-statement" data-lf-overlap>
-```
-
-and `theme/sections/lf-cta-row.liquid`'s root element:
-
-```liquid
-<section class="lf-ctarow" data-lf-overlap>
-```
-
-- [ ] **Step 4: Append overlap-scroll utility to `theme/assets/lf-tokens.css`:**
+- [ ] **Step 3: Append overlap-scroll utility to `theme/assets/lf-tokens.css`:**
 
 ```css
 /* Overlap-scroll stitching (B3.2): pinned section slides down over 500px of
@@ -810,16 +804,16 @@ and `theme/sections/lf-cta-row.liquid`'s root element:
 [data-lf-overlap] { position: relative; z-index: 1; will-change: transform; }
 ```
 
-- [ ] **Step 5: Push to dev, verify** — home page loads with all 6 new sections in order, hero clip-wipes between slides, marquee drags, lookbook arrows work, community rows reveal on scroll.
+- [ ] **Step 4: Push to dev, verify** — home page loads with all 6 new sections in order, hero clip-wipes between slides, marquee drags, lookbook arrows work, community rows reveal on scroll.
 
 ```bash
 shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add theme/templates/index.json theme/assets/lf-sections.js theme/assets/lf-tokens.css theme/sections/lf-statement.liquid theme/sections/lf-cta-row.liquid
+git add theme/templates/index.json theme/assets/lf-sections.js theme/assets/lf-tokens.css
 git commit -m "feat(b3.2): wire home page to new sections, add overlap-scroll stitching"
 git status --short
 ```
