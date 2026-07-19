@@ -240,7 +240,7 @@ Claude to replace `theme/assets/lf-culture-*.jpg` and push.
 
 **Culture 1 (menu panel + easter egg + footer):**
 ```
-iconic night photograph, silhouette of an African American Mardi Gras Indian's plumed crown against a giant out-of-focus ice-blue neon sign blurred beyond readability so no letterforms are legible blurred beyond readability so no letterforms are legible, pure black foreground, the crown edge burning with blue rim light, instantly readable shape, CineStill 800T tungsten halation, minimal and monumental --ar 4:5 --style raw
+iconic night photograph, silhouette of an African American Mardi Gras Indian wearing a beaded Mardi Gras Indian suit, plumed crown against a giant out-of-focus ice-blue neon sign blurred beyond readability so no letterforms are legible, pure black foreground, the crown edge burning with blue rim light, instantly readable shape, CineStill 800T tungsten halation, minimal and monumental --ar 4:5 --style raw
 ```
 
 **Culture 2 (preloader + footer):**
