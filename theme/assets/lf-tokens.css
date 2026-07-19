@@ -170,3 +170,24 @@ body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-t
   body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text,
   .lf-glow-text[data-lf-reveal] { transition: none; }
 }
+
+/* ——— B3.3 policy pages ——— */
+/* No `policy` template type exists in current Shopify — templates/policy.liquid is
+   ignored (verified live + shopify.dev templates list). /policies/* render fixed
+   shopify-policy__* markup (h1 nested inside .shopify-policy__title) within
+   layout/theme.liquid, plus an injected storefront stylesheet (65ch container,
+   class specificity, no !important). CSS is the only control surface; the
+   #lf-main prefix out-specifies the injected sheet regardless of load order. */
+#lf-main .shopify-policy__container { max-width: 720px; margin: 0 auto; padding: 6rem 1.5rem 5rem; }
+#lf-main .shopify-policy__title { text-align: center; margin: 0 0 3rem; }
+#lf-main .shopify-policy__title h1 {
+  font-family: var(--lf-font-display); letter-spacing: .04em; text-transform: uppercase;
+  color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo), 0 0 28px var(--lf-neon-halo);
+  font-size: clamp(1.5rem, 4vw, 2.3rem); margin: 0;
+}
+#lf-main .shopify-policy__body { color: var(--lf-body-text); font-size: .9rem; line-height: 1.75; }
+#lf-main .shopify-policy__body h2, #lf-main .shopify-policy__body h3 {
+  color: var(--lf-body-text); font-family: var(--lf-font-display); letter-spacing: .04em;
+  text-transform: uppercase; font-size: 1rem; margin: 2rem 0 .6rem;
+}
+#lf-main .shopify-policy__body a { color: var(--lf-neon-core); }
