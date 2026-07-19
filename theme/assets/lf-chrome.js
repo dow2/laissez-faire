@@ -182,4 +182,45 @@
       if (e.key === 'Escape' && menu.getAttribute('data-state') === 'open') close();
     });
   };
+
+  // ——— First-visit preloader + popup auto-open ———
+  LF.init.preloader = function (root, ctx) {
+    var pre = document.querySelector('[data-lf-preloader]');
+    if (!pre || pre.hasAttribute('data-lf-bound')) return;
+    pre.setAttribute('data-lf-bound', '1');
+    var firstVisit = document.documentElement.classList.contains('lf-first-visit');
+    try { sessionStorage.setItem('lfVisited', '1'); } catch (e) {}
+    // Also gates the popup-timer block below — both features share this
+    // one "did we already handle this session" flag.
+    if (!firstVisit) return;
+
+    function done() {
+      pre.style.display = 'none';
+      document.documentElement.classList.remove('lf-first-visit');
+    }
+    if (ctx.reduced || !window.gsap) { done(); }
+    else {
+      var crest = pre.querySelector('.lf-preloader__crest');
+      var img = pre.querySelector('.lf-preloader__img');
+      gsap.timeline({ onComplete: done })
+        .to(crest, { opacity: 1, duration: .9, ease: 'sine.in' })
+        .to(crest, { keyframes: [{ opacity: .2 }, { opacity: 1 }, { opacity: .4 }, { opacity: 1 }], duration: .45, ease: 'steps(3)' })
+        .to(img, { clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)', duration: .7, ease: 'lf-ease-3' }, '<')
+        .to(pre, { clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)', duration: .7, ease: 'lf-ease-3', delay: .2 });
+    }
+
+    // Newsletter auto-open: once per session, 10s after first-ever load.
+    try {
+      if (!sessionStorage.getItem('lfPopupShown')) {
+        setTimeout(function () {
+          // Own try/catch: this runs in a separate call stack 10s later, so
+          // the outer try/catch above (which only covers the synchronous
+          // setup) can't protect it — a storage failure here must not be
+          // able to block the actual popup open below.
+          try { sessionStorage.setItem('lfPopupShown', '1'); } catch (e) {}
+          if (LF.openSignup) LF.openSignup();
+        }, 10000);
+      }
+    } catch (e) {}
+  };
 })();
