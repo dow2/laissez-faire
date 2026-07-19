@@ -219,6 +219,14 @@ Expected: 3-warning baseline.
               duration: .55 * f, ease: 'steps(5)'
             })
             .to(blackout, { opacity: 1, duration: .12 * f }, '<70%')
+            // Barba doesn't remove the outgoing container until well after our
+            // own enter()/afterEnter resolve — left in normal flow, it sits
+            // above the incoming container and pushes it hundreds of px down
+            // the page. That's invisible (blackout covers it) but corrupts any
+            // getBoundingClientRect() read during afterEnter (e.g. ignite's
+            // above-the-fold check), which was measuring the incoming heading
+            // as if it were far off-screen. Take it out of flow ourselves.
+            .set(data.current.container, { display: 'none' })
             .then();
         },
         enter: function (data) {
@@ -524,6 +532,8 @@ git add theme/assets/lf-tokens.css && git commit -m "Motion CSS: hover buzz, ign
       // e.g. collection/story/PDP titles) is already "inside" the zone and would
       // never receive that event, staying permanently dim. Fire immediately for
       // anything already past the trigger line; ScrollTrigger only for the rest.
+      // (Requires the outgoing Barba container to already be display:none — see
+      // lf-motion.js leave() — otherwise this reads a phantom pushed-down position.)
       var rect = el.getBoundingClientRect();
       if (rect.top < window.innerHeight * 0.55) {
         fire();
