@@ -835,18 +835,28 @@ Note: `lf-hero-slider`, `lf-featured-story`, `lf-drop-grid`, `lf-culture-strip` 
 
 ```js
   // ——— Overlap-scroll stitching: pinned section slides under the next as you scroll past ———
+  // Desktop-only (LF.FINE, same gate as flickthrough): the yPercent:50 slide is
+  // calibrated for desktop section geometry. On portrait mobile the CTA row
+  // collapses to a single ~880px column, so half its height (~440px) permanently
+  // buried the entire marquee beneath it — z-index:1 put the slid section on top.
   LF.init.scrollOverlap = function (root, ctx) {
     if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    if (!(LF.FINE && LF.FINE.matches)) return;
     (root || document).querySelectorAll('[data-lf-overlap]:not([data-lf-overlap-bound])').forEach(function (el) {
       el.setAttribute('data-lf-overlap-bound', '1');
       gsap.timeline({
-        scrollTrigger: { trigger: el, start: 'top top', end: '+=500', scrub: true }
-      }).to(el, { yPercent: 50, ease: 'power1.in' });
+        scrollTrigger: { trigger: el, start: 'top top', end: '+=500', scrub: true, invalidateOnRefresh: true }
+      // Fixed-px slide, NOT yPercent: a proportional slide re-scales whenever a
+      // section's height changes (the 70svh->100svh statement grew its slide by
+      // ~43% and its opaque tail sliced across the marquee's stamp line). The
+      // stitch is "about 240px" by design, whatever the section's height is.
+      }).to(el, { y: function () { return Math.min(el.offsetHeight * 0.5, 240); }, ease: 'power1.in' });
     });
   };
 ```
 
 > **As-run:** `data-lf-overlap` was already baked into `lf-statement.liquid` and `lf-cta-row.liquid` from Task 2/Task 3's own creation (an earlier revision of this plan added it there directly rather than deferring to this task) — there's nothing left to "add" here; both sections already carry the marker and CTA row's grid-column CSS variable. This step is a no-op, kept only as a record of the original intent.
+> **As-run (two post-ship fixes, reflected in the code block above):** (1) `75aa131` — the effect is now **desktop-gated** via `LF.FINE`. The original ungated version buried the entire mobile marquee: on portrait phones the CTA row collapses to a single ~880px column, so its yPercent:50 slide became ~440px — larger than the whole mobile marquee section — and z-index:1 stacked the slid card directly over the carousel (user-reported as "carousel not rendering"; rotating to landscape re-laid-out to 3 short columns, which is why sideways looked fine). (2) `4988220` — the slide is now a **fixed-px cap** (`y = min(height*0.5, 240)` + `invalidateOnRefresh`) instead of `yPercent: 50`. Proportional slides re-scale whenever section geometry changes: growing the statement band 70svh→100svh (fill-to-screen directive) silently grew its slide ~43%, and its opaque tail sliced across the marquee's `LFLC©26` stamp line on desktop. Lesson for future effects: never size an overlay/slide distance proportionally to a section's own height — heights change; fix the travel in px.
 
 - [ ] **Step 3: Append overlap-scroll utility to `theme/assets/lf-tokens.css`:**
 
