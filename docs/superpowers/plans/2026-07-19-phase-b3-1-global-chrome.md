@@ -987,7 +987,14 @@ git status --short
       var listRect = list.getBoundingClientRect();
       var h = panel.offsetHeight;
       var y = e.clientY - listRect.top - h / 2;
-      y = Math.max(0, Math.min(y, listRect.height - h));
+      // Clamp bounds must be computed with min/max, not assumed 0-first:
+      // when the follow panel is taller than the (short, 6-product) list,
+      // "listRect.height - h" is negative, inverting which bound is the
+      // true min — a naive Math.max(0, Math.min(y, listRect.height - h))
+      // then always resolves to 0 regardless of cursor position.
+      var lo = Math.min(0, listRect.height - h);
+      var hi = Math.max(0, listRect.height - h);
+      y = Math.max(lo, Math.min(y, hi));
       yTo(y);
       var row = e.target.closest('[data-lf-fimg]');
       if (row) {
@@ -997,6 +1004,8 @@ git status --short
     });
   };
 ```
+
+> **As-run:** the original clamp (`Math.max(0, Math.min(y, listRect.height - h))`) silently pinned the follow panel at `y:0` for every cursor position — this theme has only 6 real products (a ~139px list), while the follow panel is up to ~250px tall, so `listRect.height - h` is negative and the outer `Math.max(0, ...)` always won regardless of the inner result. Live-verified via three sampled mouse positions (panel frozen at one value before the fix). Fixed by computing the clamp's `lo`/`hi` bounds with `Math.min`/`Math.max` against 0 rather than assuming 0 is always the lower bound — this generalizes correctly whether the panel ends up taller or shorter than the list, without changing the panel's declared size (see the corrected code above).
 
 - [ ] **Step 4: Verify** — footer shows wordmark, three columns, policies row; hovering Site Index links reveals the matching image; entering the product list wipes the follow panel in, it tracks the cursor vertically clamped to the list, image swaps per row; "Join the list" opens the popup; mobile (≤899px) hides both follow elements; reduced-motion leaves a plain static footer.
 
