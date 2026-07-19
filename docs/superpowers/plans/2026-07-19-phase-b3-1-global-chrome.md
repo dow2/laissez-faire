@@ -424,6 +424,14 @@ git status --short
         return;
       }
       menu.setAttribute('data-state', 'animating');
+      // GSAP's first touch of an element with a CSS-declared percentage
+      // transform caches the browser's resolved pixel matrix as its `y`
+      // baseline, then ADDS a requested yPercent on top — doubling the
+      // offset instead of replacing it. Forcing y:0 first wipes that
+      // inherited baseline so the following yPercent set (and the tween
+      // below) resolve against a true zero, matching the CSS start state.
+      gsap.set([imgPanel, panels], { y: 0 });
+      gsap.set([imgPanel, panels], { yPercent: -101 });
       gsap.timeline({ onComplete: function () {
           menu.setAttribute('data-state', 'open');
           release = LF.trapFocus(menu);
@@ -481,6 +489,8 @@ git status --short
     });
   };
 ```
+
+> **As-run:** the first version of `open()` (without the two `gsap.set()` priming lines above) shipped a genuinely broken menu — `fromTo(panels/imgPanel, {yPercent:-101}, {yPercent:0})` silently no-op'd because GSAP's first touch of an element carrying a CSS-declared percentage transform caches the browser's resolved pixel matrix as its `y` baseline, then treats a subsequent `yPercent` as ADDITIVE rather than replacing it — doubling the offset instead of animating to zero. Confirmed via live Playwright verification (real, non-forced clicks on menu links timed out as "outside viewport") and an isolated minimal repro against the theme's own vendored `gsap.min.js`/`CustomEase.min.js`. Fixed by forcing `gsap.set([imgPanel, panels], { y: 0 })` before the percent-based set/tween, wiping the inherited CSS baseline so GSAP's cache starts from true zero. Verified across repeated open/close cycles with no state corruption.
 
 - [ ] **Step 3: Verify on dev server** — Menu opens with panel drop, links stagger in, sibling-dim hover works, Esc and Close and veil-click close it, Tab stays inside, body doesn't scroll behind, clicking a link navigates via surge with the menu gone. Reduced-motion (devtools emulation): instant open/close.
 

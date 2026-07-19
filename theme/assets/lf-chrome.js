@@ -86,4 +86,100 @@
       });
     }
   };
+
+  // ——— Full-screen menu overlay ———
+  LF.init.menu = function (root, ctx) {
+    var menu = document.querySelector('[data-lf-menu-root]');
+    if (!menu || menu.hasAttribute('data-lf-bound')) return;
+    menu.setAttribute('data-lf-bound', '1');
+    var openBtns = document.querySelectorAll('[data-lf-menu-open]');
+    var veil = menu.querySelector('.lf-menu__veil');
+    var imgPanel = menu.querySelector('.lf-menu__imgpanel');
+    var panels = menu.querySelectorAll('.lf-menu__panel');
+    var links = menu.querySelectorAll('.lf-menu__link');
+    var fades = menu.querySelectorAll('[data-lf-menu-fade]');
+    var release = null;
+
+    function setOpenState(open) {
+      menu.setAttribute('aria-hidden', String(!open));
+      openBtns.forEach(function (b) { b.setAttribute('aria-expanded', String(open)); });
+    }
+
+    function releaseFocusAndScroll() {
+      if (release) { release(); release = null; }
+      LF.scrollLock(false);
+    }
+
+    function open() {
+      LF.scrollLock(true);
+      setOpenState(true);
+      if (ctx.reduced || !window.gsap) {
+        menu.setAttribute('data-state', 'open');
+        release = LF.trapFocus(menu);
+        return;
+      }
+      menu.setAttribute('data-state', 'animating');
+      // Force a clean pixel baseline before re-deriving yPercent: GSAP's
+      // first touch of an element with a CSS-declared percentage transform
+      // caches the browser's resolved matrix as its `y`, then treats a
+      // subsequent yPercent as ADDITIVE rather than replacing it — doubling
+      // the offset. Without this, the fromTo below silently no-ops.
+      gsap.set([imgPanel, panels], { y: 0 });
+      gsap.set([imgPanel, panels], { yPercent: -101 });
+      gsap.timeline({ onComplete: function () {
+          menu.setAttribute('data-state', 'open');
+          release = LF.trapFocus(menu);
+        } })
+        .fromTo(veil, { autoAlpha: 0 }, { autoAlpha: 1, duration: .4, ease: 'expo.out' })
+        .fromTo(imgPanel, { yPercent: -101 }, { yPercent: 0, duration: .575, ease: 'lf-ease-3' }, '<')
+        .fromTo(panels, { yPercent: -101 }, { yPercent: 0, stagger: 0.1, duration: .575, ease: 'lf-ease-3' }, '<15%')
+        .fromTo(links, { yPercent: 130 }, { yPercent: 0, stagger: 0.05, duration: .575, ease: 'lf-ease-3' }, '<20%')
+        .fromTo(fades, { autoAlpha: 0 }, { autoAlpha: 1, duration: .4, ease: 'sine.out' }, '<70%');
+    }
+
+    function close(afterFn) {
+      releaseFocusAndScroll();
+      if (ctx.reduced || !window.gsap) {
+        setOpenState(false);
+        menu.setAttribute('data-state', 'closed');
+        if (afterFn) afterFn();
+        return;
+      }
+      menu.setAttribute('data-state', 'animating');
+      gsap.timeline({ onComplete: function () {
+          setOpenState(false);
+          menu.setAttribute('data-state', 'closed');
+          if (afterFn) afterFn();
+        } })
+        .to(fades, { autoAlpha: 0, duration: .3, ease: 'expo.out' })
+        .to(links, { yPercent: 130, duration: .45, ease: 'expo.out' }, '<')
+        .to(panels, { yPercent: -101, stagger: 0.1, duration: .5, ease: 'expo.out' }, '<10%')
+        .to(imgPanel, { yPercent: -101, duration: .5, ease: 'expo.out' }, '<')
+        .to(veil, { autoAlpha: 0, duration: .3 }, '<30%');
+    }
+
+    openBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (menu.getAttribute('data-state') === 'closed') open();
+      });
+    });
+    menu.addEventListener('click', function (e) {
+      var closer = e.target.closest('[data-lf-menu-close]');
+      if (!closer || menu.getAttribute('data-state') !== 'open') return;
+      var link = closer.closest('a[href]');
+      if (link) {
+        // Let Barba take the navigation; close instantly so the surge owns the screen.
+        releaseFocusAndScroll();
+        setOpenState(false);
+        menu.setAttribute('data-state', 'closed');
+        gsap && gsap.set([veil, imgPanel, panels, links, fades], { clearProps: 'all' });
+      } else {
+        e.preventDefault();
+        close();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && menu.getAttribute('data-state') === 'open') close();
+    });
+  };
 })();
