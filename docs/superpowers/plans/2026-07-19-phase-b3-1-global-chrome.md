@@ -1097,7 +1097,11 @@ const BASE = 'http://127.0.0.1:9292';
 (async () => {
   const browser = await chromium.launch();
 
-  // 1. Preloader: shows on first visit, absent on second (same context = same sessionStorage)
+  // 1. Preloader: shows on first visit, absent on second. Must RELOAD THE SAME
+  // TAB to test "repeat visit" — sessionStorage is scoped per top-level
+  // browsing context, so a fresh context.newPage() gets its own empty
+  // storage and is NOT a valid repeat-visit test (it looks like a second
+  // first-visit, which is exactly what its own preloader would then do).
   const ctx1 = await browser.newContext();
   const p1 = await ctx1.newPage();
   await p1.goto(BASE + '/', { waitUntil: 'load' });
@@ -1107,22 +1111,26 @@ const BASE = 'http://127.0.0.1:9292';
   await p1.waitForTimeout(3500);
   console.log('preloader finished (hidden):', await p1.evaluate(() =>
     getComputedStyle(document.querySelector('[data-lf-preloader]')).display === 'none'));
-  const p2 = await ctx1.newPage();
-  await p2.goto(BASE + '/', { waitUntil: 'load' });
-  console.log('preloader absent on repeat:', await p2.evaluate(() =>
+  await p1.reload({ waitUntil: 'load' });
+  console.log('preloader absent on repeat (same-tab reload):', await p1.evaluate(() =>
     !document.documentElement.classList.contains('lf-first-visit')));
+  const p2 = p1; // continue on the same, already-past-preloader tab
 
-  // 2. Menu: open, focus trapped, Esc closes, link nav closes + surges
+  // 2. Menu: open, focus trapped, Esc closes, link nav closes + surges.
+  // The open()/close() GSAP timelines measure ~1.0-1.3s to onComplete under
+  // typical local-machine load (several browser contexts + dev server +
+  // file watcher all competing for CPU) — a 900ms wait is too tight and
+  // reads the state mid-animation. 1700ms gives real margin.
   await p2.click('[data-lf-menu-open]');
-  await p2.waitForTimeout(900);
+  await p2.waitForTimeout(1700);
   console.log('menu open:', await p2.evaluate(() => document.querySelector('[data-lf-menu-root]').getAttribute('data-state') === 'open'));
   console.log('focus inside menu:', await p2.evaluate(() => !!document.activeElement.closest('[data-lf-menu-root]')));
   await p2.keyboard.press('Escape');
-  await p2.waitForTimeout(900);
+  await p2.waitForTimeout(1700);
   console.log('menu closed by Esc:', await p2.evaluate(() => document.querySelector('[data-lf-menu-root]').getAttribute('data-state') === 'closed'));
   console.log('scroll unlocked:', await p2.evaluate(() => document.documentElement.style.overflow === ''));
   await p2.click('[data-lf-menu-open]');
-  await p2.waitForTimeout(900);
+  await p2.waitForTimeout(1700);
   await p2.click('.lf-menu__link[href*="/collections/"]');
   await p2.waitForTimeout(2500);
   console.log('menu link navigated:', p2.url().indexOf('/collections/') > -1);
@@ -1175,6 +1183,8 @@ const BASE = 'http://127.0.0.1:9292';
 ```
 
 Expected: every line `true` / overflow `0`. Fix findings, re-run until clean; commit fixes as `fix(b3.1): <finding>` and amend the relevant plan code blocks.
+
+> **As-run:** the first two runs of this script (with its original `context.newPage()`-based repeat-visit check and 900ms animation waits) failed several lines — both were script bugs, not site defects, diagnosed and confirmed via targeted isolation before touching any source file. (1) `sessionStorage` is scoped per top-level browsing context; a fresh `context.newPage()` starts with empty storage, so it looks like a genuine first visit and its own preloader correctly plays and blocks the subsequent menu click — the fix (already applied above) is to `page.reload()` the SAME tab instead. (2) The menu's `open()`/`close()` GSAP timelines genuinely take ~1.0–1.3s to reach `onComplete` under this session's typical local load (confirmed via a 100ms-interval poll), well past the original 900ms wait — the fix (already applied above) widens those waits to 1700ms. With both corrected, all 19 checks passed cleanly on the next run.
 
 - [ ] **Step 4: User visual pass** on the dev preview (menu feel, preloader, footer follow, popup styling). Fix + re-verify anything raised.
 
