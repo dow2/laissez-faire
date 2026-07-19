@@ -381,4 +381,44 @@
       }).to(el, { yPercent: 50, ease: 'power1.in' });
     });
   };
+
+  // ——— Editorial image parallax (scrubbed to scroll) ———
+  LF.init.imgScroll = function (root, ctx) {
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    (root || document).querySelectorAll('[data-lf-img-scroll]:not([data-lf-imgscroll-bound])').forEach(function (wrap) {
+      wrap.setAttribute('data-lf-imgscroll-bound', '1');
+      var img = wrap.querySelector('img');
+      if (!img) return;
+      gsap.fromTo(img, { yPercent: 0 }, {
+        yPercent: 20, ease: 'linear',
+        scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true }
+      });
+    });
+  };
+
+  // ——— Flickthrough hover zoetrope (desktop hover, mobile auto-cycle) ———
+  LF.init.flickthrough = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-flickthrough]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    var imgs = Array.prototype.slice.call(wrap.querySelectorAll('.lf-flickthrough__img'));
+    if (imgs.length < 2) return;
+    var index = 0, interval = null;
+    function nextImage() {
+      imgs[index].classList.remove('is-shown');
+      index = (index + 1) % imgs.length;
+      imgs[index].classList.add('is-shown');
+    }
+    if (ctx.reduced) return;
+    if (LF.FINE.matches) {
+      wrap.addEventListener('mouseenter', function () {
+        nextImage();
+        interval = setInterval(nextImage, 300);
+      });
+      wrap.addEventListener('mouseleave', function () { clearInterval(interval); });
+    } else {
+      interval = setInterval(nextImage, 500);
+    }
+    LF.teardown.push(function () { clearInterval(interval); });
+  };
 })();

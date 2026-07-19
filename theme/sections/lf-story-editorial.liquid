@@ -1,0 +1,59 @@
+<section class="lf-storyed">
+  <div class="lf-storyed__band" data-lf-reveal>
+    <p class="lf-storyed__eyebrow">{% render 'lf-eyebrow', text: section.settings.eyebrow %}</p>
+  </div>
+  <div class="lf-storyed__offset">
+    <div class="lf-storyed__imgwrap lf-storyed__imgwrap--left" data-lf-img-scroll>
+      {% if section.settings.image_left != blank %}
+        {{ section.settings.image_left | image_url: width: 1400 | image_tag: loading: 'lazy', class: 'lf-storyed__img', alt: '' }}
+      {% endif %}
+    </div>
+    <div class="lf-storyed__imgwrap lf-storyed__imgwrap--right" data-lf-img-scroll>
+      {% if section.settings.image_right != blank %}
+        {{ section.settings.image_right | image_url: width: 1400 | image_tag: loading: 'lazy', class: 'lf-storyed__img', alt: '' }}
+      {% endif %}
+    </div>
+  </div>
+  <p class="lf-storyed__copy" data-lf-reveal>{{ section.settings.copy }}</p>
+  <div class="lf-flickthrough" data-lf-flickthrough>
+    {% for i in (1..3) %}
+      {% assign img_key = 'flick_image_' | append: i %}
+      {% if section.settings[img_key] != blank %}
+        <div class="lf-flickthrough__img {% if forloop.first %}is-shown{% endif %}">
+          {{ section.settings[img_key] | image_url: width: 900 | image_tag: loading: 'lazy', alt: '' }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-storyed { padding: 3rem 1.5rem 5rem; max-width: 1100px; margin: 0 auto; }
+.lf-storyed__band { text-align: center; margin-bottom: 3rem; }
+.lf-storyed__offset { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; }
+.lf-storyed__imgwrap { overflow: clip; }
+.lf-storyed__imgwrap--left { aspect-ratio: 4.35/2.8; align-self: start; }
+.lf-storyed__imgwrap--right { aspect-ratio: 4.35/6; align-self: end; }
+.lf-storyed__img { width: 100%; height: 120%; object-fit: cover; display: block; }
+.lf-storyed__copy { max-width: 60ch; margin: 0 auto 4rem; font-size: 1rem; line-height: 1.75; color: var(--lf-body-text); text-align: center; }
+.lf-flickthrough { position: relative; aspect-ratio: 4/3; max-width: 420px; margin: 0 auto; overflow: hidden; }
+.lf-flickthrough__img { position: absolute; inset: 0; opacity: 0; transition: opacity .1s linear; }
+.lf-flickthrough__img.is-shown { opacity: 1; }
+.lf-flickthrough__img img { width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 649px) { .lf-storyed__offset { grid-template-columns: 1fr; } }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Story Editorial",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "our craft" },
+    { "type": "image_picker", "id": "image_left", "label": "Wide image" },
+    { "type": "image_picker", "id": "image_right", "label": "Tall image" },
+    { "type": "textarea", "id": "copy", "label": "Body copy", "default": "Informed by tradition, within the context of today's culture, we want every piece to carry the weight of where it came from." },
+    { "type": "image_picker", "id": "flick_image_1", "label": "Flickthrough image 1" },
+    { "type": "image_picker", "id": "flick_image_2", "label": "Flickthrough image 2" },
+    { "type": "image_picker", "id": "flick_image_3", "label": "Flickthrough image 3" }
+  ]
+}
+{% endschema %}
