@@ -884,7 +884,7 @@ git status --short
 </footer>
 
 {% stylesheet %}
-.lf-footer { padding: 4rem 1.25rem 1.5rem; border-top: 1px solid #1a1a22; }
+.lf-footer { padding: 4rem 1.25rem 1.5rem; border-top: 1px solid #1a1a22; overflow-x: clip; }
 .lf-footer--full { min-height: 100dvh; display: flex; flex-direction: column; justify-content: space-between; }
 .lf-footer__wordmark {
   width: min(88vw, 900px); aspect-ratio: 2129/749; margin: 0 auto;
@@ -901,7 +901,7 @@ git status --short
   background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font-family: var(--lf-font-body);
 }
 .lf-footer__col a:hover, .lf-footer__joinbtn:hover { color: var(--lf-neon-core); }
-.lf-footer__findex { position: absolute; right: -20%; top: 0; width: 130px; aspect-ratio: 4/5; pointer-events: none; }
+.lf-footer__findex { position: absolute; right: -10%; top: 0; width: 130px; aspect-ratio: 4/5; pointer-events: none; }
 .lf-footer__findex div {
   position: absolute; inset: 0; background-size: cover; background-position: center;
   visibility: hidden; border: 1px solid var(--lf-neon-halo);
@@ -911,7 +911,7 @@ git status --short
 .lf-footer__plist a { display: flex; justify-content: space-between; gap: .8rem; padding: .32rem 0; border-bottom: 1px solid #191922; }
 .lf-footer__pcode { color: #55555f; }
 .lf-footer__follow {
-  position: absolute; right: -34%; top: 0; width: min(200px, 18vw); aspect-ratio: 4/5;
+  position: absolute; right: -10%; top: 0; width: min(200px, 18vw); aspect-ratio: 4/5;
   overflow: hidden; pointer-events: none; border: 1px solid var(--lf-neon-halo);
   box-shadow: 0 0 24px rgba(74,168,255,.25);
   clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%); will-change: transform;
@@ -974,6 +974,14 @@ git status --short
       var pre = new Image(); pre.src = a.getAttribute('data-lf-fimg');
     });
     var yTo = gsap.quickTo(panel, 'y', { duration: .35, ease: 'power3' });
+    // Footer persists entirely outside the Barba container, so this state
+    // survives every swap. A user hovering the list when they click a
+    // product link never fires mouseleave — without this, the panel stays
+    // stuck open showing the last-hovered image on the next page.
+    LF.teardown.push(function () {
+      gsap.set(panel, { clipPath: 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)', y: 0 });
+      currentSrc = null;
+    });
     list.addEventListener('mouseenter', function () {
       gsap.fromTo(panel,
         { clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)' },
@@ -1006,6 +1014,8 @@ git status --short
 ```
 
 > **As-run:** the original clamp (`Math.max(0, Math.min(y, listRect.height - h))`) silently pinned the follow panel at `y:0` for every cursor position — this theme has only 6 real products (a ~139px list), while the follow panel is up to ~250px tall, so `listRect.height - h` is negative and the outer `Math.max(0, ...)` always won regardless of the inner result. Live-verified via three sampled mouse positions (panel frozen at one value before the fix). Fixed by computing the clamp's `lo`/`hi` bounds with `Math.min`/`Math.max` against 0 rather than assuming 0 is always the lower bound — this generalizes correctly whether the panel ends up taller or shorter than the list, without changing the panel's declared size (see the corrected code above).
+
+> **As-run (round 2):** code review found two more real issues after the clamp fix shipped. (1) Critical: `.lf-footer__findex`/`.lf-footer__follow`'s original `right: -20%`/`-34%` offsets spilled past the viewport's right edge at common laptop widths (~899–1335px) — `clip-path` clips paint, not layout, so the un-hovered box still occupied that horizontal space, risking a sitewide horizontal scrollbar on every page load regardless of hover state. Fixed by tightening both offsets to `right: -10%` and adding `overflow-x: clip` to `.lf-footer` as defense-in-depth; live-verified zero horizontal overflow at 1024/1280/1366px. (2) Important, same class of bug already fixed twice in this plan for `LF.init.cursor`/`LF.init.easter`: `footerFollow` had no `LF.teardown` entry, so hovering the product list right before clicking a product link (which never fires `mouseleave`) left the follow panel stuck open showing the stale image on the next page, since the footer persists outside the Barba container. Fixed with a teardown that force-closes the clip-path and resets `y`/`currentSrc`; live-verified via a simulated `LF.teardown` drain.
 
 - [ ] **Step 4: Verify** — footer shows wordmark, three columns, policies row; hovering Site Index links reveals the matching image; entering the product list wipes the follow panel in, it tracks the cursor vertically clamped to the list, image swaps per row; "Join the list" opens the popup; mobile (≤899px) hides both follow elements; reduced-motion leaves a plain static footer.
 
