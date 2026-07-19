@@ -1,8 +1,7 @@
 # Image Generation Prompt Book — every image slot on the site
 
 One prompt per image slot, mapped to the role/mood of the corresponding image
-on Odd Ritual's site, translated into the LFLC world: **African American Mardi Gras Indians
-(Black Masking Indians) of New Orleans, at night, in the Neon Nights grade** —
+on Odd Ritual's site, translated into the LFLC world: **African American Mardi Gras Indians of New Orleans, at night, in the Neon Nights grade** —
 night-black ground, ice-blue neon light (`#9fd8ff` core / `#4aa8ff` halo),
 per-drop accent colors where noted (crimson `#c8102e`, emerald `#2fbf71`,
 violet `#8b3df0`).
@@ -20,7 +19,7 @@ violet `#8b3df0`).
   self-serve (see `docs/CONTENT-GUIDE.md`); the three "culture" chrome assets
   are code-side files — hand those to Claude to install.
 
-**Consistency system (read once):** every person depicted is African American — the Mardi Gras Indian (Black Masking Indian) tradition is Black New Orleans culture, and every prompt states this explicitly per subject (models don't reliably infer it from the tradition's name alone; any future prompt must carry it too). Every prompt shares the same DNA —
+**Consistency system (read once):** every person depicted is African American — the African American Mardi Gras Indian tradition is Black New Orleans culture, and every prompt states this explicitly per subject (models don't reliably infer it from the tradition's name alone; any future prompt must carry it too). Every prompt shares the same DNA —
 *"cinematic editorial night photography, New Orleans, CineStill 800T tungsten
 film look with neon halation, deep black shadows, ice-blue neon rim light"* —
 so the whole site grades together like one shoot. Vary only what each slot
@@ -61,7 +60,7 @@ The commerce card: suit-as-craft, close on the artistry. Install: Theme
 Editor → Home → CTA row → Card 1.
 
 ```
-cinematic editorial night photography, extreme detail shot of a Mardi Gras Indian suit chest panel — dense hand-sewn beadwork, rhinestones, and sequins depicting a beaded scene, ostrich feather trim entering frame from the edges, lit by a single ice-blue neon glow from the left, every bead a point of blue light against deep black shadow, CineStill 800T tungsten film look, macro texture, no face visible, craftsmanship as the entire subject --ar 4:3 --style raw
+cinematic editorial night photography, extreme detail shot of an African American Mardi Gras Indian suit chest panel — dense hand-sewn beadwork, rhinestones, and sequins depicting a beaded scene, ostrich feather trim entering frame from the edges, lit by a single ice-blue neon glow from the left, every bead a point of blue light against deep black shadow, CineStill 800T tungsten film look, macro texture, no face visible, craftsmanship as the entire subject --ar 4:3 --style raw
 ```
 
 ### 5. CTA card — "Our Story / Read More" (OR: heritage-street card)
@@ -150,7 +149,7 @@ Panels 1–5.
 
 **Panel 1 — "The First Stitch":**
 ```
-cinematic night photograph, extreme close-up of an African American artisan's weathered hands pushing a threaded needle through canvas dense with beads and rhinestones, a Mardi Gras Indian suit panel in progress, lamplight mixing with ice-blue neon from a window, every bead glinting, months of work visible in the finished rows, CineStill 800T tungsten film look, macro reverence --ar 16:9 --style raw
+cinematic night photograph, extreme close-up of an African American artisan's weathered hands pushing a threaded needle through canvas dense with beads and rhinestones, an African American Mardi Gras Indian suit panel in progress, lamplight mixing with ice-blue neon from a window, every bead glinting, months of work visible in the finished rows, CineStill 800T tungsten film look, macro reverence --ar 16:9 --style raw
 ```
 
 **Panel 2 — "Cut for the Heat":**
@@ -160,7 +159,7 @@ cinematic night photograph, an African American Mardi Gras Indian in a lightweig
 
 **Panel 3 — "Built to Outlast a Season":**
 ```
-cinematic night photograph, a wall of retired Mardi Gras Indian suits hanging in a dark practice hall, decades of feathered crowns and beaded panels in violet, crimson, emerald and white, one ice-blue neon tube light running along the ceiling reflecting off thousands of beads, archive of a lifetime, CineStill 800T tungsten film look, museum stillness in the dark --ar 16:9 --style raw
+cinematic night photograph, a wall of retired African American Mardi Gras Indian suits hanging in a dark practice hall, decades of feathered crowns and beaded panels in violet, crimson, emerald and white, one ice-blue neon tube light running along the ceiling reflecting off thousands of beads, archive of a lifetime, CineStill 800T tungsten film look, museum stillness in the dark --ar 16:9 --style raw
 ```
 
 **Panel 4 — "A Night Economy":**
@@ -225,7 +224,7 @@ fashion editorial night photograph, a young African American New Orleans man in 
 ```
 
 ```
-fashion editorial night photograph, detail crop of a plain heavyweight charcoal hoodie worn under a Mardi Gras Indian beaded suit collar being fastened, African American hands mid-motion, ice-blue neon glinting off beads onto the fabric weave, texture on texture, no faces, no logos, CineStill 800T film look, macro night light --ar 16:9 --style raw
+fashion editorial night photograph, detail crop of a plain heavyweight charcoal hoodie worn under an African American Mardi Gras Indian beaded suit collar being fastened, African American hands mid-motion, ice-blue neon glinting off beads onto the fabric weave, texture on texture, no faces, no logos, CineStill 800T film look, macro night light --ar 16:9 --style raw
 ```
 
 ---
