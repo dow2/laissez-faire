@@ -260,6 +260,10 @@ git status --short
 - **CTA/scroll indicator collision:** `.lf-heroV2__copy`'s `bottom` was `6rem`, leaving only ~3px clearance (a true overlap at every tested viewport) against `.lf-heroV2__scroll`'s `bottom: 2.2rem`. Bumped to `7.25rem`, giving ~17px clearance. Reflected above.
 - **Mid-word heading breaks:** `LF.init.ignite` (defined once, shared across sections, not part of this task's own code block) used `new SplitText(el, { type: 'chars' })`, giving the browser no word-level grouping to wrap on — confirmed live that "Needle" fit its container width yet still split mid-word. Fixed by changing to `type: 'words, chars'`. This function lives outside Task 1's file scope; see wherever `LF.init.ignite` is defined in `theme/assets/lf-sections.js` for the corrected version.
 
+---
+
+### Task 2: Home — Statement band
+
 **Files:**
 - Create: `theme/sections/lf-statement.liquid`
 
@@ -273,7 +277,7 @@ git status --short
 
 {% stylesheet %}
 .lf-statement {
-  min-height: 70svh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; gap: 2rem; padding: 4rem 1.5rem; background: #08080b;
 }
 .lf-statement__crest {
@@ -302,6 +306,8 @@ git add theme/sections/lf-statement.liquid
 git commit -m "feat(b3.2): home statement band"
 git status --short
 ```
+
+> **As-run (site-wide directive, fixed in `6caeda2`):** the user explicitly directed that major editorial/visual "scene" sections fill exactly one viewport, with nothing from the next section visible until scrolling (confirmed scope via clarifying question: applies to hero/statement/story-hero/lookbook/story-editorial-images, NOT to CTA row/marquee/community/email/footer, which stay their compact size). `min-height: 70svh` → `100svh`; reflected above. Simple flex-centered text+crest, no crop/composition concerns. Verified: 900/900px @ 1440×900, 1080/1080px @ 1920×1080 (exact fill both sizes); `data-lf-overlap`'s scroll-stitch pin effect confirmed unaffected (height-independent).
 
 ---
 
@@ -580,7 +586,7 @@ git status --short
 </section>
 
 {% stylesheet %}
-.lf-lookbook { position: relative; aspect-ratio: 8/3; overflow: hidden; }
+.lf-lookbook { position: relative; height: 100svh; overflow: hidden; }
 .lf-lookbook__list, .lf-lookbook__slide { position: absolute; inset: 0; }
 .lf-lookbook__slide { opacity: 0; transition: opacity .6s var(--lf-ease); }
 .lf-lookbook__slide.is-active { opacity: 1; }
@@ -645,6 +651,7 @@ git status --short
 
 > **As-run (found in the user's third visual pass, fixed in `d3ec598`):** `height: 90svh` forced the section to 90% of viewport height at every tested size (810-1035px), and cover-cropping the square 2000×2000 filler images into that near-hero-scale landscape frame left only ~50-56% of the source image visible — same defect pattern as the CTA row's aspect-ratio bug (`9990561`), just via a different CSS property. Replaced `height: 90svh` with `aspect-ratio: 10/3` (a wide cinematic banner ratio, empirically tested against several candidates via live screenshots) and added `object-position: 50% 22%` to bias the crop upward so the headdress/sky context stays in frame rather than a symmetric center-crop cutting into the subject. Re-verified: 432-600px tall at tested viewports (48-53% of viewport, in the same "modest" range the CTA row fix landed in), `.lf-lookbook__ui`'s counter/arrows still clear the section's bottom edge by 24px, and prev/next crossfade nav confirmed still functional on both slides.
 > **As-run (found in the user's fourth visual pass, fixed in `839fee6`):** `aspect-ratio: 10/3` read as too compact once seen in context alongside the seeded community section below it (see Task 7's As-run notes). Bumped to `aspect-ratio: 8/3`, landing around 60-67% of viewport height instead of 48-53% — more gallery presence while staying well short of the original 90svh bug.
+> **As-run (site-wide directive, fixed in `c6faafc`):** the user then directed that all major editorial/visual sections fill exactly one viewport (see Task 2's As-run for the full directive). Reverted the sizing mechanism from `aspect-ratio: 8/3` back to viewport-native `height: 100svh` — the original crop-too-tight bug was never really about the height value itself, it was the missing `object-position` tuning, which is still in place (`object-position: 50% 22%` on `.lf-lookbook__img`, unchanged). Verified live at true 100vh with the existing tuning: both slides read well-composed (full headdress/subject visible), no further `object-position` adjustment needed. Measured 900/900px @ 1440×900, 1080/1080px @ 1920×1080 (exact fill); prev/next crossfade re-confirmed functional on both slides.
 
 ---
 
@@ -896,7 +903,7 @@ git status --short
 </header>
 
 {% stylesheet %}
-.lf-storyhero { min-height: 80svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5rem; text-align: center; padding: 4rem 1.5rem; }
+.lf-storyhero { min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5rem; text-align: center; padding: 4rem 1.5rem; }
 .lf-storyhero__crest {
   width: 56px; aspect-ratio: 300/320; background-color: var(--lf-neon-core);
   -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat;
@@ -949,6 +956,8 @@ git commit -m "feat(b3.2): story hero with CSS reading-mode hover"
 git status --short
 ```
 
+> **As-run (site-wide directive, fixed in `327bada`):** same full-viewport-scene directive as Task 2's statement band. `min-height: 80svh` → `100svh`; reflected above. This was the section directly responsible for the user's original screenshot showing the next section's images peeking in at the bottom of the viewport. Verified: 900/900px @ 1440×900, 1080/1080px @ 1920×1080 (exact fill), no next-section content visible in the fitted viewport.
+
 ---
 
 ### Task 9: Story — editorial band (parallax images + flickthrough)
@@ -993,7 +1002,7 @@ git status --short
 {% stylesheet %}
 .lf-storyed { padding: 3rem 1.5rem 5rem; max-width: 1100px; margin: 0 auto; }
 .lf-storyed__band { text-align: center; margin-bottom: 3rem; }
-.lf-storyed__offset { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; }
+.lf-storyed__offset { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; min-height: 100svh; align-content: center; }
 .lf-storyed__imgwrap { overflow: clip; }
 .lf-storyed__imgwrap--left { aspect-ratio: 4.35/2.8; align-self: start; }
 .lf-storyed__imgwrap--right { aspect-ratio: 4.35/6; align-self: end; }
@@ -1082,6 +1091,9 @@ git add theme/sections/lf-story-editorial.liquid theme/assets/lf-sections.js the
 git commit -m "feat(b3.2): story editorial band — parallax images + flickthrough zoetrope"
 git status --short
 ```
+
+> **As-run (site-wide directive, fixed in `04e3598`):** unlike Task 2/8's simple full-height sections, this is a composite section (eyebrow + offset image pair + body copy + flickthrough zoetrope) — the directive was scoped to only the offset image pair being the "photo scene" (eyebrow/copy/flickthrough stay compact, matching the approved clarifying-question scope). Added `min-height: 100svh; align-content: center;` to `.lf-storyed__offset` (reflected above). Note: `align-content: center` was used instead of the more obvious `align-items: center`, because with `align-items: center` CSS Grid's default `align-content: stretch` forces the row to stretch to the full section height, and since the shorter landscape image is `align-self: start`, the void beneath it grows unboundedly with viewport height (measured 454px at 900px height → 683px at 1080px height). `align-content: center` keeps the row's natural content height (~709px, set by the taller portrait image) and centers that whole two-image cluster, making the void a constant ~453px regardless of viewport.
+> **Known, pre-existing, not fixed here:** that ~453px void beneath the landscape image is NOT new — it existed before this task's height changes too, driven by the two images' very different aspect ratios (`4.35/2.8` landscape vs. `4.35/6` portrait) combined with `align-self: start`/`end` staggering. It was easy to miss when this content scrolled past compactly; now that it's an isolated full-viewport scene, the void reads as a much more prominent black gap next to the left image. Not fixed in this pass since it's a pre-existing design characteristic, not a regression, and closing it (e.g. narrowing the aspect-ratio gap between the two images, or changing the stagger mechanism) is a real design decision outside the literal scope of "make sections fill the viewport." Flagged for the user to decide on a follow-up.
 
 ---
 
@@ -1239,22 +1251,36 @@ git status --short
 - [ ] **Step 4: Suppress the global footer-group for `story`/`contact` templates** — modify `theme/layout/theme.liquid`, changing:
 
 ```liquid
+    <main id="lf-main" data-barba="wrapper">
+      <div data-barba="container" data-barba-namespace="{{ template.name }}">{{ content_for_layout }}</div>
+    </main>
     {% sections 'footer-group' %}
 ```
 
 to:
 
 ```liquid
-    {%- comment -%} Story renders its own full-height footer as a template section (above);
-       Contact's split layout has an inline mini-footer and no standard footer at all.
-       Scoped to template.name == 'page' too — template.suffix alone is resource-type-
-       agnostic in Shopify, so an unrelated future alternate template (e.g.
-       product.story.json) named "story"/"contact" for a different purpose would
-       otherwise silently lose its footer sitewide. {%- endcomment -%}
-    {% unless template.name == 'page' and template.suffix == 'story' or template.name == 'page' and template.suffix == 'contact' %}
-      {% sections 'footer-group' %}
-    {% endunless %}
+    <main id="lf-main" data-barba="wrapper">
+      <div data-barba="container" data-barba-namespace="{{ template.name }}">
+        {{ content_for_layout }}
+        {%- comment -%} Story renders its own full-height footer as a template section (above);
+           Contact's split layout has an inline mini-footer and no standard footer at all.
+           Scoped to template.name == 'page' too — template.suffix alone is resource-type-
+           agnostic in Shopify, so an unrelated future alternate template (e.g.
+           product.story.json) named "story"/"contact" for a different purpose would
+           otherwise silently lose its footer sitewide.
+           Lives INSIDE the Barba container (not after </main>) so it's re-evaluated
+           and swapped on every client-side navigation, not just on hard/fresh loads —
+           otherwise a stale footer-group from a previous page persists across Barba
+           transitions into pages that should suppress it (or vice versa). {%- endcomment -%}
+        {% unless template.name == 'page' and template.suffix == 'story' or template.name == 'page' and template.suffix == 'contact' %}
+          {% sections 'footer-group' %}
+        {% endunless %}
+      </div>
+    </main>
 ```
+
+> **As-run (found via direct user report "there are two footers on story page", fixed in `001db88`):** the `{% unless %}...{% sections 'footer-group' %}` block originally lived AFTER `</main>` (outside the Barba container), so it was only evaluated on a hard/fresh page load — never re-evaluated on a client-side Barba transition. Reproduced live: hard-load Home (1 footer, correct) → click the nav's in-app "Story" link (Barba client-side transition) → 2 footers (the stale Home footer-group, never removed because it lived outside the swapped container, plus Story's own full-height footer which correctly rendered as part of the swap). Fixed by moving the entire `{% unless %}` block to inside `<div data-barba="container">`, immediately after `{{ content_for_layout }}` — now it's part of what Barba swaps on every navigation, matching how Story's own template-level footer already behaved. Verified safe: `LF.init.footerFollow` and all footer-tied listeners already use the `data-lf-bound` idempotency guard + `LF.init.*` re-dispatch pattern that's designed to survive repeated re-run after every Barba swap, so nothing assumed the footer's DOM persisted untouched across navigations. Full verification matrix (6 cells, all pass): Home hard-load (1, standard), Home→Story via Barba (1, full-height — bug fixed), Story→Home via Barba (1, standard, correctly reappears), Home→Contact via Barba (0 `.lf-footer` + 1 `.lf-contact__mini-footer`, correct), Story hard-load (1, full-height, regression-safe), Contact hard-load (0 + mini-footer, regression-safe).
 
 - [ ] **Step 5: Push to dev, verify** — `/pages/story` shows hero (with working reading-hover on desktop), editorial band with parallax images and flickthrough, 5 sticky panels that pin and stack while scrolling, floating crests cycling, then the full-height footer — and only ONE footer renders (not the default plus the full-height one).
 
