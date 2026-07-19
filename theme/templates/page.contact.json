@@ -1,6 +1,14 @@
 {
   "sections": {
-    "main": { "type": "lf-contact-split", "settings": {} }
+    "main": {
+      "type": "lf-contact-split",
+      "settings": {
+        "image_1": "shopify://shop_images/lf-b3-contact-crown.jpg",
+        "image_2": "shopify://shop_images/lf-b3-contact-profile.jpg",
+        "image_3": "shopify://shop_images/lf-b3-contact-hands.jpg",
+        "image_4": "shopify://shop_images/lf-b3-contact-alley.jpg"
+      }
+    }
   },
   "order": ["main"]
 }

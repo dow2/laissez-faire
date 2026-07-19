@@ -14,7 +14,7 @@
         "pillar_body_3": "The city runs on its night economy — the musicians, cooks, and bartenders who keep the lights humming. This is their uniform."
       }
     },
-    "band2": { "type": "lf-image-band", "settings": { "image": "shopify://shop_images/lf-hero-secondline.jpg" } }
+    "band2": { "type": "lf-image-band", "settings": { "image": "shopify://shop_images/lf-b3-shop-band.jpg" } }
   },
   "order": ["grid", "band1", "pillars", "band2"]
 }
