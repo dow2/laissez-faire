@@ -30,7 +30,27 @@
     "statement": { "type": "lf-statement", "settings": {} },
     "ctarow": { "type": "lf-cta-row", "settings": {} },
     "marquee": { "type": "lf-marquee", "settings": {} },
-    "lookbook": { "type": "lf-lookbook", "settings": {} },
+    "lookbook": {
+      "type": "lf-lookbook",
+      "blocks": {
+        "slide1": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/lf-hero-chief.jpg",
+            "caption": "Won't Bow Down"
+          }
+        },
+        "slide2": {
+          "type": "slide",
+          "settings": {
+            "image": "shopify://shop_images/lf-hero-secondline.jpg",
+            "caption": "Kill 'Em Dead, Needle & Thread"
+          }
+        }
+      },
+      "block_order": ["slide1", "slide2"],
+      "settings": {}
+    },
     "community": { "type": "lf-community", "settings": {} },
     "email": { "type": "lf-email-block", "settings": {} }
   },
