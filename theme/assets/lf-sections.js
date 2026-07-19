@@ -356,8 +356,12 @@
     (root || document).querySelectorAll('[data-lf-overlap]:not([data-lf-overlap-bound])').forEach(function (el) {
       el.setAttribute('data-lf-overlap-bound', '1');
       gsap.timeline({
-        scrollTrigger: { trigger: el, start: 'top top', end: '+=500', scrub: true }
-      }).to(el, { yPercent: 50, ease: 'power1.in' });
+        scrollTrigger: { trigger: el, start: 'top top', end: '+=500', scrub: true, invalidateOnRefresh: true }
+      // Fixed-px slide, NOT yPercent: a proportional slide re-scales whenever a
+      // section's height changes (the 70svh->100svh statement grew its slide by
+      // ~43% and its opaque tail sliced across the marquee's stamp line). The
+      // stitch is "about 240px" by design, whatever the section's height is.
+      }).to(el, { y: function () { return Math.min(el.offsetHeight * 0.5, 240); }, ease: 'power1.in' });
     });
   };
 
