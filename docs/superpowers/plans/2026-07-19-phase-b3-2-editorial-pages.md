@@ -482,6 +482,19 @@ git status --short
     if (ctx.reduced || !window.gsap) return;
     var track = wrap.querySelector('[data-lf-marquee-track]');
     if (!track) return;
+    var section = wrap.closest('.lf-marquee-section');
+    // The transform-driven track has no native scroll position of its own,
+    // but its overflow:hidden ancestor (which also wraps the unrelated
+    // statement text as a sibling) is still a valid target for the browser's
+    // native focus-scroll-into-view behavior on every Tab keystroke. Left
+    // alone, that native scrollLeft adjustment fights the GSAP transform and
+    // can visibly drift the statement text sideways. Snap it back to 0 so
+    // the GSAP transform stays the only source of truth for position.
+    if (section) {
+      section.addEventListener('focusin', function () {
+        if (section.scrollLeft !== 0) section.scrollLeft = 0;
+      });
+    }
     var half = track.scrollWidth / 2; // second half is the duplicated loop content
     var wrapFn = gsap.utils.wrap(-half, 0);
     var total = 0;
@@ -530,11 +543,13 @@ git status --short
       if (!dragging) { total -= deltaTime / 20; xTo(total); }
     }
     gsap.ticker.add(tick);
-    LF.teardown.push(function () { gsap.ticker.remove(tick); });
+    LF.teardown.push(function () { gsap.ticker.remove(tick); gsap.killTweensOf(track); });
   };
 ```
 
 > **As-run:** the original `setPointerCapture`/`releasePointerCapture` calls targeted `track` (an ancestor of the actual pointerdown target) — proven via an isolated A/B test to suppress the browser's native click-event synthesis on EVERY card click, drag or not (a zero-movement tap failed to navigate with capture active, and navigated correctly with `setPointerCapture` neutered). Compounding this, the click handler's `if (dragging) e.preventDefault();` was dead code — `onUp` resets `dragging = false` synchronously, and the browser's `click` event always fires after `pointerup` for the same interaction, so the check could never read true. Fixed both together (already reflected in the code above): pointer capture now targets `e.target` (the actual interacted element, not `track`), and a `lastDragDistance` flag captured before the `dragging` reset drives the click-suppression check instead. Live-verified the specific regression: a genuine drag no longer navigates, and a zero-movement click now correctly navigates to the product page (previously it silently failed to, for every card, every time).
+>
+> **As-run (round 2):** code review found two more Important gaps, both fixed and live-verified (already reflected in the code above). (1) `gsap.quickTo`'s tween on `track` was never killed in teardown — only the ticker callback was removed, so an in-flight `.5s power3` tween can keep GSAP's root timeline referencing the (soon-to-be-discarded) `track` for up to half a second after a Barba nav; added `gsap.killTweensOf(track)` alongside the ticker removal. (2) Keyboard Tab-focus on an off-screen card triggered the browser's native scroll-into-view on `.lf-marquee-section` (the `overflow:hidden` ancestor, which also wraps the unrelated statement text as a sibling) — completely uncoordinated with the GSAP transform driving the track's actual position, so the two could visibly fight and drift the statement text sideways while tabbing through cards. Fixed with a `focusin` handler that snaps `section.scrollLeft` back to 0 immediately, keeping the GSAP transform as the sole source of truth for position. Verified live: the teardown-drain no longer leaves the tween animating, and 5 real Tab presses through the card list all confirmed `scrollLeft` stayed at 0.
 
 - [ ] **Step 3: Commit**
 
