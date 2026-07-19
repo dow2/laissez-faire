@@ -174,6 +174,8 @@
       // e.g. collection/story/PDP titles) is already "inside" the zone and would
       // never receive that event, staying permanently dim. Fire immediately for
       // anything already past the trigger line; ScrollTrigger only for the rest.
+      // (Requires the outgoing Barba container to already be display:none — see
+      // lf-motion.js leave() — otherwise this reads a phantom pushed-down position.)
       var rect = el.getBoundingClientRect();
       if (rect.top < window.innerHeight * 0.55) {
         fire();

@@ -77,6 +77,14 @@
               duration: .55 * f, ease: 'steps(5)'
             })
             .to(blackout, { opacity: 1, duration: .12 * f }, '<70%')
+            // Barba doesn't remove the outgoing container until well after our
+            // own enter()/afterEnter resolve — left in normal flow, it sits
+            // above the incoming container and pushes it hundreds of px down
+            // the page. That's invisible (blackout covers it) but corrupts any
+            // getBoundingClientRect() read during afterEnter (e.g. ignite's
+            // above-the-fold check), which was measuring the incoming heading
+            // as if it were far off-screen. Take it out of flow ourselves.
+            .set(data.current.container, { display: 'none' })
             .then();
         },
         enter: function (data) {
