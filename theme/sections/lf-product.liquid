@@ -61,11 +61,11 @@
       %}
       <details name="lf-pdp-acc">
         <summary>Garment Details<span class="lf-pdp__plus" aria-hidden="true"></span></summary>
-        <div>{{ lf_details }}</div>
+        <div>{{ lf_details | newline_to_br }}</div>
       </details>
       <details name="lf-pdp-acc">
         <summary>Wash Care<span class="lf-pdp__plus" aria-hidden="true"></span></summary>
-        <div>{{ lf_care }}</div>
+        <div>{{ lf_care | newline_to_br }}</div>
       </details>
     </div>
   </div>
@@ -86,7 +86,6 @@
 .lf-pdp__titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .lf-pdp__titlerow h1 { font-size: clamp(1.4rem, 3.6vw, 2.1rem); margin: 0 0 .4rem; }
 .lf-pdp__buy { position: sticky; top: 6.5rem; }
-.lf-pdp__buy h1 { font-size: clamp(1.4rem, 3.6vw, 2.1rem); margin: 0 0 .4rem; }
 .lf-pdp__price { font-size: 1rem; color: var(--lf-body-text); margin: 0 0 .2rem; }
 .lf-pdp__edition { color: var(--lf-muted); font-size: .7rem; letter-spacing: .25em; text-transform: uppercase; margin: 0 0 1rem; }
 .lf-pdp__story { font-size: 1.05rem; margin: 0 0 .8rem; }
