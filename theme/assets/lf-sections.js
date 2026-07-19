@@ -167,22 +167,4 @@
       }
     });
   };
-
-  // ——— Footer crest cursor-follow (footer persists; bind once) ———
-  LF.init.footerFollow = function (root, ctx) {
-    if (ctx.reduced || !window.gsap) return;
-    if (!window.matchMedia('(pointer: fine)').matches) return;
-    var wm = document.querySelector('.lf-footer__wordmark');
-    var crest = document.querySelector('.lf-follow-crest');
-    if (!wm || !crest || crest.hasAttribute('data-lf-bound')) return;
-    crest.setAttribute('data-lf-bound', '1');
-    var qx = gsap.quickTo(crest, 'x', { duration: 0.4, ease: 'power3' });
-    var qy = gsap.quickTo(crest, 'y', { duration: 0.4, ease: 'power3' });
-    var zone = wm.closest('.lf-footer') || wm;
-    zone.addEventListener('mousemove', function (e) {
-      qx(e.clientX - 32); qy(e.clientY - 40);
-    });
-    zone.addEventListener('mouseenter', function () { gsap.to(crest, { opacity: .9, duration: .3 }); });
-    zone.addEventListener('mouseleave', function () { gsap.to(crest, { opacity: 0, duration: .3 }); });
-  };
 })();

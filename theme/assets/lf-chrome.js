@@ -313,4 +313,63 @@
       if (e.target.closest('[data-easter]')) egg.classList.remove('is-on');
     });
   };
+
+  // ——— Footer: Site Index per-link reveals + product image-follow ———
+  LF.init.footerFollow = function (root, ctx) {
+    var footer = document.querySelector('.lf-footer');
+    if (!footer || footer.hasAttribute('data-lf-bound')) return;
+    footer.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !FINE.matches || !window.gsap) return;
+
+    // Site Index reveals
+    var findexImgs = footer.querySelectorAll('.lf-footer__findex div');
+    footer.querySelectorAll('[data-lf-findex]').forEach(function (a) {
+      var i = parseInt(a.getAttribute('data-lf-findex'), 10);
+      a.addEventListener('mouseenter', function () {
+        findexImgs.forEach(function (d, j) { d.classList.toggle('show', j === i); });
+      });
+      a.addEventListener('mouseleave', function () {
+        findexImgs.forEach(function (d) { d.classList.remove('show'); });
+      });
+    });
+
+    // Product image-follow
+    var list = footer.querySelector('[data-lf-flist]');
+    var panel = footer.querySelector('[data-lf-follow]');
+    if (!list || !panel) return;
+    var img = panel.querySelector('img');
+    var currentSrc = null;
+    list.querySelectorAll('[data-lf-fimg]').forEach(function (a) {
+      var pre = new Image(); pre.src = a.getAttribute('data-lf-fimg');
+    });
+    var yTo = gsap.quickTo(panel, 'y', { duration: .35, ease: 'power3' });
+    list.addEventListener('mouseenter', function () {
+      gsap.fromTo(panel,
+        { clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)' },
+        { clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)', duration: .5, ease: 'expo.inOut' });
+    });
+    list.addEventListener('mouseleave', function () {
+      gsap.to(panel, { clipPath: 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)', duration: .5, ease: 'expo.inOut' });
+      currentSrc = null;
+    });
+    list.addEventListener('mousemove', function (e) {
+      var listRect = list.getBoundingClientRect();
+      var h = panel.offsetHeight;
+      var y = e.clientY - listRect.top - h / 2;
+      // Clamp bounds must be computed with min/max, not assumed 0-first:
+      // when the follow panel is taller than the (short, 6-product) list,
+      // "listRect.height - h" is negative, inverting which bound is the
+      // true min — a naive Math.max(0, Math.min(y, listRect.height - h))
+      // then always resolves to 0 regardless of cursor position.
+      var lo = Math.min(0, listRect.height - h);
+      var hi = Math.max(0, listRect.height - h);
+      y = Math.max(lo, Math.min(y, hi));
+      yTo(y);
+      var row = e.target.closest('[data-lf-fimg]');
+      if (row) {
+        var src = row.getAttribute('data-lf-fimg');
+        if (src && src !== currentSrc) { currentSrc = src; img.src = src; }
+      }
+    });
+  };
 })();

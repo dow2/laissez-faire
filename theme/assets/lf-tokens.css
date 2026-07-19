@@ -101,22 +101,11 @@ body {
 .lf-ignite-char { display: inline-block; white-space: pre; opacity: .12; }
 .lf-ignite-done .lf-ignite-char, .lf-lit .lf-ignite-char { opacity: 1; }
 
-/* Crest cursor-follow (footer, desktop only — element added in lf-footer.liquid) */
-.lf-follow-crest {
-  position: fixed; width: 64px; aspect-ratio: 300/320; pointer-events: none; z-index: 80;
-  background-color: var(--lf-neon-core);
-  -webkit-mask: var(--lf-crest) center/contain no-repeat;
-  mask: var(--lf-crest) center/contain no-repeat;
-  filter: drop-shadow(0 0 6px var(--lf-neon-halo)) drop-shadow(0 0 20px var(--lf-neon-halo));
-  opacity: 0; top: 0; left: 0; will-change: transform;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .lf-pdp__add:hover, .lf-teaser__row button:hover, .lf-email__row button:hover,
   .lf-drawer__checkout:hover, .lf-hero__cta:hover, .lf-fstory__cta:hover, .lf-dgrid__cta:hover,
   .lf-footer__cols a:hover { animation: none; }
   .lf-ignite-char { opacity: 1 !important; }
-  .lf-follow-crest { display: none; }
 }
 
 /* Voice components */
