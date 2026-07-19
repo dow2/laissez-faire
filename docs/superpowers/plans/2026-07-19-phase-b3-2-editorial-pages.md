@@ -1026,6 +1026,7 @@ git status --short
     if (LF.FINE.matches) {
       wrap.addEventListener('mouseenter', function () {
         nextImage();
+        clearInterval(interval);
         interval = setInterval(nextImage, 300);
       });
       wrap.addEventListener('mouseleave', function () { clearInterval(interval); });
@@ -1041,6 +1042,8 @@ git status --short
 >   LF.FINE = FINE; // shared across files via the LF namespace (lf-sections.js reads this)
 > ```
 > and reference it as `LF.FINE.matches` in `LF.init.flickthrough` above (already reflected in the code block). This is the more idiomatic fix versus the alternatives considered (a second independent `matchMedia` call in `lf-sections.js`, which would create a redundant `MediaQueryList`; or inlining the raw query string directly in the function) — `LF` is already the established shared-state namespace for cross-file values (`LF.scrollLock`, `LF.trapFocus`, `LF.money`, `LF.esc`), so `LF.FINE` fits that existing pattern rather than adding a new mechanism. Live-verified after the fix: no `ReferenceError`, hover-cycling on desktop-width/fine-pointer contexts and auto-cycling on coarse/narrow contexts both work correctly.
+>
+> **As-run (round 2):** code review found the `mouseenter` handler didn't guard against stacking intervals if it somehow fired twice without an intervening `mouseleave` — a trivial, zero-cost defensive `clearInterval(interval)` before re-arming (already reflected above) matches the identical pattern `LF.init.hero`'s `arm()` already uses elsewhere in this same file.
 
 - [ ] **Step 3: Commit**
 
