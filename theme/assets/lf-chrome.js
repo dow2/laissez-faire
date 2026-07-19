@@ -254,4 +254,63 @@
     // Reopen after a successful post (Shopify reloads the page with params).
     if (location.search.indexOf('customer_posted=true') > -1) LF.openSignup();
   };
+
+  // ——— Labeled cursor (desktop only) ———
+  LF.init.cursor = function (root, ctx) {
+    var pill = document.querySelector('[data-lf-cursor]');
+    if (!pill || pill.hasAttribute('data-lf-bound')) return;
+    pill.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !FINE.matches || !window.gsap) return;
+    var label = pill.querySelector('p');
+    var xTo = gsap.quickTo(pill, 'x', { duration: .25, ease: 'power3' });
+    var yTo = gsap.quickTo(pill, 'y', { duration: .25, ease: 'power3' });
+    var current = null, lastText = '', lastEdge = '';
+    LF.teardown.push(function () { current = null; document.body.classList.remove('lf-cursor-on'); });
+    window.addEventListener('mousemove', function (e) {
+      var nearRight = e.clientX > window.innerWidth * 0.9;
+      var nearBottom = e.clientY > window.innerHeight * 0.9;
+      var edge = nearRight + ':' + nearBottom;
+      if (edge !== lastEdge) {
+        lastEdge = edge;
+        gsap.to(pill, { xPercent: nearRight ? -110 : 12, yPercent: nearBottom ? -110 : 16, duration: .15, ease: 'power3' });
+      }
+      xTo(e.clientX); yTo(e.clientY);
+      if (current) {
+        var txt = (nearRight && current.getAttribute('data-easter-label')) || current.getAttribute('data-cursor') || '';
+        if (txt !== lastText) { label.textContent = txt; lastText = txt; }
+      }
+    });
+    document.addEventListener('mouseover', function (e) {
+      var t = e.target.closest('[data-cursor]');
+      current = t;
+      if (t) {
+        document.body.classList.add('lf-cursor-on');
+        var txt = t.getAttribute('data-cursor') || '';
+        if (txt !== lastText) { label.textContent = txt; lastText = txt; }
+      } else {
+        document.body.classList.remove('lf-cursor-on');
+      }
+    });
+  };
+
+  // ——— Easter-egg brand flash ———
+  LF.init.easter = function (root, ctx) {
+    var egg = document.querySelector('[data-lf-easter]');
+    if (!egg || egg.hasAttribute('data-lf-bound')) return;
+    egg.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !FINE.matches) return;
+    var scrolling = false, scrollTimer = null;
+    LF.teardown.push(function () { egg.classList.remove('is-on'); });
+    window.addEventListener('scroll', function () {
+      scrolling = true;
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function () { scrolling = false; }, 150);
+    }, { passive: true });
+    document.addEventListener('mouseover', function (e) {
+      if (e.target.closest('[data-easter]') && !scrolling) egg.classList.add('is-on');
+    });
+    document.addEventListener('mouseout', function (e) {
+      if (e.target.closest('[data-easter]')) egg.classList.remove('is-on');
+    });
+  };
 })();

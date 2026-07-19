@@ -135,3 +135,17 @@ body {
 }
 .lf-roll:hover .lf-roll__inner { transform: translateY(1.1em); transition-duration: 400ms; }
 @media (prefers-reduced-motion: reduce) { .lf-roll:hover .lf-roll__inner { transform: none; } }
+
+/* Labeled cursor pill (desktop, pointer:fine — element in theme.liquid) */
+.lf-cursor {
+  position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none; opacity: 0;
+  background: var(--lf-panel); border: 1px solid var(--lf-neon-halo);
+  padding: .3rem .7rem; will-change: transform;
+}
+.lf-cursor p {
+  margin: 0; color: var(--lf-neon-core); text-shadow: 0 0 6px var(--lf-neon-halo);
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; white-space: nowrap;
+}
+body.lf-cursor-on .lf-cursor { opacity: 1; }
+@media (max-width: 991px), (pointer: coarse) { .lf-cursor { display: none; } }
+@media (prefers-reduced-motion: reduce) { .lf-cursor { display: none; } }

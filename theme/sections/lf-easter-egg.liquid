@@ -1,4 +1,20 @@
-{% comment %} B3.1 stub — filled by its plan task {% endcomment %}
+<div class="lf-easter" data-lf-easter aria-hidden="true">
+  <div class="lf-easter__img" style="background-image: url('{{ 'lf-culture-1.jpg' | asset_url }}');"></div>
+  <div class="lf-easter__text">
+    <p class="lf-display">Laissez-Faire Leisure Club</p>
+    <p>a neon-lit expression of New Orleans — {% render 'lf-stamp' %}</p>
+  </div>
+</div>
+
+{% stylesheet %}
+.lf-easter { position: fixed; inset: 0; z-index: 78; display: none; pointer-events: none; background: #000; }
+.lf-easter.is-on { display: flex; align-items: flex-end; justify-content: space-between; padding: 2rem; }
+.lf-easter__img { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: .55; }
+.lf-easter__text { position: relative; }
+.lf-easter__text .lf-display { color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); font-size: 1.1rem; margin: 0 0 .3rem; }
+.lf-easter__text p:last-child { color: var(--lf-muted); font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; margin: 0; }
+{% endstylesheet %}
+
 {% schema %}
-{ "name": "stub", "settings": [] }
+{ "name": "LF Easter Egg", "settings": [] }
 {% endschema %}
