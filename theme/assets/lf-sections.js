@@ -262,4 +262,76 @@
     // via [data-cursor] — nothing further needed here beyond marking bound so
     // this init is idempotent; kept as its own function for clarity/future growth.
   };
+
+  // ——— Draggable infinite product marquee (native Pointer Events, no Observer plugin) ———
+  LF.init.marquee = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-marquee]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !window.gsap) return;
+    var track = wrap.querySelector('[data-lf-marquee-track]');
+    if (!track) return;
+    var section = wrap.closest('.lf-marquee-section');
+    // The transform-driven track has no native scroll position of its own,
+    // but its overflow:hidden ancestor (which also wraps the unrelated
+    // statement text as a sibling) is still a valid target for the browser's
+    // native focus-scroll-into-view behavior on every Tab keystroke. Left
+    // alone, that native scrollLeft adjustment fights the GSAP transform and
+    // can visibly drift the statement text sideways. Snap it back to 0 so
+    // the GSAP transform stays the only source of truth for position.
+    if (section) {
+      section.addEventListener('focusin', function () {
+        if (section.scrollLeft !== 0) section.scrollLeft = 0;
+      });
+    }
+    var half = track.scrollWidth / 2; // second half is the duplicated loop content
+    var wrapFn = gsap.utils.wrap(-half, 0);
+    var total = 0;
+    var xTo = gsap.quickTo(track, 'x', {
+      duration: .5, ease: 'power3',
+      modifiers: { x: gsap.utils.unitize(wrapFn) }
+    });
+    var dragging = false, startX = 0, startTotal = 0, activePointer = null, lastDragDistance = 0;
+
+    function onDown(e) {
+      dragging = true; startX = e.clientX; startTotal = total; activePointer = e.pointerId;
+      wrap.classList.add('is-dragging');
+      // Capture on the actual event target, not `track` — capturing on an
+      // ancestor disrupts the browser's native click-event synthesis for
+      // the descendant that was really interacted with, suppressing
+      // navigation on every click (drag or not), not just genuine drags.
+      try { e.target.setPointerCapture(activePointer); } catch (err) {}
+    }
+    function onMove(e) {
+      if (!dragging || e.pointerId !== activePointer) return;
+      total = startTotal + (e.clientX - startX);
+      xTo(total);
+    }
+    function onUp(e) {
+      if (!dragging || e.pointerId !== activePointer) return;
+      // Capture the drag distance BEFORE resetting `dragging` — the click
+      // handler runs after pointerup in the same interaction, so checking
+      // `dragging` there would always read the just-reset false value.
+      lastDragDistance = Math.abs(total - startTotal);
+      dragging = false;
+      wrap.classList.remove('is-dragging');
+      try { e.target.releasePointerCapture(activePointer); } catch (err) {}
+      activePointer = null;
+    }
+    track.addEventListener('pointerdown', onDown);
+    track.addEventListener('pointermove', onMove);
+    track.addEventListener('pointerup', onUp);
+    track.addEventListener('pointercancel', onUp);
+    track.addEventListener('click', function (e) {
+      // A genuine drag (moved more than a few px) shouldn't navigate; a tap/
+      // click that barely moved should behave like a normal link click.
+      if (lastDragDistance > 6) e.preventDefault();
+    });
+
+    function tick(time, deltaTime) {
+      if (!dragging) { total -= deltaTime / 20; xTo(total); }
+    }
+    gsap.ticker.add(tick);
+    LF.teardown.push(function () { gsap.ticker.remove(tick); gsap.killTweensOf(track); });
+  };
 })();
