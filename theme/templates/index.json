@@ -20,7 +20,7 @@
             "heading": "Kill 'Em Dead, Needle & Thread",
             "cta_label": "Our Story",
             "link": "shopify://pages/story",
-            "image": "shopify://shop_images/lf-b3-hero-02.jpg"
+            "image": "shopify://shop_images/lf-b3r2-hero-02.jpg"
           }
         },
         "slide3": {
@@ -48,7 +48,7 @@
             "title": "Shop the Drop",
             "cta_label": "Shop",
             "link": "shopify://collections/all",
-            "image": "shopify://shop_images/lf-b3-cta-products.jpg"
+            "image": "shopify://shop_images/lf-b3r2-cta-products.jpg"
           }
         },
         "card2": {
@@ -68,7 +68,7 @@
             "title": "Get in Touch",
             "cta_label": "Connect",
             "link": "shopify://pages/contact",
-            "image": "shopify://shop_images/lf-b3-cta-community.jpg"
+            "image": "shopify://shop_images/lf-b3r2-cta-community.jpg"
           }
         }
       },
@@ -101,9 +101,9 @@
       "type": "lf-community",
       "blocks": {
         "partner1": { "type": "partner", "settings": { "name": "NOLA Second Line Society", "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs.", "image": "shopify://shop_images/lf-b3-community-secondline.jpg" } },
-        "partner2": { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.", "image": "shopify://shop_images/lf-b3-community-sewing.jpg" } },
-        "partner3": { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.", "image": "shopify://shop_images/lf-b3-community-bar.jpg" } },
-        "partner4": { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.", "image": "shopify://shop_images/lf-b3-community-nightshift.jpg" } }
+        "partner2": { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.", "image": "shopify://shop_images/lf-b3r2-community-sewing.jpg" } },
+        "partner3": { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.", "image": "shopify://shop_images/lf-b3r2-community-bar.jpg" } },
+        "partner4": { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.", "image": "shopify://shop_images/lf-b3r2-community-nightshift.jpg" } }
       },
       "block_order": ["partner1", "partner2", "partner3", "partner4"],
       "settings": {}
