@@ -580,7 +580,7 @@ git status --short
 </section>
 
 {% stylesheet %}
-.lf-lookbook { position: relative; aspect-ratio: 10/3; overflow: hidden; }
+.lf-lookbook { position: relative; aspect-ratio: 8/3; overflow: hidden; }
 .lf-lookbook__list, .lf-lookbook__slide { position: absolute; inset: 0; }
 .lf-lookbook__slide { opacity: 0; transition: opacity .6s var(--lf-ease); }
 .lf-lookbook__slide.is-active { opacity: 1; }
@@ -644,6 +644,7 @@ git status --short
 ```
 
 > **As-run (found in the user's third visual pass, fixed in `d3ec598`):** `height: 90svh` forced the section to 90% of viewport height at every tested size (810-1035px), and cover-cropping the square 2000×2000 filler images into that near-hero-scale landscape frame left only ~50-56% of the source image visible — same defect pattern as the CTA row's aspect-ratio bug (`9990561`), just via a different CSS property. Replaced `height: 90svh` with `aspect-ratio: 10/3` (a wide cinematic banner ratio, empirically tested against several candidates via live screenshots) and added `object-position: 50% 22%` to bias the crop upward so the headdress/sky context stays in frame rather than a symmetric center-crop cutting into the subject. Re-verified: 432-600px tall at tested viewports (48-53% of viewport, in the same "modest" range the CTA row fix landed in), `.lf-lookbook__ui`'s counter/arrows still clear the section's bottom edge by 24px, and prev/next crossfade nav confirmed still functional on both slides.
+> **As-run (found in the user's fourth visual pass, fixed in `839fee6`):** `aspect-ratio: 10/3` read as too compact once seen in context alongside the seeded community section below it (see Task 7's As-run notes). Bumped to `aspect-ratio: 8/3`, landing around 60-67% of viewport height instead of 48-53% — more gallery presence while staying well short of the original 90svh bug.
 
 ---
 
@@ -803,7 +804,17 @@ git status --short
       "block_order": ["slide1", "slide2"],
       "settings": {}
     },
-    "community": { "type": "lf-community", "settings": {} },
+    "community": {
+      "type": "lf-community",
+      "blocks": {
+        "partner1": { "type": "partner", "settings": { "name": "NOLA Second Line Society", "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "partner2": { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.", "image": "shopify://shop_images/lf-hero-chief.jpg" } },
+        "partner3": { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "partner4": { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.", "image": "shopify://shop_images/lf-hero-chief.jpg" } }
+      },
+      "block_order": ["partner1", "partner2", "partner3", "partner4"],
+      "settings": {}
+    },
     "email": { "type": "lf-email-block", "settings": {} }
   },
   "order": ["hero", "statement", "ctarow", "marquee", "lookbook", "community", "email"]
@@ -859,6 +870,7 @@ git status --short
 > **As-run (found in the user's second visual pass, fixed in `96291f4`):** `lf-email-block.liquid` (retained unmodified from B1, not part of this plan's own task files) still carried its original pre-launch teaser copy — prompt "Be there when the lights come on.", button "Notify Me", `contact[tags]=teaser-list`. That copy made sense when the site was gated behind the password teaser; it reads as contradictory on the fully-built, fully-browsable home page this plan ships (the user is already shopping products, reading the story, viewing PDPs — "notify me when we launch" doesn't fit). Changed to newsletter-signup framing: prompt "First word on new drops, restocks, and second-line events.", button "Join", tag `newsletter` — consistent with the footer's existing "Join the list" button copy (`lf-footer.liquid`, unchanged). No layout/structure changes, copy only.
 > **As-run (found in the user's second visual pass, fixed in `9990561`):** `lf-cta-row.liquid`'s `.lf-ctarow__card` used `aspect-ratio: 3/4` (portrait), which combined with `object-fit: cover` on the seeded 2000×2000 square filler images produced cards measuring 71-79% of viewport height at common desktop sizes (confirmed live: 640px at 1440×900, 854px at 1920×1080) — the row visually dominated the screen rather than reading as a compact editorial grid. Changed to `aspect-ratio: 4/3` (landscape); reflected in Step 1's code block above. Re-verified: 360px at 1440×900 (0.40 of viewport), 480px at 1920×1080 (0.44), mobile stacked height dropped from ~1560px to ~877px. No `object-position` tuning was needed — the source photos are full-bleed subject shots that already frame well at default center-center.
 > **Checked, not a bug:** the user also reported the standard footer (nav links, product rack, legal/copyright) appeared to be missing entirely on the home page after the email signup block. Live DOM/CSS inspection found `.lf-footer` renders fully and correctly — real height (663px), all nav links, 6 populated product-rack items, legal nav, and copyright line all present and visible, no clipping/hiding ancestors. No code change made; most likely explanation is the visual break at the email block's bottom border reading as a natural stopping point before scrolling further.
+> **As-run (found in the user's fourth visual pass, fixed in `e8bf5c2`):** `community` was the fourth section to ship with `"settings": {}` and no blocks at all — same bug class as lookbook (`de44c28`), cta-row (`3b678f3`), and story editorial/sticky (`635282c`). Section instances in JSON templates don't inherit a schema's `"default.blocks"` preset (that preset is only applied when a merchant adds the section fresh via the theme editor), so all 4 partner rows rendered as zero. The intro ("Giving back...") was followed immediately by the section's own `padding: 5rem`/`margin-bottom: 3.5rem` and nothing else, then the email block's own top padding stacked on top — reading as an oversized empty gap between two text blocks, which is what the user reported (perceived as a spacing bug; actual cause was missing content, not excess padding). Seeded the same 4 partner names/blurbs already defined as `lf-community.liquid`'s own schema `default.blocks` preset, alternating the two already-uploaded hero images across the 4 rows. Code block above corrected; re-verified live (4 `.lf-community__row` elements render with real name/blurb/image content).
 
 ---
 
