@@ -38,11 +38,6 @@
   </nav>
   <p class="lf-heroV2__scroll" aria-hidden="true">Scroll</p>
   <button type="button" class="lf-heroV2__next" data-lf-hero-next aria-label="Next slide">Next</button>
-
-  <div class="lf-heroV2__lockup">
-    <div class="lf-heroV2__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
-         style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
-  </div>
 </section>
 
 {% stylesheet %}
@@ -74,12 +69,6 @@
   position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); z-index: 2;
   background: none; border: 0; cursor: pointer; color: var(--lf-body-text);
   font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
-}
-.lf-heroV2__lockup { position: absolute; left: 1.5rem; top: 1.5rem; z-index: 2; }
-.lf-heroV2__wordmark {
-  width: 160px; aspect-ratio: 2129/749; background-color: var(--lf-neon-core);
-  -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
-  filter: drop-shadow(0 0 6px var(--lf-neon-halo));
 }
 /* No CSS transition to disable here — slide motion is entirely GSAP-driven
    inline clip-path tweening (see LF.init.heroV2's `ctx.reduced` branch in
