@@ -413,6 +413,7 @@
     if (LF.FINE.matches) {
       wrap.addEventListener('mouseenter', function () {
         nextImage();
+        clearInterval(interval);
         interval = setInterval(nextImage, 300);
       });
       wrap.addEventListener('mouseleave', function () { clearInterval(interval); });
