@@ -364,6 +364,13 @@
     section.setAttribute('data-lf-bound', '1');
   };
 
+  // ——— Story hero: reading-mode hover is pure CSS (:has()); nothing to bind ———
+  LF.init.storyHero = function (root, ctx) {
+    var hero = (root || document).querySelector('.lf-storyhero');
+    if (!hero || hero.hasAttribute('data-lf-bound')) return;
+    hero.setAttribute('data-lf-bound', '1');
+  };
+
   // ——— Overlap-scroll stitching: pinned section slides under the next as you scroll past ———
   LF.init.scrollOverlap = function (root, ctx) {
     if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;

@@ -1,0 +1,42 @@
+<header class="lf-storyhero">
+  <div class="lf-storyhero__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');" data-lf-fadeout></div>
+  <div class="lf-storyhero__head">
+    <div class="lf-storyhero__intro">
+      <p class="lf-storyhero__kicker" data-lf-fadeout>Est. New Orleans</p>
+      <p class="lf-storyhero__name lf-script">{{ section.settings.intro }}</p>
+    </div>
+    <h1 class="lf-storyhero__title lf-display lf-glow-text" data-lf-ignite>{{ page.title }}</h1>
+  </div>
+</header>
+
+{% stylesheet %}
+.lf-storyhero { min-height: 80svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5rem; text-align: center; padding: 4rem 1.5rem; }
+.lf-storyhero__crest {
+  width: 56px; aspect-ratio: 300/320; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat;
+  filter: drop-shadow(0 0 8px var(--lf-neon-halo)); transition: opacity .3s ease;
+}
+.lf-storyhero__head { position: relative; max-width: 700px; }
+.lf-storyhero__kicker { font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-muted); margin: 0 0 .6rem; transition: opacity .3s ease; }
+.lf-storyhero__name { font-size: 1.3rem; color: var(--lf-body-text); margin: 0; }
+.lf-storyhero__title { font-size: clamp(2rem, 6vw, 3.4rem); margin: .8rem 0 0; transition: opacity .3s ease; }
+/* Reading-mode hover: hovering the intro fades the headline + this section's
+   [data-lf-fadeout] elements so the page "makes room" for reading — matches
+   OR's about-head_wrap pattern. */
+@media (hover: hover) and (pointer: fine) {
+  .lf-storyhero__head:has(.lf-storyhero__intro:hover) .lf-storyhero__title { opacity: .12; }
+  /* Scoped to the section, not body — [data-lf-fadeout] is a generic,
+     reusable attribute name other Story-page sections may adopt later;
+     a page-wide selector here would dim their unrelated elements too. */
+  .lf-storyhero:has(.lf-storyhero__intro:hover) [data-lf-fadeout] { opacity: .12; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Story Hero",
+  "settings": [
+    { "type": "text", "id": "intro", "label": "Intro line", "default": "A modern expression of New Orleans" }
+  ]
+}
+{% endschema %}
