@@ -11,7 +11,7 @@ New Orleans luxury streetwear. Shopify Online Store 2.0 theme, hand-built
   - `assets/lf-motion.js` — Lenis, Barba surge transitions, init-registry dispatch
   - `assets/lf-sections.js` — section behaviors (`LF.init.*`), swap-safe
   - `sections/lf-*.liquid` — all LF sections (markup + scoped styles + schema)
-  - vendored libs: GSAP/ScrollTrigger/SplitText/Observer/Barba/Lenis (pinned, self-hosted)
+  - vendored libs: GSAP/ScrollTrigger/SplitText/CustomEase/Barba/Lenis (pinned, self-hosted)
 - `scripts/create-products.mjs` — Drop 001 catalog loader (Admin GraphQL,
   client-credentials auth; secret in macOS Keychain `lf-shopify-client-secret`)
 - `docs/superpowers/specs|plans/` — design specs and implementation plans (source of truth

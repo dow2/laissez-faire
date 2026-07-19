@@ -14,12 +14,28 @@ const API = `https://${SHOP}/admin/api/2025-10/graphql.json`;
 const CLIENT_ID = '1c05c65814060a190372cffaa20ba146';
 const CLIENT_SECRET = execSync('security find-generic-password -a lf -s lf-shopify-client-secret -w', { encoding: 'utf8' }).trim();
 
+// Mirrors the AbortController watchdog pattern already used for the storefront's
+// add-to-cart fetch (theme/assets/lf-sections.js) — a hung Shopify endpoint would
+// otherwise stall this script indefinitely instead of failing loudly.
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const watchdog = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error(`Timeout after ${timeoutMs}ms: ${url}`);
+    throw err;
+  } finally {
+    clearTimeout(watchdog);
+  }
+}
+
 async function getAccessToken() {
-  const res = await fetch(`https://${SHOP}/admin/oauth/access_token`, {
+  const res = await fetchWithTimeout(`https://${SHOP}/admin/oauth/access_token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ grant_type: 'client_credentials', client_id: CLIENT_ID, client_secret: CLIENT_SECRET }),
-  });
+  }, 15000);
   if (!res.ok) throw new Error(`client credentials grant failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
   return json.access_token;
@@ -44,11 +60,11 @@ const PRODUCTS = [
 ];
 
 async function gql(query, variables) {
-  const res = await fetch(API, {
+  const res = await fetchWithTimeout(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': TOKEN },
     body: JSON.stringify({ query, variables }),
-  });
+  }, 15000);
   const json = await res.json();
   if (json.errors) throw new Error(JSON.stringify(json.errors));
   return json.data;
@@ -66,7 +82,7 @@ async function stagedUpload(filename) {
   const form = new FormData();
   t.parameters.forEach(p => form.append(p.name, p.value));
   form.append('file', new Blob([readFileSync(path.join(IMG_DIR, filename))], { type: 'image/jpeg' }), filename);
-  const up = await fetch(t.url, { method: 'POST', body: form });
+  const up = await fetchWithTimeout(t.url, { method: 'POST', body: form }, 30000);
   if (!up.ok) throw new Error(`upload failed for ${filename}: ${up.status}`);
   return t.resourceUrl;
 }
