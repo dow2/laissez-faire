@@ -1,0 +1,1404 @@
+# Phase B3.2 — Editorial Pages Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Rebuild Home, Story, and Contact to full Odd Ritual structural parity per spec §4/B3.2 — hero slider v2, statement band, CTA row, draggable marquee, lookbook, community section (Home); reading-hover hero, editorial parallax band, flickthrough, sticky story stack, floating crests (Story); split-screen sticky layout (Contact) — shipping `v0.4.1-editorial`.
+
+**Architecture:** New page-section Liquid files composed via `templates/index.json` (Home) and new/modified `templates/page.story.json` / `templates/page.contact.json`. All interactive behavior lives in `theme/assets/lf-sections.js` (page-section registry, matching B1/B2 convention) using `LF.init.*` + `data-lf-bound` + `LF.teardown`, dispatched by the existing `lf-motion.js` registry. No new vendors — `gsap.utils.wrap`/`gsap.utils.unitize` (already in vendored `gsap.min.js` core) replace the Observer-plugin drag pattern with native Pointer Events, per the spec's engineering constraints. Retired sections (`lf-hero-slider`, `lf-featured-story`, `lf-drop-grid`, `lf-culture-strip`) drop out of `index.json`'s render order but stay in the repo (dead-but-harmless, matching B3.1's retirement precedent).
+
+**Tech Stack:** Shopify OS 2.0 Liquid, GSAP 3.13.0 core + ScrollTrigger + CustomEase (all already vendored from B2/B3.1), vanilla JS. Spec: `docs/superpowers/specs/2026-07-19-phase-b3-ritual-build-design.md`. Builds on B3.1 (`v0.4.0-chrome`, shipped) — `LF.scrollLock`, `LF.trapFocus`, `LF.init.navBehaviors` (consumes `[data-nav-light]` markers — moot for this plan, see self-review note: every B3.2 section stays on the night-black background, so nothing here is ever "light" enough to trigger it), `LF.init.footerFollow`, cursor/easter systems all live in `theme/assets/lf-chrome.js` and need no changes here.
+
+**Current state this plan changes:** `templates/index.json` renders `lf-hero-slider` → `lf-featured-story` → `lf-drop-grid` → `lf-culture-strip` → `lf-email-block`. `templates/page.story.json` renders one monolithic `lf-story` section (hero + manifesto + pillars + content + seal). No `templates/page.contact.json` exists — the live Contact page (confirmed to exist via a 200 response, empty content) falls back to the generic `templates/page.json` → `sections/page.liquid`, which only prints `<h1>{{ page.title }}</h1>{{ page.content }}` — explaining the "nothing on the contact page" report. `theme/layout/theme.liquid` renders `{% sections 'footer-group' %}` unconditionally for every template.
+
+---
+
+## File map
+
+| File | Action | Responsibility |
+|---|---|---|
+| `theme/sections/lf-hero-slider-v2.liquid` | Create | Home hero: numbered nav, Scroll indicator, Next button, directional clip wipes |
+| `theme/sections/lf-statement.liquid` | Create | Dark brand-statement band |
+| `theme/sections/lf-cta-row.liquid` | Create | 3-card CTA row w/ cursor-following pill |
+| `theme/sections/lf-marquee.liquid` | Create | Made-in-NOLA block + draggable infinite product row |
+| `theme/sections/lf-lookbook.liquid` | Create | Second full-bleed editorial slider |
+| `theme/sections/lf-community.liquid` | Create | Giving-back intro + 4 filler NOLA partner rows |
+| `theme/templates/index.json` | Modify | Home section order → new sections |
+| `theme/sections/lf-story-hero.liquid` | Create | Story hero, reading-mode hover |
+| `theme/sections/lf-story-editorial.liquid` | Create | Image band + offset parallax images + flickthrough |
+| `theme/sections/lf-story-sticky.liquid` | Create | Vision eyebrow + 5-panel sticky stack + floating crest SVGs |
+| `theme/templates/page.story.json` | Modify | Story section order → new sections + full-height footer |
+| `theme/sections/lf-contact-split.liquid` | Create | Split-screen sticky contact layout w/ inline mini-footer |
+| `theme/templates/page.contact.json` | Create | Contact template (new alternate template) |
+| `theme/layout/theme.liquid` | Modify | Suppress global footer-group for `story`/`contact` template suffixes |
+| `theme/assets/lf-sections.js` | Modify | `LF.init.heroV2`, `.ctaFollow`, `.marquee`, `.lookbook`, `.community`, `.storyHero`, `.flickthrough`, `.stickyStack`, `.floatingCrests`, `.scrollOverlap` |
+| `theme/assets/lf-tokens.css` | Modify | Shared styles: overlap-scroll utility, reading-hover, flickthrough, sticky-stack, split-contact |
+
+---
+
+### Task 1: Home — Hero slider v2
+
+**Files:**
+- Create: `theme/sections/lf-hero-slider-v2.liquid`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.heroV2`)
+
+- [ ] **Step 1: Create `theme/sections/lf-hero-slider-v2.liquid`:**
+
+```liquid
+<section class="lf-heroV2" data-lf-hero-v2 data-autoplay="{{ section.settings.autoplay_seconds }}">
+  <div class="lf-heroV2__list" data-lf-hero-list>
+    {% for block in section.blocks %}
+      <div class="lf-heroV2__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }} data-lf-hero-slide data-index="{{ forloop.index0 }}">
+        <div class="lf-heroV2__visual" data-lf-hero-visual>
+          {% if block.settings.video != blank %}
+            <video class="lf-heroV2__img" src="{{ block.settings.video }}" autoplay muted loop playsinline></video>
+          {% elsif block.settings.image != blank %}
+            {{ block.settings.image | image_url: width: 2400 | image_tag: class: 'lf-heroV2__img', loading: forloop.first ? 'eager' : 'lazy', fetchpriority: forloop.first ? 'high' : 'auto', alt: block.settings.heading }}
+          {% endif %}
+        </div>
+        <div class="lf-heroV2__shade"></div>
+        <div class="lf-heroV2__copy">
+          {% if block.settings.kicker != blank %}<p class="lf-heroV2__kicker">{{ block.settings.kicker }}</p>{% endif %}
+          {% if block.settings.heading != blank %}<h2 class="lf-heroV2__heading lf-display lf-glow-text" data-lf-ignite>{{ block.settings.heading }}</h2>{% endif %}
+          {% if block.settings.link != blank %}<a class="lf-heroV2__cta lf-display" href="{{ block.settings.link }}" data-cursor="{{ block.settings.cta_label | default: 'Shop' }}">{{ block.settings.cta_label | default: 'Shop' }}</a>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <nav class="lf-heroV2__nav" aria-label="Hero slides">
+    <ol class="lf-heroV2__navlist" data-lf-hero-navlist>
+      {% for block in section.blocks %}
+        <li class="lf-heroV2__navitem {% if forloop.first %}is-active{% endif %}" data-lf-hero-dot data-index="{{ forloop.index0 }}">
+          <button type="button" aria-label="Go to slide {{ forloop.index }}">{{ forloop.index | prepend: '0' | slice: -2, 2 }}</button>
+        </li>
+      {% endfor %}
+    </ol>
+  </nav>
+  <p class="lf-heroV2__scroll" aria-hidden="true">Scroll</p>
+  <button type="button" class="lf-heroV2__next" data-lf-hero-next aria-label="Next slide">Next</button>
+
+  <div class="lf-heroV2__lockup">
+    <div class="lf-heroV2__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
+         style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-heroV2 { position: relative; height: 100svh; overflow: hidden; color: var(--lf-body-text); }
+.lf-heroV2__list, .lf-heroV2__slide, .lf-heroV2__visual { position: absolute; inset: 0; }
+.lf-heroV2__slide { visibility: hidden; clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%); }
+.lf-heroV2__slide.is-active { visibility: visible; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); }
+.lf-heroV2__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-heroV2__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,13,17,.55) 0%, rgba(13,13,17,.2) 45%, rgba(13,13,17,.85) 100%); }
+.lf-heroV2__copy { position: absolute; left: 1.5rem; bottom: 6rem; max-width: 34ch; z-index: 2; }
+.lf-heroV2__kicker { font-size: .7rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); margin: 0 0 .6rem; }
+.lf-heroV2__heading { font-size: clamp(1.8rem, 6vw, 3.6rem); line-height: 1.05; margin: 0 0 1.2rem; }
+.lf-heroV2__cta { color: var(--lf-body-text); text-decoration: none; letter-spacing: .18em; text-transform: uppercase; font-size: .8rem; border-bottom: 1px solid currentColor; padding-bottom: .2rem; }
+.lf-heroV2__nav { position: absolute; right: 1.5rem; bottom: 2.2rem; z-index: 2; }
+.lf-heroV2__navlist { list-style: none; display: flex; gap: .6rem; margin: 0; padding: 0; }
+.lf-heroV2__navitem button {
+  background: none; border: 1px solid rgba(255,255,255,.3); color: var(--lf-muted);
+  font-size: .68rem; letter-spacing: .1em; padding: .35rem .6rem; cursor: pointer;
+  transition: all .3s var(--lf-ease);
+}
+.lf-heroV2__navitem.is-active button { color: var(--lf-neon-core); border-color: var(--lf-neon-halo); text-shadow: 0 0 6px var(--lf-neon-halo); }
+.lf-heroV2__navlist:hover .lf-heroV2__navitem:not(.is-active) button { opacity: .5; }
+.lf-heroV2__scroll {
+  position: absolute; left: 1.5rem; bottom: 2.2rem; z-index: 2; margin: 0;
+  font-size: .66rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-muted);
+  writing-mode: vertical-lr;
+}
+.lf-heroV2__next {
+  position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); z-index: 2;
+  background: none; border: 0; cursor: pointer; color: var(--lf-body-text);
+  font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
+}
+.lf-heroV2__lockup { position: absolute; left: 1.5rem; top: 1.5rem; z-index: 2; }
+.lf-heroV2__wordmark {
+  width: 160px; aspect-ratio: 2129/749; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
+  filter: drop-shadow(0 0 6px var(--lf-neon-halo));
+}
+@media (prefers-reduced-motion: reduce) {
+  .lf-heroV2__slide { transition: none; }
+}
+@media (max-width: 749px) {
+  .lf-heroV2__nav, .lf-heroV2__scroll { display: none; }
+  .lf-heroV2__copy { bottom: 3.5rem; left: 1.1rem; right: 1.1rem; max-width: none; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Hero v2",
+  "settings": [
+    { "type": "range", "id": "autoplay_seconds", "label": "Autoplay seconds (0 = off)", "min": 0, "max": 15, "default": 6 }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        { "type": "text", "id": "kicker", "label": "Kicker" },
+        { "type": "text", "id": "heading", "label": "Heading" },
+        { "type": "text", "id": "cta_label", "label": "CTA label" },
+        { "type": "url", "id": "link", "label": "Link" },
+        { "type": "image_picker", "id": "image", "label": "Image" },
+        { "type": "video_url", "id": "video", "label": "Video (optional, overrides image)", "accept": ["youtube", "vimeo"] }
+      ]
+    }
+  ],
+  "max_blocks": 4
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Append `LF.init.heroV2` to `theme/assets/lf-sections.js`** (before the file's closing `})();`):
+
+```js
+  // ——— Home hero v2: numbered nav, directional clip wipes, swipe ———
+  LF.init.heroV2 = function (root, ctx) {
+    var hero = (root || document).querySelector('[data-lf-hero-v2]');
+    if (!hero || hero.hasAttribute('data-lf-bound')) return;
+    hero.setAttribute('data-lf-bound', '1');
+    var slides = Array.prototype.slice.call(hero.querySelectorAll('[data-lf-hero-slide]'));
+    var dots = Array.prototype.slice.call(hero.querySelectorAll('[data-lf-hero-dot]'));
+    var n = slides.length;
+    if (n < 2) return;
+    var i = 0, timer = null;
+    var secs = parseInt(hero.getAttribute('data-autoplay'), 10) || 0;
+
+    function go(nextIndex, forwards) {
+      var nextI = (nextIndex + n) % n;
+      if (nextI === i) return;
+      var prevSlide = slides[i], nextSlide = slides[nextI];
+      var prevVisual = prevSlide.querySelector('[data-lf-hero-visual]');
+      var nextVisual = nextSlide.querySelector('[data-lf-hero-visual]');
+      dots[i].classList.remove('is-active');
+      dots[nextI].classList.add('is-active');
+      i = nextI;
+      if (ctx.reduced || !window.gsap) {
+        prevSlide.classList.remove('is-active');
+        nextSlide.classList.add('is-active');
+        return;
+      }
+      var openPoly = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+      var closedTop = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)';
+      var closedBottom = 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)';
+      nextSlide.classList.add('is-active');
+      var tl = gsap.timeline({ defaults: { duration: 1, ease: 'lf-ease-3' }, onComplete: function () { prevSlide.classList.remove('is-active'); } });
+      if (forwards) {
+        gsap.set(nextSlide, { clipPath: closedTop });
+        tl.to(nextSlide, { clipPath: openPoly })
+          .to(prevSlide, { clipPath: closedBottom }, '<')
+          .fromTo(prevVisual, { yPercent: 0 }, { yPercent: 10 }, '<')
+          .fromTo(nextVisual, { yPercent: -10 }, { yPercent: 0 }, '<');
+      } else {
+        gsap.set(nextSlide, { clipPath: closedBottom });
+        tl.to(nextSlide, { clipPath: openPoly })
+          .to(prevSlide, { clipPath: closedTop }, '<')
+          .fromTo(prevVisual, { yPercent: 0 }, { yPercent: -10 }, '<')
+          .fromTo(nextVisual, { yPercent: 10 }, { yPercent: 0 }, '<');
+      }
+    }
+    function arm() {
+      if (secs > 0 && !ctx.reduced && n > 1) { clearInterval(timer); timer = setInterval(function () { go(i + 1, true); }, secs * 1000); }
+    }
+    var nextBtn = hero.querySelector('[data-lf-hero-next]');
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(i + 1, true); arm(); });
+    dots.forEach(function (dot) {
+      dot.querySelector('button').addEventListener('click', function () {
+        var target = parseInt(dot.getAttribute('data-index'), 10);
+        go(target, target > i);
+        arm();
+      });
+    });
+    // Mobile swipe via native Pointer Events (no Observer plugin per spec constraint).
+    var list = hero.querySelector('[data-lf-hero-list]');
+    var downX = null;
+    list.addEventListener('pointerdown', function (e) { downX = e.clientX; });
+    list.addEventListener('pointerup', function (e) {
+      if (downX == null) return;
+      var dx = e.clientX - downX;
+      downX = null;
+      if (Math.abs(dx) < 40) return;
+      go(i + (dx < 0 ? 1 : -1), dx < 0);
+      arm();
+    });
+    arm();
+    LF.teardown.push(function () { clearInterval(timer); });
+  };
+```
+
+- [ ] **Step 3: Theme check** — `shopify theme check --path theme 2>&1 | tail -5`. This section isn't referenced by any template yet (Task 7 wires `index.json`), so expect an `UnusedAssign`/no offense change beyond the existing baseline (no `OrphanedSnippet`-equivalent rule fires for sections).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add theme/sections/lf-hero-slider-v2.liquid theme/assets/lf-sections.js
+git commit -m "feat(b3.2): home hero slider v2 — numbered nav, clip-wipe transitions, swipe"
+git status --short
+```
+
+---
+
+### Task 2: Home — Statement band
+
+**Files:**
+- Create: `theme/sections/lf-statement.liquid`
+
+- [ ] **Step 1: Create `theme/sections/lf-statement.liquid`:**
+
+```liquid
+<section class="lf-statement">
+  <div class="lf-statement__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
+  <h2 class="lf-statement__text lf-display lf-glow-text" data-lf-ignite data-lf-reveal>{{ section.settings.statement }}</h2>
+</section>
+
+{% stylesheet %}
+.lf-statement {
+  min-height: 70svh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: 2rem; padding: 4rem 1.5rem; background: #08080b;
+}
+.lf-statement__crest {
+  width: 72px; aspect-ratio: 300/320; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat;
+  filter: drop-shadow(0 0 8px var(--lf-neon-halo)) drop-shadow(0 0 24px var(--lf-neon-halo));
+  opacity: .8;
+}
+.lf-statement__text { font-size: clamp(1.4rem, 4.2vw, 2.6rem); line-height: 1.35; max-width: 22ch; margin: 0; }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Statement",
+  "settings": [
+    { "type": "textarea", "id": "statement", "label": "Statement", "default": "Born from a shared love of the city, rooted in a vision of authenticity and craft." }
+  ]
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add theme/sections/lf-statement.liquid
+git commit -m "feat(b3.2): home statement band"
+git status --short
+```
+
+---
+
+### Task 3: Home — CTA row
+
+**Files:**
+- Create: `theme/sections/lf-cta-row.liquid`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.ctaFollow`)
+
+- [ ] **Step 1: Create `theme/sections/lf-cta-row.liquid`:**
+
+```liquid
+<section class="lf-ctarow">
+  {% for block in section.blocks %}
+    <a class="lf-ctarow__card" href="{{ block.settings.link }}" {{ block.shopify_attributes }} data-cursor="{{ block.settings.cta_label | default: 'View' }}">
+      {% if block.settings.image != blank %}
+        {{ block.settings.image | image_url: width: 900 | image_tag: loading: 'lazy', class: 'lf-ctarow__img', alt: block.settings.title }}
+      {% endif %}
+      <div class="lf-ctarow__overlay"></div>
+      <div class="lf-ctarow__copy">
+        <p class="lf-ctarow__eyebrow">{% render 'lf-eyebrow', text: block.settings.eyebrow %}</p>
+        <h3 class="lf-ctarow__title lf-display">{{ block.settings.title }}</h3>
+      </div>
+    </a>
+  {% endfor %}
+</section>
+
+{% stylesheet %}
+.lf-ctarow { display: grid; grid-template-columns: repeat(3, 1fr); }
+.lf-ctarow__card { position: relative; display: block; aspect-ratio: 3/4; text-decoration: none; overflow: hidden; }
+.lf-ctarow__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--lf-ease); }
+.lf-ctarow__card:hover .lf-ctarow__img { transform: scale(1.04); }
+.lf-ctarow__overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,13,17,.1) 0%, rgba(13,13,17,.75) 100%); }
+.lf-ctarow__copy { position: absolute; left: 1.4rem; bottom: 1.6rem; right: 1.4rem; }
+.lf-ctarow__eyebrow { margin: 0 0 .4rem; }
+.lf-ctarow__title { color: var(--lf-body-text); font-size: 1.1rem; margin: 0; }
+@media (max-width: 749px) { .lf-ctarow { grid-template-columns: 1fr; } }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF CTA Row",
+  "blocks": [
+    {
+      "type": "card",
+      "name": "Card",
+      "settings": [
+        { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "our products" },
+        { "type": "text", "id": "title", "label": "Title", "default": "Shop now" },
+        { "type": "text", "id": "cta_label", "label": "Cursor label", "default": "View" },
+        { "type": "url", "id": "link", "label": "Link" },
+        { "type": "image_picker", "id": "image", "label": "Image" }
+      ]
+    }
+  ],
+  "max_blocks": 3,
+  "default": {
+    "blocks": [
+      { "type": "card", "settings": { "eyebrow": "our products", "title": "Shop now" } },
+      { "type": "card", "settings": { "eyebrow": "our story", "title": "Read more" } },
+      { "type": "card", "settings": { "eyebrow": "our community", "title": "Community" } }
+    ]
+  }
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Append `LF.init.ctaFollow` to `theme/assets/lf-sections.js`:**
+
+```js
+  // ——— CTA row: cursor-following label pill per card (desktop only) ———
+  LF.init.ctaFollow = function (root, ctx) {
+    var row = (root || document).querySelector('.lf-ctarow');
+    if (!row || row.hasAttribute('data-lf-bound')) return;
+    row.setAttribute('data-lf-bound', '1');
+    // Cursor labels themselves are handled globally by LF.init.cursor (lf-chrome.js)
+    // via [data-cursor] — nothing further needed here beyond marking bound so
+    // this init is idempotent; kept as its own function for clarity/future growth.
+  };
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add theme/sections/lf-cta-row.liquid theme/assets/lf-sections.js
+git commit -m "feat(b3.2): home CTA row with cursor-labeled cards"
+git status --short
+```
+
+---
+
+### Task 4: Home — Made-in-NOLA block + draggable marquee
+
+**Files:**
+- Create: `theme/sections/lf-marquee.liquid`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.marquee`)
+
+- [ ] **Step 1: Create `theme/sections/lf-marquee.liquid`:**
+
+```liquid
+<section class="lf-marquee-section">
+  <div class="lf-marquee-section__statement" data-lf-reveal>
+    <p class="lf-marquee-section__stamp">{% render 'lf-stamp' %} — Designed and made locally</p>
+    <p class="lf-marquee-section__body">{{ section.settings.statement }}</p>
+    <p class="lf-marquee-section__place">New Orleans, Louisiana</p>
+  </div>
+  <div class="lf-marquee" data-lf-marquee>
+    <div class="lf-marquee__track" data-lf-marquee-track>
+      {% assign products = collections.all.products %}
+      {% for product in products limit: 12 %}
+        <a class="lf-marquee__card" href="{{ product.url }}">
+          {{ product.featured_image | image_url: width: 500 | image_tag: loading: 'lazy', alt: product.title, class: 'lf-marquee__img' }}
+          <span class="lf-marquee__name">{{ product.title }}</span>
+          <span class="lf-marquee__price">{{ product.price_min | money }}</span>
+        </a>
+      {% endfor %}
+      {% for product in products limit: 12 %}
+        <a class="lf-marquee__card" href="{{ product.url }}" aria-hidden="true" tabindex="-1">
+          {{ product.featured_image | image_url: width: 500 | image_tag: loading: 'lazy', alt: '', class: 'lf-marquee__img' }}
+          <span class="lf-marquee__name">{{ product.title }}</span>
+          <span class="lf-marquee__price">{{ product.price_min | money }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-marquee-section { padding: 4rem 0; overflow: hidden; }
+.lf-marquee-section__statement { max-width: 640px; margin: 0 auto 3rem; padding: 0 1.5rem; text-align: center; }
+.lf-marquee-section__stamp { color: var(--lf-neon-core); font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; margin: 0 0 1rem; }
+.lf-marquee-section__body { font-size: 1.05rem; line-height: 1.7; color: var(--lf-body-text); margin: 0 0 .6rem; }
+.lf-marquee-section__place { color: var(--lf-muted); font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; margin: 0; }
+.lf-marquee { cursor: grab; touch-action: pan-y; }
+.lf-marquee.is-dragging { cursor: grabbing; }
+.lf-marquee__track { display: flex; gap: 1.2rem; padding: 0 1.5rem; width: max-content; }
+.lf-marquee__card { flex: 0 0 200px; text-decoration: none; color: var(--lf-body-text); user-select: none; }
+.lf-marquee__img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; margin-bottom: .6rem; pointer-events: none; -webkit-user-drag: none; }
+.lf-marquee__name { display: block; font-size: .78rem; letter-spacing: .05em; }
+.lf-marquee__price { display: block; color: var(--lf-muted); font-size: .74rem; margin-top: .2rem; }
+@media (prefers-reduced-motion: reduce) {
+  .lf-marquee { cursor: default; }
+  .lf-marquee__track { flex-wrap: wrap; width: auto; transform: none !important; overflow: visible; justify-content: center; }
+  .lf-marquee__card[aria-hidden="true"] { display: none; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Marquee",
+  "settings": [
+    { "type": "textarea", "id": "statement", "label": "Statement", "default": "Our city is rich in culture, diversity, and heritage — producing locally is harder, but it's the only way this ever made sense to us." }
+  ]
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Append `LF.init.marquee` to `theme/assets/lf-sections.js`:**
+
+```js
+  // ——— Draggable infinite product marquee (native Pointer Events, no Observer plugin) ———
+  LF.init.marquee = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-marquee]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !window.gsap) return;
+    var track = wrap.querySelector('[data-lf-marquee-track]');
+    if (!track) return;
+    var half = track.scrollWidth / 2; // second half is the duplicated loop content
+    var wrapFn = gsap.utils.wrap(-half, 0);
+    var total = 0;
+    var xTo = gsap.quickTo(track, 'x', {
+      duration: .5, ease: 'power3',
+      modifiers: { x: gsap.utils.unitize(wrapFn) }
+    });
+    var dragging = false, startX = 0, startTotal = 0, activePointer = null;
+
+    function onDown(e) {
+      dragging = true; startX = e.clientX; startTotal = total; activePointer = e.pointerId;
+      wrap.classList.add('is-dragging');
+      try { track.setPointerCapture(activePointer); } catch (err) {}
+    }
+    function onMove(e) {
+      if (!dragging || e.pointerId !== activePointer) return;
+      total = startTotal + (e.clientX - startX);
+      xTo(total);
+    }
+    function onUp(e) {
+      if (!dragging || e.pointerId !== activePointer) return;
+      dragging = false;
+      wrap.classList.remove('is-dragging');
+      try { track.releasePointerCapture(activePointer); } catch (err) {}
+      activePointer = null;
+    }
+    track.addEventListener('pointerdown', onDown);
+    track.addEventListener('pointermove', onMove);
+    track.addEventListener('pointerup', onUp);
+    track.addEventListener('pointercancel', onUp);
+    track.addEventListener('click', function (e) {
+      // A drag that ended as a click (tiny movement) shouldn't navigate;
+      // a genuine drag already exceeded this via pointer capture, so only
+      // suppress when we're mid-drag at click time (rare double-fire).
+      if (dragging) e.preventDefault();
+    });
+
+    function tick(time, deltaTime) {
+      if (!dragging) { total -= deltaTime / 20; xTo(total); }
+    }
+    gsap.ticker.add(tick);
+    LF.teardown.push(function () { gsap.ticker.remove(tick); });
+  };
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add theme/sections/lf-marquee.liquid theme/assets/lf-sections.js
+git commit -m "feat(b3.2): made-in-NOLA statement + draggable product marquee"
+git status --short
+```
+
+---
+
+### Task 5: Home — Lookbook slider
+
+**Files:**
+- Create: `theme/sections/lf-lookbook.liquid`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.lookbook`)
+
+- [ ] **Step 1: Create `theme/sections/lf-lookbook.liquid`:**
+
+```liquid
+<section class="lf-lookbook" data-lf-lookbook>
+  <div class="lf-lookbook__list" data-lf-lookbook-list>
+    {% for block in section.blocks %}
+      <div class="lf-lookbook__slide {% if forloop.first %}is-active{% endif %}" {{ block.shopify_attributes }}>
+        {% if block.settings.image != blank %}
+          {{ block.settings.image | image_url: width: 2400 | image_tag: loading: 'lazy', class: 'lf-lookbook__img', alt: block.settings.caption }}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="lf-lookbook__ui">
+    <span class="lf-lookbook__stamp">{% render 'lf-stamp' %}</span>
+    <span class="lf-lookbook__count"><span data-lf-lookbook-current>01</span> / <span>{{ section.blocks.size | prepend: '0' | slice: -2, 2 }}</span></span>
+    <button type="button" data-lf-lookbook-prev aria-label="Previous">&larr;</button>
+    <button type="button" data-lf-lookbook-next aria-label="Next">&rarr;</button>
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-lookbook { position: relative; height: 90svh; overflow: hidden; }
+.lf-lookbook__list, .lf-lookbook__slide { position: absolute; inset: 0; }
+.lf-lookbook__slide { opacity: 0; transition: opacity .6s var(--lf-ease); }
+.lf-lookbook__slide.is-active { opacity: 1; }
+.lf-lookbook__img { width: 100%; height: 100%; object-fit: cover; }
+.lf-lookbook__ui {
+  position: absolute; left: 1.5rem; right: 1.5rem; bottom: 1.5rem; z-index: 2;
+  display: flex; align-items: center; gap: 1.4rem; color: var(--lf-body-text);
+  font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+}
+.lf-lookbook__count { flex: 1; }
+.lf-lookbook__ui button { background: none; border: 1px solid rgba(255,255,255,.35); color: inherit; padding: .4rem .7rem; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .lf-lookbook__slide { transition: none; } }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Lookbook",
+  "blocks": [
+    { "type": "slide", "name": "Slide", "settings": [
+      { "type": "image_picker", "id": "image", "label": "Image" },
+      { "type": "text", "id": "caption", "label": "Caption (alt text)" }
+    ] }
+  ],
+  "max_blocks": 6
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Append `LF.init.lookbook` to `theme/assets/lf-sections.js`:**
+
+```js
+  // ——— Lookbook slider: simple crossfade + counter ———
+  LF.init.lookbook = function (root, ctx) {
+    var section = (root || document).querySelector('[data-lf-lookbook]');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
+    var slides = Array.prototype.slice.call(section.querySelectorAll('.lf-lookbook__slide'));
+    var n = slides.length;
+    if (n < 2) return;
+    var i = 0;
+    var counter = section.querySelector('[data-lf-lookbook-current]');
+    function go(next) {
+      slides[i].classList.remove('is-active');
+      i = (next + n) % n;
+      slides[i].classList.add('is-active');
+      if (counter) counter.textContent = String(i + 1).padStart(2, '0');
+    }
+    var prevBtn = section.querySelector('[data-lf-lookbook-prev]');
+    var nextBtn = section.querySelector('[data-lf-lookbook-next]');
+    if (prevBtn) prevBtn.addEventListener('click', function () { go(i - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(i + 1); });
+  };
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add theme/sections/lf-lookbook.liquid theme/assets/lf-sections.js
+git commit -m "feat(b3.2): home lookbook slider"
+git status --short
+```
+
+---
+
+### Task 6: Home — Community section
+
+**Files:**
+- Create: `theme/sections/lf-community.liquid`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.community`)
+
+- [ ] **Step 1: Create `theme/sections/lf-community.liquid`:**
+
+```liquid
+<section class="lf-community">
+  <div class="lf-community__intro" data-lf-reveal>
+    <h2 class="lf-community__title lf-display lf-glow-text" data-lf-ignite>{{ section.settings.title }}</h2>
+    <p class="lf-community__body">{{ section.settings.body }}</p>
+  </div>
+  <div class="lf-community__list">
+    {% for block in section.blocks %}
+      <div class="lf-community__row" data-lf-reveal>
+        <div class="lf-community__imgwrap">
+          {% if block.settings.image != blank %}
+            {{ block.settings.image | image_url: width: 700 | image_tag: loading: 'lazy', class: 'lf-community__img', alt: block.settings.name }}
+          {% endif %}
+        </div>
+        <div class="lf-community__copy">
+          <h3 class="lf-community__name lf-display">{{ block.settings.name }}</h3>
+          <p class="lf-community__blurb">{{ block.settings.blurb }}</p>
+          {% if block.settings.link != blank %}<a class="lf-community__link" href="{{ block.settings.link }}" target="_blank" rel="noopener" data-cursor="Visit">Visit website</a>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-community { padding: 5rem 1.5rem; max-width: 1000px; margin: 0 auto; }
+.lf-community__intro { text-align: center; margin-bottom: 3.5rem; }
+.lf-community__title { font-size: clamp(1.5rem, 4vw, 2.2rem); margin: 0 0 1rem; }
+.lf-community__body { color: var(--lf-body-text); font-size: .95rem; line-height: 1.7; max-width: 60ch; margin: 0 auto; }
+.lf-community__row { display: grid; grid-template-columns: 160px 1fr; gap: 1.6rem; align-items: center; padding: 1.6rem 0; border-top: 1px solid #1e1e26; }
+.lf-community__imgwrap { aspect-ratio: 4/3; overflow: hidden; }
+.lf-community__img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--lf-ease); }
+.lf-community__row:hover .lf-community__img { transform: scale(1.05); }
+.lf-community__name { font-size: 1rem; margin: 0 0 .5rem; }
+.lf-community__blurb { color: var(--lf-muted); font-size: .84rem; line-height: 1.6; margin: 0 0 .6rem; }
+.lf-community__link { color: var(--lf-neon-core); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
+@media (max-width: 649px) { .lf-community__row { grid-template-columns: 1fr; } }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Community",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Title", "default": "Giving back" },
+    { "type": "textarea", "id": "body", "label": "Body", "default": "We never set out to be just a clothing brand. Laissez-Faire is as much about culture as it is about craft — our greater community." }
+  ],
+  "blocks": [
+    { "type": "partner", "name": "Partner", "settings": [
+      { "type": "image_picker", "id": "image", "label": "Image" },
+      { "type": "text", "id": "name", "label": "Name" },
+      { "type": "textarea", "id": "blurb", "label": "Blurb" },
+      { "type": "url", "id": "link", "label": "Link" }
+    ] }
+  ],
+  "max_blocks": 6,
+  "default": {
+    "blocks": [
+      { "type": "partner", "settings": { "name": "NOLA Second Line Society", "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs." } },
+      { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond." } },
+      { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage." } },
+      { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark." } }
+    ]
+  }
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Append `LF.init.community` to `theme/assets/lf-sections.js`:**
+
+```js
+  // ——— Community section: reveal-on-scroll only (data-lf-reveal handles it), no extra JS needed ———
+  LF.init.community = function (root, ctx) {
+    var section = (root || document).querySelector('.lf-community');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
+  };
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add theme/sections/lf-community.liquid theme/assets/lf-sections.js
+git commit -m "feat(b3.2): home community section with filler NOLA partners"
+git status --short
+```
+
+---
+
+### Task 7: Home — wire `index.json`, overlap-scroll stitching, nav markers
+
+**Files:**
+- Modify: `theme/templates/index.json` (full replacement)
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.scrollOverlap`)
+- Modify: `theme/assets/lf-tokens.css` (append overlap-scroll utility)
+
+- [ ] **Step 1: Replace `theme/templates/index.json` entirely:**
+
+```json
+{
+  "sections": {
+    "hero": {
+      "type": "lf-hero-slider-v2",
+      "blocks": {
+        "slide1": {
+          "type": "slide",
+          "settings": {
+            "kicker": "Drop 001",
+            "heading": "Won't Bow Down",
+            "cta_label": "Shop the Drop",
+            "link": "shopify://collections/all",
+            "image": "shopify://shop_images/lf-hero-chief.jpg"
+          }
+        },
+        "slide2": {
+          "type": "slide",
+          "settings": {
+            "kicker": "Nouvelle-Orléans",
+            "heading": "Kill 'Em Dead, Needle & Thread",
+            "cta_label": "Our Story",
+            "link": "shopify://pages/story",
+            "image": "shopify://shop_images/lf-hero-secondline.jpg"
+          }
+        }
+      },
+      "block_order": ["slide1", "slide2"],
+      "settings": { "autoplay_seconds": 6 }
+    },
+    "statement": { "type": "lf-statement", "settings": {} },
+    "ctarow": { "type": "lf-cta-row", "settings": {} },
+    "marquee": { "type": "lf-marquee", "settings": {} },
+    "lookbook": { "type": "lf-lookbook", "settings": {} },
+    "community": { "type": "lf-community", "settings": {} },
+    "email": { "type": "lf-email-block", "settings": {} }
+  },
+  "order": ["hero", "statement", "ctarow", "marquee", "lookbook", "community", "email"]
+}
+```
+
+Note: `lf-hero-slider`, `lf-featured-story`, `lf-drop-grid`, `lf-culture-strip` drop out of the render order here but their `.liquid` files stay in the repo (retirement policy from B3.1's precedent). `lf-cta-row`'s block-level `default` settings (Task 3) supply its 3 cards since `index.json` doesn't list blocks explicitly for it.
+
+- [ ] **Step 2: Append `LF.init.scrollOverlap` to `theme/assets/lf-sections.js`:**
+
+```js
+  // ——— Overlap-scroll stitching: pinned section slides under the next as you scroll past ———
+  LF.init.scrollOverlap = function (root, ctx) {
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    (root || document).querySelectorAll('[data-lf-overlap]:not([data-lf-overlap-bound])').forEach(function (el) {
+      el.setAttribute('data-lf-overlap-bound', '1');
+      gsap.timeline({
+        scrollTrigger: { trigger: el, start: 'top top', end: '+=500', scrub: true }
+      }).to(el, { yPercent: 50, ease: 'power1.in' });
+    });
+  };
+```
+
+- [ ] **Step 3: Add `data-lf-overlap` to the statement and CTA-row sections** so they participate in the stitching — modify `theme/sections/lf-statement.liquid`'s root element:
+
+```liquid
+<section class="lf-statement" data-lf-overlap>
+```
+
+and `theme/sections/lf-cta-row.liquid`'s root element:
+
+```liquid
+<section class="lf-ctarow" data-lf-overlap>
+```
+
+- [ ] **Step 4: Append overlap-scroll utility to `theme/assets/lf-tokens.css`:**
+
+```css
+/* Overlap-scroll stitching (B3.2): pinned section slides down over 500px of
+   scroll so the next section appears to scroll up over it. Positioning
+   context only — the yPercent tween itself is applied by ScrollTrigger. */
+[data-lf-overlap] { position: relative; z-index: 1; will-change: transform; }
+```
+
+- [ ] **Step 5: Push to dev, verify** — home page loads with all 6 new sections in order, hero clip-wipes between slides, marquee drags, lookbook arrows work, community rows reveal on scroll.
+
+```bash
+shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add theme/templates/index.json theme/assets/lf-sections.js theme/assets/lf-tokens.css theme/sections/lf-statement.liquid theme/sections/lf-cta-row.liquid
+git commit -m "feat(b3.2): wire home page to new sections, add overlap-scroll stitching"
+git status --short
+```
+
+---
+
+### Task 8: Story — hero rebuild with reading-mode hover
+
+**Files:**
+- Create: `theme/sections/lf-story-hero.liquid`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.storyHero`)
+- Modify: `theme/assets/lf-tokens.css` (append reading-hover rule)
+
+- [ ] **Step 1: Create `theme/sections/lf-story-hero.liquid`:**
+
+```liquid
+<header class="lf-storyhero">
+  <div class="lf-storyhero__crest" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');" data-lf-fadeout></div>
+  <div class="lf-storyhero__head" data-lf-reading-wrap>
+    <div class="lf-storyhero__intro" data-lf-reading-trigger>
+      <p class="lf-storyhero__kicker" data-lf-fadeout>Est. New Orleans</p>
+      <p class="lf-storyhero__name lf-script">{{ section.settings.intro }}</p>
+    </div>
+    <h1 class="lf-storyhero__title lf-display lf-glow-text" data-lf-ignite data-lf-reading-target>{{ page.title }}</h1>
+  </div>
+</header>
+
+{% stylesheet %}
+.lf-storyhero { min-height: 80svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5rem; text-align: center; padding: 4rem 1.5rem; }
+.lf-storyhero__crest {
+  width: 56px; aspect-ratio: 300/320; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat;
+  filter: drop-shadow(0 0 8px var(--lf-neon-halo)); transition: opacity .3s ease;
+}
+.lf-storyhero__head { position: relative; max-width: 700px; }
+.lf-storyhero__intro { transition: opacity .3s ease; }
+.lf-storyhero__kicker { font-size: .68rem; letter-spacing: .3em; text-transform: uppercase; color: var(--lf-muted); margin: 0 0 .6rem; transition: opacity .3s ease; }
+.lf-storyhero__name { font-size: 1.3rem; color: var(--lf-body-text); margin: 0; }
+.lf-storyhero__title { font-size: clamp(2rem, 6vw, 3.4rem); margin: .8rem 0 0; transition: opacity .3s ease; }
+/* Reading-mode hover: hovering the intro fades the headline + page-wide [data-lf-fadeout]
+   elements so the page "makes room" for reading — matches OR's about-head_wrap pattern. */
+@media (hover: hover) and (pointer: fine) {
+  .lf-storyhero__head:has(.lf-storyhero__intro:hover) .lf-storyhero__title { opacity: .12; }
+  body:has(.lf-storyhero__intro:hover) [data-lf-fadeout] { opacity: .12; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Story Hero",
+  "settings": [
+    { "type": "text", "id": "intro", "label": "Intro line", "default": "A modern expression of New Orleans" }
+  ]
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Append `LF.init.storyHero` to `theme/assets/lf-sections.js`** (a no-op bind — the hover effect is pure CSS `:has()`, degrading gracefully to no effect on browsers without `:has()` support since the rest of the page stays fully readable either way):
+
+```js
+  // ——— Story hero: reading-mode hover is pure CSS (:has()); nothing to bind ———
+  LF.init.storyHero = function (root, ctx) {
+    var hero = (root || document).querySelector('.lf-storyhero');
+    if (!hero || hero.hasAttribute('data-lf-bound')) return;
+    hero.setAttribute('data-lf-bound', '1');
+  };
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add theme/sections/lf-story-hero.liquid theme/assets/lf-sections.js
+git commit -m "feat(b3.2): story hero with CSS reading-mode hover"
+git status --short
+```
+
+---
+
+### Task 9: Story — editorial band (parallax images + flickthrough)
+
+**Files:**
+- Create: `theme/sections/lf-story-editorial.liquid`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.imgScroll`, `LF.init.flickthrough`)
+
+- [ ] **Step 1: Create `theme/sections/lf-story-editorial.liquid`:**
+
+```liquid
+<section class="lf-storyed">
+  <div class="lf-storyed__band" data-lf-reveal>
+    <p class="lf-storyed__eyebrow">{% render 'lf-eyebrow', text: section.settings.eyebrow %}</p>
+  </div>
+  <div class="lf-storyed__offset">
+    <div class="lf-storyed__imgwrap lf-storyed__imgwrap--left" data-lf-img-scroll>
+      {% if section.settings.image_left != blank %}
+        {{ section.settings.image_left | image_url: width: 1400 | image_tag: loading: 'lazy', class: 'lf-storyed__img', alt: '' }}
+      {% endif %}
+    </div>
+    <div class="lf-storyed__imgwrap lf-storyed__imgwrap--right" data-lf-img-scroll>
+      {% if section.settings.image_right != blank %}
+        {{ section.settings.image_right | image_url: width: 1400 | image_tag: loading: 'lazy', class: 'lf-storyed__img', alt: '' }}
+      {% endif %}
+    </div>
+  </div>
+  <p class="lf-storyed__copy" data-lf-reveal>{{ section.settings.copy }}</p>
+  <div class="lf-flickthrough" data-lf-flickthrough>
+    {% for i in (1..3) %}
+      {% assign img_key = 'flick_image_' | append: i %}
+      {% if section.settings[img_key] != blank %}
+        <div class="lf-flickthrough__img {% if forloop.first %}is-shown{% endif %}">
+          {{ section.settings[img_key] | image_url: width: 900 | image_tag: loading: 'lazy', alt: '' }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-storyed { padding: 3rem 1.5rem 5rem; max-width: 1100px; margin: 0 auto; }
+.lf-storyed__band { text-align: center; margin-bottom: 3rem; }
+.lf-storyed__offset { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; }
+.lf-storyed__imgwrap { overflow: clip; }
+.lf-storyed__imgwrap--left { aspect-ratio: 4.35/2.8; align-self: start; }
+.lf-storyed__imgwrap--right { aspect-ratio: 4.35/6; align-self: end; }
+.lf-storyed__img { width: 100%; height: 120%; object-fit: cover; display: block; }
+.lf-storyed__copy { max-width: 60ch; margin: 0 auto 4rem; font-size: 1rem; line-height: 1.75; color: var(--lf-body-text); text-align: center; }
+.lf-flickthrough { position: relative; aspect-ratio: 4/3; max-width: 420px; margin: 0 auto; overflow: hidden; }
+.lf-flickthrough__img { position: absolute; inset: 0; opacity: 0; transition: opacity .1s linear; }
+.lf-flickthrough__img.is-shown { opacity: 1; }
+.lf-flickthrough__img img { width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 649px) { .lf-storyed__offset { grid-template-columns: 1fr; } }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Story Editorial",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "our craft" },
+    { "type": "image_picker", "id": "image_left", "label": "Wide image" },
+    { "type": "image_picker", "id": "image_right", "label": "Tall image" },
+    { "type": "textarea", "id": "copy", "label": "Body copy", "default": "Informed by tradition, within the context of today's culture, we want every piece to carry the weight of where it came from." },
+    { "type": "image_picker", "id": "flick_image_1", "label": "Flickthrough image 1" },
+    { "type": "image_picker", "id": "flick_image_2", "label": "Flickthrough image 2" },
+    { "type": "image_picker", "id": "flick_image_3", "label": "Flickthrough image 3" }
+  ]
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Append `LF.init.imgScroll` and `LF.init.flickthrough` to `theme/assets/lf-sections.js`:**
+
+```js
+  // ——— Editorial image parallax (scrubbed to scroll) ———
+  LF.init.imgScroll = function (root, ctx) {
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    (root || document).querySelectorAll('[data-lf-img-scroll]:not([data-lf-imgscroll-bound])').forEach(function (wrap) {
+      wrap.setAttribute('data-lf-imgscroll-bound', '1');
+      var img = wrap.querySelector('img');
+      if (!img) return;
+      gsap.fromTo(img, { yPercent: 0 }, {
+        yPercent: 20, ease: 'linear',
+        scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true }
+      });
+    });
+  };
+
+  // ——— Flickthrough hover zoetrope (desktop hover, mobile auto-cycle) ———
+  LF.init.flickthrough = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-flickthrough]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    var imgs = Array.prototype.slice.call(wrap.querySelectorAll('.lf-flickthrough__img'));
+    if (imgs.length < 2) return;
+    var index = 0, interval = null;
+    function nextImage() {
+      imgs[index].classList.remove('is-shown');
+      index = (index + 1) % imgs.length;
+      imgs[index].classList.add('is-shown');
+    }
+    if (ctx.reduced) return;
+    if (FINE.matches) {
+      wrap.addEventListener('mouseenter', function () {
+        nextImage();
+        interval = setInterval(nextImage, 300);
+      });
+      wrap.addEventListener('mouseleave', function () { clearInterval(interval); });
+    } else {
+      interval = setInterval(nextImage, 500);
+    }
+    LF.teardown.push(function () { clearInterval(interval); });
+  };
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add theme/sections/lf-story-editorial.liquid theme/assets/lf-sections.js
+git commit -m "feat(b3.2): story editorial band — parallax images + flickthrough zoetrope"
+git status --short
+```
+
+---
+
+### Task 10: Story — sticky stack + floating crests + full-height footer wiring
+
+**Files:**
+- Create: `theme/sections/lf-story-sticky.liquid`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.stickyStack`, `LF.init.floatingCrests`)
+- Modify: `theme/templates/page.story.json` (full replacement)
+- Modify: `theme/layout/theme.liquid` (suppress global footer-group for `story`/`contact` templates)
+
+- [ ] **Step 1: Create `theme/sections/lf-story-sticky.liquid`:**
+
+```liquid
+<section class="lf-storysticky">
+  <p class="lf-storysticky__eyebrow" data-lf-reveal>{% render 'lf-eyebrow', text: 'our story' %}</p>
+  <div class="lf-storysticky__stack">
+    {% for i in (1..5) %}
+      {% assign title_key = 'panel_title_' | append: i %}
+      {% assign body_key = 'panel_body_' | append: i %}
+      {% assign img_key = 'panel_image_' | append: i %}
+      {% if section.settings[title_key] != blank %}
+        <div class="lf-storysticky__panel">
+          <div class="lf-storysticky__img">
+            {% if section.settings[img_key] != blank %}
+              {{ section.settings[img_key] | image_url: width: 1200 | image_tag: loading: 'lazy', alt: '' }}
+            {% endif %}
+          </div>
+          <div class="lf-storysticky__copy">
+            <h2 class="lf-display">{{ section.settings[title_key] }}</h2>
+            <p>{{ section.settings[body_key] }}</p>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="lf-storysticky__crests" data-lf-floating-crests>
+    {% for i in (1..3) %}
+      <div class="lf-storysticky__crest {% if forloop.first %}is-shown{% endif %}" aria-hidden="true" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');"></div>
+    {% endfor %}
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-storysticky { padding: 2rem 1.5rem 3rem; }
+.lf-storysticky__eyebrow { text-align: center; margin-bottom: 2.5rem; }
+.lf-storysticky__stack { display: flex; flex-direction: column; max-width: 900px; margin: 0 auto; }
+.lf-storysticky__panel {
+  position: sticky; top: 0; height: 100svh; display: flex; flex-direction: column;
+  justify-content: center; gap: 1.5rem; background: var(--lf-ground);
+}
+.lf-storysticky__img { aspect-ratio: 6.5/3.75; overflow: hidden; }
+.lf-storysticky__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-storysticky__copy h2 { font-size: clamp(1.2rem, 3vw, 1.7rem); color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo); margin: 0 0 .6rem; }
+.lf-storysticky__copy p { color: var(--lf-body-text); font-size: .92rem; line-height: 1.7; margin: 0; max-width: 60ch; }
+.lf-storysticky__crests { position: relative; height: 40svh; display: grid; place-items: center; }
+.lf-storysticky__crest {
+  grid-area: 1/1; width: 90px; aspect-ratio: 300/320; opacity: 0;
+  background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-crest) center/contain no-repeat; mask: var(--lf-crest) center/contain no-repeat;
+  filter: drop-shadow(0 0 10px var(--lf-neon-halo));
+}
+.lf-storysticky__crest.is-shown { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .lf-storysticky__panel { position: relative; height: auto; padding: 2rem 0; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Story Sticky Stack",
+  "settings": [
+    { "type": "text", "id": "panel_title_1", "label": "Panel 1 title", "default": "The First Stitch" },
+    { "type": "textarea", "id": "panel_body_1", "label": "Panel 1 body", "default": "Every Laissez-Faire piece starts as a sketch of something the city already wears — a second-line umbrella, a wrought-iron gate, a brass band's Sunday best." },
+    { "type": "image_picker", "id": "panel_image_1", "label": "Panel 1 image" },
+    { "type": "text", "id": "panel_title_2", "label": "Panel 2 title", "default": "Cut for the Heat" },
+    { "type": "textarea", "id": "panel_body_2", "label": "Panel 2 body", "default": "New Orleans doesn't do seasons the way other cities do. Every fabric choice starts with humidity, not runway trends." },
+    { "type": "image_picker", "id": "panel_image_2", "label": "Panel 2 image" },
+    { "type": "text", "id": "panel_title_3", "label": "Panel 3 title", "default": "Built to Outlast a Season" },
+    { "type": "textarea", "id": "panel_body_3", "label": "Panel 3 body", "default": "Slow production, small runs, real seams. We'd rather make less and have it last." },
+    { "type": "image_picker", "id": "panel_image_3", "label": "Panel 3 image" },
+    { "type": "text", "id": "panel_title_4", "label": "Panel 4 title", "default": "A Night Economy" },
+    { "type": "textarea", "id": "panel_body_4", "label": "Panel 4 body", "default": "This city runs after dark. Our neon is a nod to every sign that's ever lit somebody's walk home." },
+    { "type": "image_picker", "id": "panel_image_4", "label": "Panel 4 image" },
+    { "type": "text", "id": "panel_title_5", "label": "Panel 5 title", "default": "Laissez Les Bons Temps Rouler" },
+    { "type": "textarea", "id": "panel_body_5", "label": "Panel 5 body", "default": "Let the good times roll — not as a slogan, but as instructions." },
+    { "type": "image_picker", "id": "panel_image_5", "label": "Panel 5 image" }
+  ]
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Append `LF.init.stickyStack` and `LF.init.floatingCrests` to `theme/assets/lf-sections.js`:**
+
+```js
+  // ——— Sticky story stack: pure CSS position:sticky, JS only for reduced-motion no-op guard ———
+  LF.init.stickyStack = function (root, ctx) {
+    var stack = (root || document).querySelector('.lf-storysticky__stack');
+    if (!stack || stack.hasAttribute('data-lf-bound')) return;
+    stack.setAttribute('data-lf-bound', '1');
+  };
+
+  // ——— Floating crests: cycle visibility scrubbed to scroll position ———
+  LF.init.floatingCrests = function (root, ctx) {
+    var wrap = (root || document).querySelector('[data-lf-floating-crests]');
+    if (!wrap || wrap.hasAttribute('data-lf-bound')) return;
+    wrap.setAttribute('data-lf-bound', '1');
+    if (ctx.reduced || !window.gsap || !window.ScrollTrigger) return;
+    var crests = Array.prototype.slice.call(wrap.querySelectorAll('.lf-storysticky__crest'));
+    if (crests.length < 2) return;
+    var tl = gsap.timeline({
+      scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true }
+    });
+    crests.forEach(function (c, idx) {
+      tl.set(crests, {
+        autoAlpha: function (i) { return i === idx ? 1 : 0; },
+        overwrite: 'auto'
+      }, idx / (crests.length - 1));
+    });
+  };
+```
+
+- [ ] **Step 3: Replace `theme/templates/page.story.json` entirely:**
+
+```json
+{
+  "sections": {
+    "hero": { "type": "lf-story-hero", "settings": {} },
+    "editorial": { "type": "lf-story-editorial", "settings": {} },
+    "sticky": { "type": "lf-story-sticky", "settings": {} },
+    "footer": { "type": "lf-footer", "settings": { "full_height": true } }
+  },
+  "order": ["hero", "editorial", "sticky", "footer"]
+}
+```
+
+- [ ] **Step 4: Suppress the global footer-group for `story`/`contact` templates** — modify `theme/layout/theme.liquid`, changing:
+
+```liquid
+    {% sections 'footer-group' %}
+```
+
+to:
+
+```liquid
+    {%- comment -%} Story renders its own full-height footer as a template section (above);
+       Contact's split layout has an inline mini-footer and no standard footer at all. {%- endcomment -%}
+    {% unless template.suffix == 'story' or template.suffix == 'contact' %}
+      {% sections 'footer-group' %}
+    {% endunless %}
+```
+
+- [ ] **Step 5: Push to dev, verify** — `/pages/story` shows hero (with working reading-hover on desktop), editorial band with parallax images and flickthrough, 5 sticky panels that pin and stack while scrolling, floating crests cycling, then the full-height footer — and only ONE footer renders (not the default plus the full-height one).
+
+```bash
+shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add theme/sections/lf-story-sticky.liquid theme/assets/lf-sections.js theme/templates/page.story.json theme/layout/theme.liquid
+git commit -m "feat(b3.2): story sticky stack, floating crests, full-height footer wiring"
+git status --short
+```
+
+---
+
+### Task 11: Contact — split-screen sticky layout
+
+**Files:**
+- Create: `theme/sections/lf-contact-split.liquid`
+- Create: `theme/templates/page.contact.json`
+- Modify: `theme/assets/lf-sections.js` (append `LF.init.contactSplit`)
+
+- [ ] **Step 1: Create `theme/sections/lf-contact-split.liquid`:**
+
+```liquid
+<section class="lf-contact">
+  <div class="lf-contact__imgs" data-lf-reveal>
+    {% for i in (1..4) %}
+      {% assign img_key = 'image_' | append: i %}
+      {% if section.settings[img_key] != blank %}
+        <div class="lf-contact__imgwrap">
+          {{ section.settings[img_key] | image_url: width: 900 | image_tag: loading: 'lazy', alt: '' }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="lf-contact__info">
+    <p class="lf-contact__label">{% render 'lf-eyebrow', text: 'contact us' %}</p>
+    {% if section.settings.email != blank %}<a class="lf-contact__link lf-display" href="mailto:{{ section.settings.email }}">{{ section.settings.email }}</a>{% endif %}
+    <p class="lf-contact__sub">{{ section.settings.body }}</p>
+    {% if section.settings.instagram_url != blank %}<a class="lf-contact__ig" href="{{ section.settings.instagram_url }}" target="_blank" rel="noopener" data-cursor="Follow">Instagram</a>{% endif %}
+    <div class="lf-contact__mini-footer">
+      <div class="lf-contact__wordmark" role="img" aria-label="Laissez-Faire Leisure Club"
+           style="--lf-wordmark: url('{{ 'lf-wordmark.png' | asset_url }}');"></div>
+      <p class="lf-contact__legal">{% render 'lf-stamp' %} — New Orleans, Louisiana</p>
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+.lf-contact { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+.lf-contact__imgs { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; overflow-y: auto; }
+.lf-contact__imgwrap { aspect-ratio: 4/5; overflow: hidden; }
+.lf-contact__imgwrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lf-contact__info {
+  position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column;
+  justify-content: center; gap: 1rem; padding: 2rem 2.5rem;
+}
+.lf-contact__label { margin: 0; }
+.lf-contact__link { font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--lf-neon-core); text-shadow: 0 0 10px var(--lf-neon-halo); text-decoration: none; }
+.lf-contact__sub { color: var(--lf-body-text); font-size: .9rem; line-height: 1.6; max-width: 40ch; margin: 0; }
+.lf-contact__ig { color: var(--lf-muted); font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; }
+.lf-contact__ig:hover { color: var(--lf-neon-core); }
+.lf-contact__mini-footer { margin-top: 2.5rem; }
+.lf-contact__wordmark {
+  width: 220px; aspect-ratio: 2129/749; background-color: var(--lf-neon-core);
+  -webkit-mask: var(--lf-wordmark) center/contain no-repeat; mask: var(--lf-wordmark) center/contain no-repeat;
+  filter: drop-shadow(0 0 6px var(--lf-neon-halo)); margin-bottom: .6rem;
+}
+.lf-contact__legal { color: var(--lf-muted); font-size: .64rem; letter-spacing: .1em; margin: 0; }
+@media (max-width: 749px) {
+  .lf-contact { grid-template-columns: 1fr; }
+  .lf-contact__info { position: relative; height: auto; padding: 2.5rem 1.25rem; }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "LF Contact Split",
+  "settings": [
+    { "type": "text", "id": "email", "label": "Email", "default": "hello@laissezfaireleisureclub.com" },
+    { "type": "textarea", "id": "body", "label": "Body copy", "default": "Questions about a drop, a fit, or the club — we read everything." },
+    { "type": "url", "id": "instagram_url", "label": "Instagram URL" },
+    { "type": "image_picker", "id": "image_1", "label": "Image 1" },
+    { "type": "image_picker", "id": "image_2", "label": "Image 2" },
+    { "type": "image_picker", "id": "image_3", "label": "Image 3" },
+    { "type": "image_picker", "id": "image_4", "label": "Image 4" }
+  ]
+}
+{% endschema %}
+```
+
+- [ ] **Step 2: Create `theme/templates/page.contact.json`:**
+
+```json
+{
+  "sections": {
+    "main": { "type": "lf-contact-split", "settings": {} }
+  },
+  "order": ["main"]
+}
+```
+
+- [ ] **Step 3: Append `LF.init.contactSplit` to `theme/assets/lf-sections.js`:**
+
+```js
+  // ——— Contact split layout: pure CSS sticky, nothing to bind beyond the idempotency guard ———
+  LF.init.contactSplit = function (root, ctx) {
+    var section = (root || document).querySelector('.lf-contact');
+    if (!section || section.hasAttribute('data-lf-bound')) return;
+    section.setAttribute('data-lf-bound', '1');
+  };
+```
+
+- [ ] **Step 4: Push to dev, verify** — a page assigned the "page.contact" template renders the split layout with no standard footer beneath it.
+
+```bash
+shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
+```
+
+**Manual step required (cannot be done from theme code):** in Shopify admin → Online Store → Pages → Contact, set **Theme template** to `page.contact`. Theme files only make the template available; assigning it to the actual Contact page is an admin action, same category as the drop-day steps in `RUNBOOK.md`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add theme/sections/lf-contact-split.liquid theme/templates/page.contact.json theme/assets/lf-sections.js
+git commit -m "feat(b3.2): contact page — split-screen sticky layout, new alternate template"
+git status --short
+```
+
+---
+
+### Task 12: Verification + ship `v0.4.1-editorial`
+
+**Files:** none (verification + deploy)
+
+- [ ] **Step 1: theme check** — `shopify theme check --path theme` — expect no new offenses vs. the B3.1 baseline (4 warnings: 3 RemoteAsset + 1 OrphanedSnippet for `lf-eyebrow` — this task renders `lf-eyebrow` in 3 new places, so that warning should clear too; confirm actual count and treat any *new* warning type as a real finding to fix).
+
+- [ ] **Step 2: Push to dev theme, restart dev server** (new templates were added):
+
+```bash
+shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
+```
+
+- [ ] **Step 3: Scripted behind-the-gate pass** (write to scratchpad, run with `NODE_PATH=/Users/dow/node_modules node <file>`; base `http://127.0.0.1:9292`; note the B3.1 lesson baked in below — reload the SAME tab for repeat-visit checks, and use generous waits for anything GSAP-timeline-driven):
+
+```js
+const { chromium } = require('playwright');
+const BASE = 'http://127.0.0.1:9292';
+(async () => {
+  const browser = await chromium.launch();
+
+  // 1. Home: hero v2 nav dots advance + clip-wipe, marquee drags, lookbook arrows work
+  const p = await browser.newPage();
+  await p.goto(BASE + '/', { waitUntil: 'load' });
+  await p.waitForTimeout(1500);
+  const dotsBefore = await p.evaluate(() => document.querySelector('.lf-heroV2__navitem.is-active').getAttribute('data-index'));
+  await p.click('[data-lf-hero-dot]:nth-child(2) button');
+  await p.waitForTimeout(1500);
+  const dotsAfter = await p.evaluate(() => document.querySelector('.lf-heroV2__navitem.is-active').getAttribute('data-index'));
+  console.log('hero dot changed:', dotsBefore !== dotsAfter);
+
+  await p.click('[data-lf-lookbook-next]');
+  await p.waitForTimeout(700);
+  console.log('lookbook advanced:', await p.evaluate(() => document.querySelector('[data-lf-lookbook-current]').textContent === '02'));
+
+  const marqueeXBefore = await p.evaluate(() => getComputedStyle(document.querySelector('[data-lf-marquee-track]')).transform);
+  await p.waitForTimeout(2000);
+  const marqueeXAfter = await p.evaluate(() => getComputedStyle(document.querySelector('[data-lf-marquee-track]')).transform);
+  console.log('marquee auto-scrolled:', marqueeXBefore !== marqueeXAfter);
+
+  // 2. Story: sticky panels present, reading-hover CSS applies (if :has() supported), footer is full-height variant, only ONE footer
+  const s = await browser.newPage();
+  await s.goto(BASE + '/pages/story', { waitUntil: 'load' });
+  await s.waitForTimeout(800);
+  console.log('story sticky panels:', await s.evaluate(() => document.querySelectorAll('.lf-storysticky__panel').length) === 5);
+  console.log('story footer is full-height:', await s.evaluate(() => document.querySelector('.lf-footer--full') !== null));
+  console.log('only one footer on story page:', await s.evaluate(() => document.querySelectorAll('.lf-footer').length) === 1);
+
+  // 3. Contact: split layout renders, no standard/full-height footer at all
+  const c = await browser.newPage();
+  await c.goto(BASE + '/pages/contact', { waitUntil: 'load' }).catch(() => {});
+  console.log('contact split renders:', await c.evaluate(() => !!document.querySelector('.lf-contact')));
+  console.log('contact has no footer:', await c.evaluate(() => document.querySelectorAll('.lf-footer').length) === 0);
+
+  // 4. 375px overflow sweep across all touched templates
+  for (const path of ['/', '/pages/story', '/pages/contact']) {
+    const m = await browser.newPage({ viewport: { width: 375, height: 667 } });
+    await m.goto(BASE + path, { waitUntil: 'load' }).catch(() => {});
+    await m.waitForTimeout(400);
+    console.log('375px', path, 'overflow:', await m.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth));
+    await m.close();
+  }
+
+  // 5. Reduced motion: marquee wraps flat, sticky panels become non-sticky, no page errors
+  const ctx2 = await browser.newContext({ reducedMotion: 'reduce' });
+  const r = await ctx2.newPage();
+  const rErrors = [];
+  r.on('pageerror', e => rErrors.push(e.message));
+  await r.goto(BASE + '/', { waitUntil: 'load' });
+  await r.waitForTimeout(500);
+  console.log('RM: marquee track wraps (not horizontal scroll):', await r.evaluate(() =>
+    getComputedStyle(document.querySelector('.lf-marquee__track')).flexWrap === 'wrap'));
+  await r.goto(BASE + '/pages/story', { waitUntil: 'load' });
+  console.log('RM: sticky panels are static:', await r.evaluate(() =>
+    getComputedStyle(document.querySelector('.lf-storysticky__panel')).position !== 'sticky'));
+  console.log('RM: zero page errors:', rErrors.length === 0);
+
+  // 6. Cart + teaser regression (unchanged by this plan, quick spot check)
+  await p.click('[data-lf-cart-open]');
+  await p.waitForTimeout(800);
+  console.log('cart drawer still opens:', await p.evaluate(() => document.querySelector('[data-lf-drawer]').classList.contains('is-open')));
+  const t = await browser.newPage();
+  await t.goto(BASE + '/password', { waitUntil: 'load' }).catch(() => {});
+  console.log('teaser intact, barba-free:', await t.evaluate(() =>
+    !!document.querySelector('.lf-teaser, [data-lf-teaser]') && !document.querySelector('[data-barba]')));
+
+  await browser.close();
+})();
+```
+
+Expected: every line `true` / overflow `0`. Fix findings, re-run until clean; commit fixes as `fix(b3.2): <finding>` and amend the relevant plan code blocks.
+
+- [ ] **Step 4: User visual pass** on the dev preview (hero feel, marquee drag feel, sticky stack pacing, contact layout, story reading-hover on a real desktop browser). Fix + re-verify anything raised.
+
+- [ ] **Step 5: Ship**
+
+```bash
+shopify theme push --path theme --theme "161862975716" --store 1xiwxi-yy.myshopify.com --allow-live
+curl -sL "https://laissezfaireleisureclub.com/" | grep -o "lf-teaser" | head -1   # teaser still gating
+git checkout master && git merge --no-ff feat/phase-b3-editorial -m "Ship B3.2: editorial pages" && git tag v0.4.1-editorial
+git push origin master --tags
+```
+
+Expected: teaser still prints; tag exists on GitHub. Remember to also do Task 11's manual admin step (assign the `page.contact` template to the live Contact page) after shipping — theme code alone doesn't do this.
+
+---
+
+## Not in this plan
+
+Shop/PDP rebuild + neon flood (B3.3 plan). Real partner orgs, real lookbook photography/video, real contact email/social (all filler, marked for swap per spec §5). `templates/page.json`'s generic fallback stays as-is for any other page that doesn't opt into `page.story`/`page.contact`.
+
+## Branch setup (do this before Task 1)
+
+```bash
+cd /Users/dow/laissez-faire && git checkout master && git pull && git checkout -b feat/phase-b3-editorial
+```
+
+## Self-review notes
+
+- **Spec coverage (B3.2 §4):** Home 7→6-content-sections (hero v2, statement, CTA row, marquee, lookbook, community — email block retained from B1) ✓ (T1-T7), overlap-scroll stitching ✓ (T7); nav recolor is deliberately NOT wired to any B3.2 section — `[data-nav-light]` exists in B3.1 for a section with a light/bright background, and per spec §2 the whole site stays night-black with no light-mode sections, so no B3.2 section ever qualifies; an earlier draft of this plan mistakenly added an unhandled `data-nav-dark` marker (no corresponding code anywhere in `lf-chrome.js`) to several sections — removed before implementation, since a marker with no behavior is worse than no marker at all; Story: reading-hover hero ✓ (T8), editorial band+parallax+flickthrough ✓ (T9), sticky stack+floating crests ✓ (T10), full-height footer ✓ (T10); Contact: split-screen sticky, no standard footer, inline mini-footer ✓ (T11). Engineering constraints: no new vendors (marquee drag uses `gsap.utils.wrap`/`unitize`, already in core, + native Pointer Events) ✓, teardown discipline (marquee ticker, flickthrough interval, hero autoplay timer all push to `LF.teardown`) ✓, reduced-motion (marquee wraps flat, sticky panels un-stick, flickthrough/parallax/crests all early-return) ✓, desktop gating via existing `FINE` for flickthrough hover mode ✓.
+- **Placeholder scan:** none — all filler copy is real, usable text (marked implicitly as spec-sanctioned filler per §5/§6 of the design spec, not literal "TBD" placeholders). All code blocks complete.
+- **Consistency:** `LF.init.*` names (`heroV2`, `ctaFollow`, `marquee`, `lookbook`, `community`, `storyHero`, `imgScroll`, `flickthrough`, `stickyStack`, `floatingCrests`, `contactSplit`, `scrollOverlap`) are each defined once and don't collide with any B1-B3.1 name; `data-lf-bound` guard pattern applied to every new init; `FINE`/`LF.teardown`/`LF.scrollLock` reused from `lf-chrome.js` (B3.1) without redefinition; `template.suffix` values (`story`, `contact`) match the JSON template filenames (`page.story.json`, `page.contact.json`) exactly, required for Shopify's alternate-template resolution to work.
