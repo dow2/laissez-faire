@@ -111,9 +111,12 @@ Numbering note: the spec's OR teardown describes JS auto-numbering; we render nu
     <div class="lf-shopv2__grid">
       {% for product in collection.products %}
         {% liquid
-          assign lf_num = forloop.index | append: ''
-          if forloop.index < 10
-            assign lf_num = forloop.index | prepend: '0'
+          # forloop.index restarts on every paginated page; offset it so page 2
+          # of a 25-product catalog reads "25 / 25", not "01 / 25".
+          assign lf_idx = paginate.current_offset | plus: forloop.index
+          assign lf_num = lf_idx | append: ''
+          if lf_idx < 10
+            assign lf_num = lf_idx | prepend: '0'
           endif
         %}
         <a class="lf-shopv2__card" href="{{ product.url }}" data-lf-reveal data-cursor="View Piece">
@@ -202,13 +205,30 @@ html.lf-flood .lf-header button,
 html.lf-flood .lf-header { color: var(--lf-ground); }
 html.lf-flood .lf-header__crest { background-color: var(--lf-ground); filter: none; }
 html.lf-flood .lf-glow-text { color: var(--lf-ground); text-shadow: none; }
+/* .lf-header__count has its own neon color rule (lf-header.liquid) that blocks
+   inheritance from the flooded button; hover rules on the cart/menu buttons are
+   (0,2,0) and would beat the plain flood button rule — both need explicit
+   flood-scoped overrides or they render neon-on-neon (invisible) mid-flood. */
+html.lf-flood .lf-header__count { color: var(--lf-ground); text-shadow: none; }
+html.lf-flood .lf-header__cart:hover, html.lf-flood .lf-header__menu:hover { color: var(--lf-ground); }
 body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text {
   transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease);
 }
+/* The group above wins the `transition` property tie against [data-lf-reveal]
+   (same 0,1,0 specificity, later in file) — elements carrying BOTH .lf-glow-text
+   and data-lf-reveal (home statement heading) would lose their reveal fade/slide.
+   The merged rule below out-specifies both and carries the union. */
+.lf-glow-text[data-lf-reveal] {
+  transition: background-color .2s var(--lf-ease), color .2s var(--lf-ease), text-shadow .2s var(--lf-ease),
+              opacity .7s var(--lf-ease), transform .7s var(--lf-ease);
+}
 @media (prefers-reduced-motion: reduce) {
-  body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text { transition: none; }
+  body, .lf-header, .lf-header a, .lf-header button, .lf-header__crest, .lf-glow-text,
+  .lf-glow-text[data-lf-reveal] { transition: none; }
 }
 ```
+
+> **As-run (combined T1-T3 review, fixed in `e09c51d` — all four were defects in this plan's own authored code, not implementer errors):** (1) the flood transition group's `transition` shorthand tied `[data-lf-reveal]`'s on specificity (0,1,0) and, being later in the file, silently killed the reveal fade/slide on elements carrying both `.lf-glow-text` and `data-lf-reveal` (the home statement heading) — fixed with the merged union rule above. (2) `.lf-header__count` carries its own neon color rule that blocks inheritance from the flooded button — was invisible neon-on-neon mid-flood. (3) `.lf-header__cart:hover`/`.lf-header__menu:hover` (0,2,0) beat the plain flood button rule — hover mid-flood went invisible. (4) Task 2's grid numbering used bare `forloop.index`, which restarts per paginated page while the denominator is collection-global — page 2 of a 25-product catalog would have read "01 / 25"; fixed with `paginate.current_offset` (Task 2's code block above corrected too). Review also confirmed: flood class has exactly one writer (never applied under reduced motion), teardown drains correctly, and `html.lf-flood body` beats every competing background rule including `critical.css`'s.
 
 - [ ] **Step 2: Append `LF.init.flood` to `theme/assets/lf-sections.js`:**
 
