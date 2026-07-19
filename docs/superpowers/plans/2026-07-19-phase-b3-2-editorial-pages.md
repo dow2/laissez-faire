@@ -1198,8 +1198,12 @@ to:
 
 ```liquid
     {%- comment -%} Story renders its own full-height footer as a template section (above);
-       Contact's split layout has an inline mini-footer and no standard footer at all. {%- endcomment -%}
-    {% unless template.suffix == 'story' or template.suffix == 'contact' %}
+       Contact's split layout has an inline mini-footer and no standard footer at all.
+       Scoped to template.name == 'page' too — template.suffix alone is resource-type-
+       agnostic in Shopify, so an unrelated future alternate template (e.g.
+       product.story.json) named "story"/"contact" for a different purpose would
+       otherwise silently lose its footer sitewide. {%- endcomment -%}
+    {% unless template.name == 'page' and template.suffix == 'story' or template.name == 'page' and template.suffix == 'contact' %}
       {% sections 'footer-group' %}
     {% endunless %}
 ```
@@ -1210,10 +1214,12 @@ to:
 shopify theme push --path theme --development --store 1xiwxi-yy.myshopify.com
 ```
 
+> **As-run:** code review found two Important issues, both fixed and already reflected above. (1) The footer-suppression conditional checked bare `template.suffix`, which is resource-type-agnostic in Shopify (pages, articles, products, collections can all have suffixed alternate templates) — zero live risk today (only `page.story.json` exists), but a latent footgun for any future unrelated template happening to share the "story"/"contact" suffix name. Scoped with `template.name == 'page'` too, matching this same file's existing `template.name` usage for the Barba namespace. (2) `theme/sections/lf-footer.liquid`'s `.lf-footer--full` used `min-height: 100dvh` while every other full-viewport element in the theme (`lf-hero-slider`, `lf-hero-slider-v2`, `lf-teaser`, and this task's own sticky panels) consistently uses `100svh` — since this task is the first to place a `100dvh` element directly after a `100svh` sticky stack, the mismatch could produce a visible height snap at that boundary as mobile browser chrome collapses/expands during scroll. Switched to `100svh` for consistency (a fix to an already-shipped B3.1 file, made here because it's directly caused by what this task introduces).
+
 - [ ] **Step 6: Commit**
 
 ```bash
-git add theme/sections/lf-story-sticky.liquid theme/assets/lf-sections.js theme/templates/page.story.json theme/layout/theme.liquid
+git add theme/sections/lf-story-sticky.liquid theme/assets/lf-sections.js theme/templates/page.story.json theme/layout/theme.liquid theme/sections/lf-footer.liquid
 git commit -m "feat(b3.2): story sticky stack, floating crests, full-height footer wiring"
 git status --short
 ```
