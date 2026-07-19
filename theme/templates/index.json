@@ -87,7 +87,17 @@
       "block_order": ["slide1", "slide2"],
       "settings": {}
     },
-    "community": { "type": "lf-community", "settings": {} },
+    "community": {
+      "type": "lf-community",
+      "blocks": {
+        "partner1": { "type": "partner", "settings": { "name": "NOLA Second Line Society", "blurb": "Keeping the tradition of the second line alive for the next generation of the city's brass bands and social clubs.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "partner2": { "type": "partner", "settings": { "name": "Crescent City Youth Arts", "blurb": "Free after-school music and craft programs for kids across the Ninth Ward and beyond.", "image": "shopify://shop_images/lf-hero-chief.jpg" } },
+        "partner3": { "type": "partner", "settings": { "name": "Magnolia Relief Fund", "blurb": "Rebuilding and repair support for New Orleans families still recovering from storm damage.", "image": "shopify://shop_images/lf-hero-secondline.jpg" } },
+        "partner4": { "type": "partner", "settings": { "name": "The Running Late Club", "blurb": "A community of night-shift workers, musicians, and service industry lifers who know the city after dark.", "image": "shopify://shop_images/lf-hero-chief.jpg" } }
+      },
+      "block_order": ["partner1", "partner2", "partner3", "partner4"],
+      "settings": {}
+    },
     "email": { "type": "lf-email-block", "settings": {} }
   },
   "order": ["hero", "statement", "ctarow", "marquee", "lookbook", "community", "email"]
