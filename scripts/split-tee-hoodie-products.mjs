@@ -2,15 +2,17 @@
 /* Splits each of the 6 Drop 001 products (which today bundle Tee — Black /
    Tee — White / Hoodie — Grey as variants of one product) into two products:
    the existing product restructured to Tee-only (option renamed Garment->Color,
-   Hoodie — Grey variant + image removed, productType set to "Shirts"), and a
-   brand-new Hoodie product (productType "Hoodies"). Run scripts/create-category-
-   collections.mjs first so productType assignment actually populates a collection.
+   values renamed Tee — Black/Tee — White -> Black/White, Hoodie — Grey variant +
+   image removed, productType set to "Shirts"), and a brand-new Hoodie product
+   (productType "Hoodies"). Run scripts/create-category-collections.mjs first so
+   productType assignment actually populates a collection.
    Auth: OAuth client credentials grant (Dev Dashboard app `lf-catalog-loader`),
    same pattern as scripts/create-products.mjs. Not safely re-runnable mid-failure
    for every step: the per-product Hoodie-creation step is skipped if the handle
-   already exists, and the Tee-restructuring's option-rename step and its media
-   cleanup step each independently re-check their own precondition (so a crash
-   between them on one product doesn't strand orphaned Hoodie media or block a
+   already exists, and within Tee-restructuring, the option/value rename+delete,
+   the productType update, and the media cleanup each independently re-check
+   their own precondition against the product's current state (so a crash
+   between any two of them on one product doesn't strand the others or block a
    retry) — but if a mutation throws mid-product, inspect that product in the
    Shopify admin before re-running. */
 import { execSync } from 'node:child_process';
@@ -120,6 +122,7 @@ async function restructureTeeProduct(p) {
     query($h: String!) {
       productByHandle(handle: $h) {
         id
+        productType
         options { id name optionValues { id name } }
         media(first: 10) { nodes { id alt } }
       }
@@ -127,40 +130,52 @@ async function restructureTeeProduct(p) {
   const product = d.productByHandle;
   if (!product) throw new Error(`Tee product not found for handle ${p.slug} — has create-products.mjs been run?`);
 
-  // Option rename/variant removal and media cleanup are intentionally two
-  // independent steps, not gated behind one shared early-return: a prior
-  // partial failure (e.g. crashed after the option rename but before the
-  // media delete) must not permanently strand the orphaned Hoodie image —
-  // each step re-checks its own precondition and skips only itself.
+  // Each of the three restructuring concerns below (option/value rename+delete,
+  // productType, media cleanup) independently re-checks its own precondition
+  // against the product's CURRENT state — not against each other — so a crash
+  // partway through a prior run can never permanently strand any one of them.
   const garmentOption = product.options.find(o => o.name === 'Garment');
   if (garmentOption) {
+    const blackValue = garmentOption.optionValues.find(v => v.name === 'Tee — Black');
+    const whiteValue = garmentOption.optionValues.find(v => v.name === 'Tee — White');
     const hoodieValue = garmentOption.optionValues.find(v => v.name === 'Hoodie — Grey');
-    if (!hoodieValue) throw new Error(`${p.title}: "Garment" option found but no "Hoodie — Grey" value`);
+    if (!blackValue || !whiteValue || !hoodieValue) {
+      throw new Error(`${p.title}: "Garment" option found but missing one of Tee — Black / Tee — White / Hoodie — Grey`);
+    }
 
     const optUpdate = await gql(`
-      mutation($productId: ID!, $option: OptionUpdateInput!, $optionValuesToDelete: [ID!], $variantStrategy: ProductOptionUpdateVariantStrategy) {
-        productOptionUpdate(productId: $productId, option: $option, optionValuesToDelete: $optionValuesToDelete, variantStrategy: $variantStrategy) {
+      mutation($productId: ID!, $option: OptionUpdateInput!, $optionValuesToUpdate: [OptionValueUpdateInput!], $optionValuesToDelete: [ID!], $variantStrategy: ProductOptionUpdateVariantStrategy) {
+        productOptionUpdate(productId: $productId, option: $option, optionValuesToUpdate: $optionValuesToUpdate, optionValuesToDelete: $optionValuesToDelete, variantStrategy: $variantStrategy) {
           userErrors { field message }
         }
       }`, {
       productId: product.id,
       option: { id: garmentOption.id, name: 'Color' },
+      optionValuesToUpdate: [
+        { id: blackValue.id, name: 'Black' },
+        { id: whiteValue.id, name: 'White' },
+      ],
       optionValuesToDelete: [hoodieValue.id],
       variantStrategy: 'MANAGE',
     });
     const optErrs = optUpdate.productOptionUpdate.userErrors;
     if (optErrs.length) throw new Error(`${p.title} option update: ${JSON.stringify(optErrs)}`);
 
+    console.log(`RESTRUCTURED ${p.title} option -> Color (Black/White), Hoodie variant removed`);
+  } else {
+    console.log(`SKIP option restructure for ${p.title} (no "Garment" option — already split?)`);
+  }
+
+  if (product.productType !== 'Shirts') {
     const typeUpdate = await gql(`
       mutation($product: ProductUpdateInput!) {
         productUpdate(product: $product) { userErrors { field message } }
       }`, { product: { id: product.id, productType: 'Shirts' } });
     const typeErrs = typeUpdate.productUpdate.userErrors;
     if (typeErrs.length) throw new Error(`${p.title} type update: ${JSON.stringify(typeErrs)}`);
-
-    console.log(`RESTRUCTURED ${p.title} -> Shirts, Color option, Hoodie variant removed`);
+    console.log(`  set productType Shirts for ${p.title}`);
   } else {
-    console.log(`SKIP option/type restructure for ${p.title} (no "Garment" option — already split?)`);
+    console.log(`  (productType already Shirts for ${p.title})`);
   }
 
   const hoodieMedia = product.media.nodes.find(m => m.alt === `Hoodie — Grey — ${p.title}`);
