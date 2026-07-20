@@ -78,10 +78,11 @@
 .lf-shopv2__title { font-size: clamp(1.6rem, 4.5vw, 2.6rem); margin: 0; }
 .lf-shopv2__col { color: var(--lf-muted); font-size: .74rem; letter-spacing: .3em; margin: 0; }
 .lf-shopv2__stamp { color: var(--lf-muted); font-size: .68rem; letter-spacing: .22em; margin: 0 0 0 auto; }
-.lf-shopv2__catnav { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; margin: -1rem 0 2.4rem; }
-.lf-shopv2__catlink { color: var(--lf-muted); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; padding-bottom: .2rem; border-bottom: 1px solid transparent; }
-.lf-shopv2__catlink.is-active { color: var(--lf-body-text); border-bottom-color: var(--lf-neon-core); }
-.lf-shopv2__catlink.is-disabled { color: #3a3a42; cursor: default; }
+.lf-shopv2__catnav { display: flex; flex-wrap: wrap; gap: .6rem .7rem; margin: -.4rem 0 2.4rem; }
+.lf-shopv2__catlink { display: inline-block; color: var(--lf-neon-core); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; text-decoration: none; padding: .55rem 1.1rem; border: 1px solid var(--lf-neon-halo); text-shadow: 0 0 8px var(--lf-neon-halo); transition: box-shadow .3s var(--lf-ease); }
+.lf-shopv2__catlink:hover, .lf-shopv2__catlink.is-active { box-shadow: 0 0 18px var(--lf-neon-halo); }
+.lf-shopv2__catlink.is-active { color: var(--lf-body-text); }
+.lf-shopv2__catlink.is-disabled { color: #55555f; border-color: #2a2a32; text-shadow: none; cursor: default; }
 .lf-shopv2__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .lf-shopv2__card { text-decoration: none; }
 .lf-shopv2__imgwrap { position: relative; overflow: hidden; border: 1px solid #1e1e26; background: var(--lf-panel); }
