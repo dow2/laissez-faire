@@ -14,7 +14,13 @@
    their own precondition against the product's current state (so a crash
    between any two of them on one product doesn't strand the others or block a
    retry) — but if a mutation throws mid-product, inspect that product in the
-   Shopify admin before re-running. */
+   Shopify admin before re-running. NOTE: this guard set does not cover every
+   historical state — the 6 live Drop-001 products briefly had their Color
+   option renamed but not its values (a bug in an earlier version of this
+   script), which was corrected out-of-band via a throwaway one-off script on
+   2026-07-19, not by re-running this file. If a similar drift is ever
+   suspected again, verify live option values directly rather than assuming
+   a clean re-run of this script will catch it. */
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
