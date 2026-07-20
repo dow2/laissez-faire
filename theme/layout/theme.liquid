@@ -22,17 +22,34 @@
     <main id="lf-main" data-barba="wrapper">
       <div data-barba="container" data-barba-namespace="{{ template.name }}">
         {{ content_for_layout }}
-        {%- comment -%} Story renders its own full-height footer as a template section (above);
-           Contact's split layout has an inline mini-footer and no standard footer at all.
-           Scoped to template.name == 'page' too — template.suffix alone is resource-type-
-           agnostic in Shopify, so an unrelated future alternate template (e.g.
-           product.story.json) named "story"/"contact" for a different purpose would
-           otherwise silently lose its footer sitewide.
+        {%- comment -%} Story and collection render their own full-height footer as a
+           template section (above); Contact's split layout has an inline mini-footer
+           and no standard footer at all.
+           Scoped to template.name == 'page' for story/contact too — template.suffix
+           alone is resource-type-agnostic in Shopify, so an unrelated future alternate
+           template (e.g. product.story.json) named "story"/"contact" for a different
+           purpose would otherwise silently lose its footer sitewide. Collection has no
+           such ambiguity — template.name == 'collection' already means the collection
+           resource type regardless of which collection.*.json alternate template renders.
            Lives INSIDE the Barba container (not after </main>) so it's re-evaluated
            and swapped on every client-side navigation, not just on hard/fresh loads —
            otherwise a stale footer-group from a previous page persists across Barba
-           transitions into pages that should suppress it (or vice versa). {%- endcomment -%}
-        {% unless template.name == 'page' and template.suffix == 'story' or template.name == 'page' and template.suffix == 'contact' %}
+           transitions into pages that should suppress it (or vice versa).
+           Uses explicit if/elsif rather than a single and/or chain — Liquid's `and`/`or`
+           have no operator precedence and evaluate strictly left to right, so chaining
+           3+ mixed conditions silently misgroups instead of matching normal boolean
+           logic; if/elsif has no such ambiguity. {%- endcomment -%}
+        {%- liquid
+          assign lf_footer_in_template = false
+          if template.name == 'page' and template.suffix == 'story'
+            assign lf_footer_in_template = true
+          elsif template.name == 'page' and template.suffix == 'contact'
+            assign lf_footer_in_template = true
+          elsif template.name == 'collection'
+            assign lf_footer_in_template = true
+          endif
+        -%}
+        {% unless lf_footer_in_template %}
           {% sections 'footer-group' %}
         {% endunless %}
       </div>

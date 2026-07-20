@@ -28,12 +28,14 @@
         "image": "shopify://shop_images/lf-b3r2-shop-band.jpg",
         "focus": "100%"
       }
-    }
+    },
+    "footer": { "type": "lf-footer", "settings": { "full_height": true } }
   },
   "order": [
     "grid",
     "band1",
     "pillars",
-    "band2"
+    "band2",
+    "footer"
   ]
 }
