@@ -96,6 +96,21 @@ there).
 - **Shop grid** — no settings here; it lists every product in your
   catalog automatically, with live price/image/title. To change what's in
   it, edit your products (Admin → Products) — not this section.
+- **Categories** — the pill row above the grid (Hats, Shirts, Hoodies,
+  Jackets, Jeans, Pants, Shorts, Accessories) is fixed in
+  `theme/sections/lf-shop-grid-v2.liquid`, not merchant-editable via the
+  Theme Editor. A category shows live (as a link) once its Shopify
+  collection has at least one product; otherwise it renders greyed with a
+  "Coming Soon" label automatically — no theme edit needed to activate a
+  category, just tag a product with that `Product type` in the admin.
+  Adding, renaming, or removing a category is two jobs. You can do the
+  first yourself in Admin → Products → Collections: create the collection
+  (rule: `Product type` equals `<name>`, or edit/delete an existing one
+  for renames/removals) and publish it to Online Store. The second job —
+  updating the pill itself (adding, editing, or deleting its
+  `Label|handle` entry in `lf_categories`, `lf-shop-grid-v2.liquid`) plus
+  a theme push to go live — needs the developer/Claude, same as any other
+  code change (see Sync Safety above).
 - **Image band (before pillars)** — leave the image blank for the dark
   divider look, or add one for a full photo band. Optional stamp line.
 - **Pillars** ("What we stand on") — sticky title + up to 3 pillars

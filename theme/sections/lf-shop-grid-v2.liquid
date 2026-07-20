@@ -4,6 +4,29 @@
     <p class="lf-shopv2__col lf-display">Collection 01</p>
     <p class="lf-shopv2__stamp">{% render 'lf-stamp' %}</p>
   </header>
+  <nav class="lf-shopv2__catnav" aria-label="Shop categories">
+    <a class="lf-shopv2__catlink{% if collection.handle == 'all' %} is-active{% endif %}" href="{{ routes.all_products_collection_url }}">All</a>
+    {% liquid
+      assign lf_categories = "Hats|hats,Shirts|shirts,Hoodies|hoodies,Jackets|jackets,Jeans|jeans,Pants|pants,Shorts|shorts,Accessories|accessories" | split: ','
+    %}
+    {% for lf_cat in lf_categories %}
+      {% liquid
+        assign lf_cat_parts = lf_cat | split: '|'
+        assign lf_cat_label = lf_cat_parts[0]
+        assign lf_cat_handle = lf_cat_parts[1]
+        assign lf_cat_collection = collections[lf_cat_handle]
+        assign lf_cat_live = false
+        if lf_cat_collection and lf_cat_collection.products_count > 0
+          assign lf_cat_live = true
+        endif
+      %}
+      {% if lf_cat_live %}
+        <a class="lf-shopv2__catlink{% if collection.handle == lf_cat_handle %} is-active{% endif %}" href="{{ lf_cat_collection.url }}">{{ lf_cat_label }}</a>
+      {% else %}
+        <span class="lf-shopv2__catlink is-disabled">{{ lf_cat_label }} — Coming Soon</span>
+      {% endif %}
+    {% endfor %}
+  </nav>
   {% paginate collection.products by 24 %}
     {% assign lf_total = collection.products_count %}
     {% liquid
@@ -55,6 +78,10 @@
 .lf-shopv2__title { font-size: clamp(1.6rem, 4.5vw, 2.6rem); margin: 0; }
 .lf-shopv2__col { color: var(--lf-muted); font-size: .74rem; letter-spacing: .3em; margin: 0; }
 .lf-shopv2__stamp { color: var(--lf-muted); font-size: .68rem; letter-spacing: .22em; margin: 0 0 0 auto; }
+.lf-shopv2__catnav { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; margin: -1rem 0 2.4rem; }
+.lf-shopv2__catlink { color: var(--lf-muted); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; padding-bottom: .2rem; border-bottom: 1px solid transparent; }
+.lf-shopv2__catlink.is-active { color: var(--lf-body-text); border-bottom-color: var(--lf-neon-core); }
+.lf-shopv2__catlink.is-disabled { color: #3a3a42; cursor: default; }
 .lf-shopv2__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .lf-shopv2__card { text-decoration: none; }
 .lf-shopv2__imgwrap { position: relative; overflow: hidden; border: 1px solid #1e1e26; background: var(--lf-panel); }
