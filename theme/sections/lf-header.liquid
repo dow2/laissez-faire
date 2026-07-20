@@ -3,6 +3,7 @@
     <span class="lf-header__crest" style="--lf-crest: url('{{ 'lf-crest.png' | asset_url }}');" aria-hidden="true"></span>
   </a>
   <div class="lf-header__right">
+    <a class="lf-header__shop" href="{{ routes.all_products_collection_url }}">Shop</a>
     <button class="lf-header__cart" type="button" data-lf-cart-open aria-label="Open cart">
       Cart <span class="lf-header__count" data-lf-cart-count>{{ cart.item_count }}</span>
     </button>
@@ -20,7 +21,7 @@
   transition: transform .3s ease-out, background .3s ease-out;
 }
 .lf-header.is-pulled { transform: translateY(-100%); }
-.lf-header.is-bright .lf-header__cart, .lf-header.is-bright .lf-header__menu { color: var(--lf-ground); }
+.lf-header.is-bright .lf-header__shop, .lf-header.is-bright .lf-header__cart, .lf-header.is-bright .lf-header__menu { color: var(--lf-ground); }
 .lf-header__crest {
   display: block; width: 30px; aspect-ratio: 300/320;
   background-color: var(--lf-neon-core);
@@ -29,11 +30,11 @@
   filter: drop-shadow(0 0 4px var(--lf-neon-halo));
 }
 .lf-header__right { display: flex; align-items: center; gap: 1.6rem; }
-.lf-header__cart, .lf-header__menu {
+.lf-header__shop, .lf-header__cart, .lf-header__menu {
   font-family: var(--lf-font-body); font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--lf-body-text); background: none; border: 0; cursor: pointer; padding: 0;
+  color: var(--lf-body-text); background: none; border: 0; cursor: pointer; padding: 0; text-decoration: none;
 }
-.lf-header__cart:hover, .lf-header__menu:hover { color: var(--lf-neon-core); }
+.lf-header__shop:hover, .lf-header__cart:hover, .lf-header__menu:hover { color: var(--lf-neon-core); }
 .lf-header__count {
   display: inline-block; min-width: 1.3em; text-align: center; margin-left: .25em;
   color: var(--lf-neon-core); text-shadow: 0 0 8px var(--lf-neon-halo);
