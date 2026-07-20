@@ -102,11 +102,15 @@ there).
   Theme Editor. A category shows live (as a link) once its Shopify
   collection has at least one product; otherwise it renders greyed with a
   "Coming Soon" label automatically — no theme edit needed to activate a
-  category, just tag a product with that `Product type` in the admin. To
-  add a 9th category: create a new automated collection in admin (rule:
-  `Product type` equals `<name>`), publish it to Online Store, then add
-  one `Label|handle` entry to the `lf_categories` list in
-  `lf-shop-grid-v2.liquid`.
+  category, just tag a product with that `Product type` in the admin.
+  Adding, renaming, or removing a category is two separate jobs: creating
+  the collection (rule: `Product type` equals `<name>`) and publishing it
+  to Online Store is something you can do yourself in Admin → Products →
+  Collections; but making its pill actually appear in the nav requires a
+  small code change (one `Label|handle` entry in `lf_categories`,
+  `lf-shop-grid-v2.liquid`) plus a theme push to go live — that part needs
+  the developer/Claude, same as any other code change (see Sync Safety
+  above).
 - **Image band (before pillars)** — leave the image blank for the dark
   divider look, or add one for a full photo band. Optional stamp line.
 - **Pillars** ("What we stand on") — sticky title + up to 3 pillars
